@@ -10,7 +10,12 @@ declare module 'fastify' {
 
 const prismaPlugin: FastifyPluginAsync = async (fastify) => {
   const prisma = new PrismaClient()
-  await prisma.$connect()
+  try {
+    await prisma.$connect()
+  } catch (err) {
+    fastify.log.error('Error conectando a la base de datos:', err)
+    throw err
+  }
   fastify.decorate('db', prisma)
   fastify.addHook('onClose', async () => {
     await prisma.$disconnect()

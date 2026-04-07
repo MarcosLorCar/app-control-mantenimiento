@@ -18,7 +18,6 @@ model Role {
   @@map("roles")
 }
 
-
 model ActionType {
   id                Int      @id @default(autoincrement())
   name              String   @unique
@@ -30,27 +29,30 @@ model ActionType {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  fullName     String   @map("full_name")
-  roleId       Int      @map("role_id")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  role         Role     @relation(fields: [roleId], references: [id])
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  fullName     String    @map("full_name")
+  roleId       Int       @map("role_id")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  role         Role      @relation(fields: [roleId], references: [id])
   actions      Action[]
 
+  @@index([roleId])
   @@map("users")
 }
 
 model Infrastructure {
-  id          Int         @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
   location    String?
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
   actions     Action[]
 
   @@map("infrastructures")
@@ -69,6 +71,10 @@ model Action {
   actionType       ActionType       @relation(fields: [actionTypeId], references: [id])
   materials        ActionMaterial[]
 
+  @@index([infrastructureId])
+  @@index([performedBy])
+  @@index([actionTypeId])
+  @@index([performedAt])
   @@map("actions")
 }
 
@@ -85,5 +91,6 @@ model ActionMaterial {
   notes       String?
   action      Action   @relation(fields: [actionId], references: [id])
 
+  @@index([actionId])
   @@map("action_materials")
 }

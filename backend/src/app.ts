@@ -20,11 +20,22 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await app.register(prismaPlugin)
   await app.register(authPlugin)
 
-  app.get('/api/health', async () => ({ status: 'ok' }))
+  app.setErrorHandler((error, _request, reply) => {
+    app.log.error(error)
+    const statusCode = error.statusCode ?? 500
+    reply.code(statusCode).send({
+      error: { code: error.code ?? 'INTERNAL_ERROR', message: error.message },
+    })
+  })
+
+  app.get('/api/v1/health', async () => ({ status: 'ok' }))
 
   // Módulos (se añaden en tasks posteriores)
-  // await app.register(authRoutes, { prefix: '/api/auth' })
-  // await app.register(usersRoutes, { prefix: '/api/users' })
+  // await app.register(authRoutes, { prefix: '/api/v1/auth' })
+  // await app.register(usersRoutes, { prefix: '/api/v1/users' })
+  // await app.register(infrastructuresRoutes, { prefix: '/api/v1/infrastructures' })
+  // await app.register(actionsRoutes, { prefix: '/api/v1/actions' })
+  // await app.register(catalogRoutes, { prefix: '/api/v1/catalog' })
 
   return app
 }
