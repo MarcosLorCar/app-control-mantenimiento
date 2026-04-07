@@ -12,9 +12,10 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | # | Task | Estado |
 |---|------|--------|
 | 1 | Monorepo scaffold (package.json, workspaces, shared/, tsconfig) | ✅ completado |
-| 2 | Prisma schema + migración inicial | ⬜ pendiente |
-| 3 | Seed de datos iniciales (roles, estados, tipos de acción, usuarios) | ⬜ pendiente |
-| 4 | App Fastify + plugins base (prisma, auth guards, helpers de test) | ⬜ pendiente |
+| 2 | Prisma schema + migración inicial | ✅ completado |
+| 3 | Seed de datos iniciales (roles, estados, tipos de acción, usuarios) | ✅ completado |
+| 4 | App Fastify + plugins base (prisma, auth guards, helpers de test) | ✅ completado |
+| — | *Hardening pre-Task 5: indexes, soft delete, API v1, error handler, env validation* | ✅ completado |
 | 5 | Módulo Auth (login, refresh, logout) con TDD | ⬜ pendiente |
 | 6 | Módulo Usuarios (CRUD) con TDD | ⬜ pendiente |
 | 7 | Módulo Catálogos (roles, estados, tipos) con TDD | ⬜ pendiente |

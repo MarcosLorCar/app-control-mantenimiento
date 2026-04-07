@@ -26,16 +26,25 @@ action_types → actions
 - `action_types.consumes_materials` flag controls whether an action type tracks material consumption
 - `action_materials` has no pre-existing catalog — materials are registered at the moment of consumption (freeform `name`, `unit`, `quantity`, `unit_cost`, `total_cost`, `supplier`)
 - Reference tables (`roles`, `action_types`) are extensible without migrations
+- `users` and `infrastructures` use soft delete (`deleted_at`) — never hard-deleted
+- All FK columns have DB indexes for query performance
 
 **Tables:**
 | Table | Purpose |
 |-------|---------|
 | `roles` | User roles with `can_write` and `can_manage` permission flags |
-| `users` | Authenticated users, linked to a role |
-| `infrastructures` | Physical assets with a location |
+| `users` | Authenticated users, linked to a role; soft delete via `deleted_at` |
+| `infrastructures` | Physical assets with a location; soft delete via `deleted_at` |
 | `actions` | Events on an infrastructure: who did what, when, and what type |
 | `action_types` | Catalog of action types (inspection, repair, installation…) |
 | `action_materials` | Materials consumed during an action (cost tracking included) |
+
+## API
+
+- Base URL: `/api/v1/`
+- Auth: JWT access token (Bearer) + refresh token en cookie HttpOnly
+- Error shape: `{ error: { code: string, message: string } }`
+- Health check: `GET /api/v1/health`
 
 ## Working with Design Files
 
