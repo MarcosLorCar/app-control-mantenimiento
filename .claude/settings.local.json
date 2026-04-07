@@ -3,5 +3,9 @@
     "allow": [
       "Bash(npm install:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "aidesigner"
+  ],
+  "enableAllProjectMcpServers": true
 }
