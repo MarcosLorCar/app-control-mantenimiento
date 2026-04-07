@@ -20,6 +20,9 @@
     "@prisma/client": "^5.14.0",
     "zod": "^3.23.8"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@control-actions/shared": "*",
     "@types/bcryptjs": "^2.4.6",
