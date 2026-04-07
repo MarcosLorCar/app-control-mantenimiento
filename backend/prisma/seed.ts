@@ -21,23 +21,6 @@ async function main() {
     create: { name: 'reader', description: 'Solo lectura', canWrite: false, canManage: false },
   })
 
-  // Estados de infraestructura
-  await prisma.infraStatus.upsert({
-    where: { name: 'active' },
-    update: {},
-    create: { name: 'active', description: 'Operativa' },
-  })
-  await prisma.infraStatus.upsert({
-    where: { name: 'inactive' },
-    update: {},
-    create: { name: 'inactive', description: 'Fuera de servicio' },
-  })
-  await prisma.infraStatus.upsert({
-    where: { name: 'maintenance' },
-    update: {},
-    create: { name: 'maintenance', description: 'En mantenimiento' },
-  })
-
   // Tipos de acción
   await prisma.actionType.upsert({
     where: { name: 'inspection' },
