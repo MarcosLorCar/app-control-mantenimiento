@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**control-actions** is an infrastructure management system for tracking actions (inspections, repairs, installations, etc.) performed on physical infrastructures. It manages materials consumed per action, users/roles, and infrastructure statuses.
+**control-actions** is an infrastructure management system for tracking actions (inspections, repairs, installations, etc.) performed on physical infrastructures. It manages materials consumed per action and users/roles.
 
 ## Repository Contents
 
@@ -18,22 +18,21 @@ Core domain entities and their relationships:
 
 ```
 roles → users → actions → action_materials
-infra_statuses → infrastructures → actions
+infrastructures → actions
 action_types → actions
 ```
 
 **Key design decisions:**
 - `action_types.consumes_materials` flag controls whether an action type tracks material consumption
 - `action_materials` has no pre-existing catalog — materials are registered at the moment of consumption (freeform `name`, `unit`, `quantity`, `unit_cost`, `total_cost`, `supplier`)
-- Reference tables (`roles`, `infra_statuses`, `action_types`) are extensible without migrations
+- Reference tables (`roles`, `action_types`) are extensible without migrations
 
 **Tables:**
 | Table | Purpose |
 |-------|---------|
 | `roles` | User roles with `can_write` and `can_manage` permission flags |
 | `users` | Authenticated users, linked to a role |
-| `infrastructures` | Physical assets with a status and location |
-| `infra_statuses` | Status catalog (active, inactive, maintenance…) |
+| `infrastructures` | Physical assets with a location |
 | `actions` | Events on an infrastructure: who did what, when, and what type |
 | `action_types` | Catalog of action types (inspection, repair, installation…) |
 | `action_materials` | Materials consumed during an action (cost tracking included) |
