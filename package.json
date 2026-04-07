@@ -1,0 +1,10 @@
+{
+  "name": "control-actions",
+  "private": true,
+  "workspaces": ["shared", "backend", "frontend"],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "test:backend": "npm run test --workspace=backend",
+    "build:backend": "npm run build --workspace=backend"
+  }
+}
