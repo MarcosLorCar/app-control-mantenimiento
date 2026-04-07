@@ -3,6 +3,7 @@ import fastifyJwt from '@fastify/jwt'
 import fastifyCookie from '@fastify/cookie'
 import prismaPlugin from './plugins/prisma.plugin'
 import authPlugin from './plugins/auth.plugin'
+import authRoutes from './modules/auth/auth.routes'
 
 export interface AppOptions {
   jwtSecret: string
@@ -30,8 +31,9 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
 
   app.get('/api/v1/health', async () => ({ status: 'ok' }))
 
-  // Módulos (se añaden en tasks posteriores)
-  // await app.register(authRoutes, { prefix: '/api/v1/auth' })
+  await app.register(authRoutes, { prefix: '/api/v1/auth' })
+
+  // Módulos pendientes
   // await app.register(usersRoutes, { prefix: '/api/v1/users' })
   // await app.register(infrastructuresRoutes, { prefix: '/api/v1/infrastructures' })
   // await app.register(actionsRoutes, { prefix: '/api/v1/actions' })
