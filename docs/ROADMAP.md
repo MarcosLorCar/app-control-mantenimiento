@@ -32,7 +32,7 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 |---|------|--------|
 | 1 | Scaffold React + Vite + TypeScript + Tailwind | ✅ completado |
 | 2 | API client + AuthContext (JWT en memoria, refresh automático) | ✅ completado |
-| 3 | Routing, Layout (sidebar) y página Login | ⬜ pendiente |
+| 3 | Routing, Layout (sidebar) y página Login | ✅ completado |
 | 4 | API hooks con TanStack Query | ⬜ pendiente |
 | 5 | Página Infraestructuras (listado + detalle + formulario) | ⬜ pendiente |
 | 6 | Formularios de Acciones y Materiales | ⬜ pendiente |
