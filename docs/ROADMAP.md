@@ -18,7 +18,7 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | — | *Hardening pre-Task 5: indexes, soft delete, API v1, error handler, env validation* | ✅ completado |
 | 5 | Módulo Auth (login, refresh, logout) con TDD | ✅ completado |
 | 6 | Módulo Usuarios (CRUD) con TDD | ✅ completado |
-| 7 | Módulo Catálogos (roles, estados, tipos) con TDD | ⬜ pendiente |
+| 7 | Módulo Catálogos (roles, estados, tipos) con TDD | ✅ completado |
 | 8 | Módulo Infraestructuras (CRUD) con TDD | ⬜ pendiente |
 | 9 | Módulo Acciones + Materiales (CRUD) con TDD | ⬜ pendiente |
 | 10 | Verificación final (suite completa + typecheck + prueba manual) | ⬜ pendiente |

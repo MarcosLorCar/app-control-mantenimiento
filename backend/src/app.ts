@@ -5,6 +5,7 @@ import prismaPlugin from './plugins/prisma.plugin'
 import authPlugin from './plugins/auth.plugin'
 import authRoutes from './modules/auth/auth.routes'
 import usersRoutes from './modules/users/users.routes'
+import catalogRoutes from './modules/catalog/catalog.routes'
 
 export interface AppOptions {
   jwtSecret: string
@@ -34,11 +35,11 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
 
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
   await app.register(usersRoutes, { prefix: '/api/v1/users' })
+  await app.register(catalogRoutes, { prefix: '/api/v1/catalog' })
 
   // Módulos pendientes
   // await app.register(infrastructuresRoutes, { prefix: '/api/v1/infrastructures' })
   // await app.register(actionsRoutes, { prefix: '/api/v1/actions' })
-  // await app.register(catalogRoutes, { prefix: '/api/v1/catalog' })
 
   return app
 }
