@@ -6,12 +6,14 @@ import { clearDb, seedTestData } from './helpers/db'
 let app: FastifyInstance
 let adminToken: string
 let readerToken: string
+let adminRoleId: number
 
 beforeAll(async () => { app = await buildTestApp() })
 afterAll(async () => { await app.close() })
 beforeEach(async () => {
   await clearDb()
-  await seedTestData()
+  const seed = await seedTestData()
+  adminRoleId = seed.adminRole.id
   adminToken = await getAdminToken(app)
   readerToken = await getReaderToken(app)
 })
@@ -49,7 +51,7 @@ describe('POST /api/v1/users', () => {
     const res = await app.inject({
       method: 'POST', url: '/api/v1/users',
       headers: { authorization: `Bearer ${adminToken}` },
-      payload: { email: 'nuevo@test.com', password: 'password123', fullName: 'Nuevo Usuario', roleId: 1 },
+      payload: { email: 'nuevo@test.com', password: 'password123', fullName: 'Nuevo Usuario', roleId: adminRoleId },
     })
     expect(res.statusCode).toBe(201)
     const body = JSON.parse(res.body)
