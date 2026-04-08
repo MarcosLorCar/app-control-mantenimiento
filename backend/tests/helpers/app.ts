@@ -11,7 +11,7 @@ export async function buildTestApp(): Promise<FastifyInstance> {
 export async function getAdminToken(app: FastifyInstance): Promise<string> {
   const res = await app.inject({
     method: 'POST',
-    url: '/api/auth/login',
+    url: '/api/v1/auth/login',
     payload: { email: 'admin@test.com', password: 'admin1234' },
   })
   return JSON.parse(res.body).data.accessToken
@@ -20,7 +20,7 @@ export async function getAdminToken(app: FastifyInstance): Promise<string> {
 export async function getEditorToken(app: FastifyInstance): Promise<string> {
   const res = await app.inject({
     method: 'POST',
-    url: '/api/auth/login',
+    url: '/api/v1/auth/login',
     payload: { email: 'editor@test.com', password: 'editor1234' },
   })
   return JSON.parse(res.body).data.accessToken
@@ -29,7 +29,7 @@ export async function getEditorToken(app: FastifyInstance): Promise<string> {
 export async function getReaderToken(app: FastifyInstance): Promise<string> {
   const res = await app.inject({
     method: 'POST',
-    url: '/api/auth/login',
+    url: '/api/v1/auth/login',
     payload: { email: 'reader@test.com', password: 'reader1234' },
   })
   return JSON.parse(res.body).data.accessToken
