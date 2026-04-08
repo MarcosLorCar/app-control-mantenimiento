@@ -7,3 +7,4 @@ dist/
 .superpowers/
 .aidesigner/*
 !.aidesigner/.gitkeep
+!.aidesigner/DESIGN.md
