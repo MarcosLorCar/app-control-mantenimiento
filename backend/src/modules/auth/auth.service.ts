@@ -8,7 +8,7 @@ export async function loginService(
   db: PrismaClient,
   app: FastifyInstance,
   body: LoginBody
-): Promise<{ accessToken: string }> {
+): Promise<{ accessToken: string; refreshToken: string }> {
   const user = await db.user.findUnique({
     where: { email: body.email },
     include: { role: true },
@@ -32,6 +32,8 @@ export async function loginService(
   }
 
   const accessToken = app.jwt.sign(payload, { expiresIn: '15m' })
+  // Refresh token lleva solo el sub — cast necesario por la declaración estricta de FastifyJWT
+  const refreshToken = app.jwt.sign({ sub: user.id } as unknown as JwtPayload, { expiresIn: '7d' })
 
-  return { accessToken }
+  return { accessToken, refreshToken }
 }

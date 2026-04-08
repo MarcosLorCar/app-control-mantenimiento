@@ -61,6 +61,43 @@ describe('POST /api/v1/auth/login', () => {
   })
 })
 
+describe('POST /api/v1/auth/refresh', () => {
+  it('devuelve nuevo accessToken con cookie de refresh válida', async () => {
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email: 'admin@test.com', password: 'admin1234' },
+    })
+    expect(loginRes.statusCode).toBe(200)
+    const cookie = loginRes.cookies.find(c => c.name === 'refreshToken')
+    expect(cookie).toBeDefined()
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/refresh',
+      cookies: { refreshToken: cookie!.value },
+    })
+    expect(res.statusCode).toBe(200)
+    const body = JSON.parse(res.body)
+    expect(body.data.accessToken).toBeDefined()
+    expect(typeof body.data.accessToken).toBe('string')
+  })
+
+  it('devuelve 401 sin cookie', async () => {
+    const res = await app.inject({ method: 'POST', url: '/api/v1/auth/refresh' })
+    expect(res.statusCode).toBe(401)
+  })
+
+  it('devuelve 401 con cookie inválida', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/refresh',
+      cookies: { refreshToken: 'token-invalido' },
+    })
+    expect(res.statusCode).toBe(401)
+  })
+})
+
 describe('POST /api/v1/auth/logout', () => {
   it('responde 200 con token válido', async () => {
     const loginRes = await app.inject({
