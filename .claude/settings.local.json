@@ -1,11 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)",
+      "Bash(npm test:*)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "aidesigner"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }
