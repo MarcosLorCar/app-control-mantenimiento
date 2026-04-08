@@ -49,3 +49,14 @@ action_types → actions
 ## Working with Design Files
 
 The `.pen` file requires the Pencil desktop app to be running. Use the `pencil` MCP tools (`get_editor_state`, `batch_get`, `batch_design`) — never `Read` or `Grep` on `.pen` files.
+
+## Plan 2 — Frontend SPA
+
+Before implementing any Plan 2 task, read [`docs/plan2-aidesigner-guide.md`](docs/plan2-aidesigner-guide.md).
+
+For UI tasks (Tasks 3, 5, 6, 7):
+1. Inspect `frontwabb.pen` with `pencil` MCP tools first (`batch_get`)
+2. Follow the AIDesigner workflow in the guide (generate → capture → adopt → implement)
+3. Read `.aidesigner/DESIGN.md` to brief AIDesigner consistently
+
+Tasks 1, 2, 4, 8 are pure code — skip AIDesigner for those.
