@@ -12,8 +12,8 @@ if (!JWT_REFRESH_SECRET || JWT_REFRESH_SECRET.length < 32) {
 
 async function start() {
   const app = await buildApp({
-    jwtSecret: JWT_SECRET,
-    jwtRefreshSecret: JWT_REFRESH_SECRET,
+    jwtSecret: JWT_SECRET!,
+    jwtRefreshSecret: JWT_REFRESH_SECRET!,
   })
 
   process.on('SIGTERM', async () => {

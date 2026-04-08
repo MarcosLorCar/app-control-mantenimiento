@@ -21,7 +21,7 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | 7 | Módulo Catálogos (roles, estados, tipos) con TDD | ✅ completado |
 | 8 | Módulo Infraestructuras (CRUD) con TDD | ✅ completado |
 | 9 | Módulo Acciones + Materiales (CRUD) con TDD | ✅ completado |
-| 10 | Verificación final (suite completa + typecheck + prueba manual) | ⬜ pendiente |
+| 10 | Verificación final (suite completa + typecheck + prueba manual) | ✅ completado |
 
 ---
 

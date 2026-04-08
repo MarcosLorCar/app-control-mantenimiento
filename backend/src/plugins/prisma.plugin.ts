@@ -13,7 +13,7 @@ const prismaPlugin: FastifyPluginAsync = async (fastify) => {
   try {
     await prisma.$connect()
   } catch (err) {
-    fastify.log.error('Error conectando a la base de datos:', err)
+    fastify.log.error({ err }, 'Error conectando a la base de datos')
     throw err
   }
   fastify.decorate('db', prisma)
