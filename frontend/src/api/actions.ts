@@ -1,21 +1,21 @@
 import { apiFetch, API_BASE } from './client'
-import type { Action, ActionMaterial } from './types'
+import type { ActionWithRelations, ActionMaterial } from './types'
 
 type ApiData<T> = { data: T }
 
-export function listActions(infraId: number): Promise<Action[]> {
-  return apiFetch<ApiData<Action[]>>(`${API_BASE}/infrastructures/${infraId}/actions`).then(r => r.data)
+export function listActions(infraId: number): Promise<ActionWithRelations[]> {
+  return apiFetch<ApiData<ActionWithRelations[]>>(`${API_BASE}/infrastructures/${infraId}/actions`).then(r => r.data)
 }
 
-export function getAction(id: number): Promise<Action> {
-  return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${id}`).then(r => r.data)
+export function getAction(id: number): Promise<ActionWithRelations> {
+  return apiFetch<ApiData<ActionWithRelations>>(`${API_BASE}/actions/${id}`).then(r => r.data)
 }
 
 export function createAction(
   infraId: number,
   body: { actionTypeId: number; description?: string; performedAt?: string },
-): Promise<Action> {
-  return apiFetch<ApiData<Action>>(`${API_BASE}/infrastructures/${infraId}/actions`, {
+): Promise<ActionWithRelations> {
+  return apiFetch<ApiData<ActionWithRelations>>(`${API_BASE}/infrastructures/${infraId}/actions`, {
     method: 'POST',
     body: JSON.stringify(body),
   }).then(r => r.data)
@@ -24,8 +24,8 @@ export function createAction(
 export function updateAction(
   id: number,
   body: { actionTypeId?: number; description?: string; performedAt?: string },
-): Promise<Action> {
-  return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${id}`, {
+): Promise<ActionWithRelations> {
+  return apiFetch<ApiData<ActionWithRelations>>(`${API_BASE}/actions/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
   }).then(r => r.data)

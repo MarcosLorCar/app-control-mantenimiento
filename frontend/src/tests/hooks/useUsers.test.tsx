@@ -21,7 +21,7 @@ function makeWrapper() {
   )
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('useUsers', () => {
   it('devuelve lista de usuarios', async () => {

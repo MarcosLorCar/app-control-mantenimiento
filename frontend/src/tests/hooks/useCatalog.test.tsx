@@ -6,7 +6,7 @@ import * as catalogApi from '../../api/catalog'
 import { useActionTypes, useRoles } from '../../hooks/useCatalog'
 
 vi.mock('../../api/catalog')
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 function makeWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })

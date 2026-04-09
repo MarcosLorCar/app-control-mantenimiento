@@ -8,7 +8,7 @@ vi.mock('../../api/client', async (importOriginal) => {
 })
 
 const mockFetch = vi.mocked(client.apiFetch)
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('listActionTypes', () => {
   it('llama a GET /api/v1/catalog/action-types', async () => {

@@ -28,9 +28,9 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateUser>[1] }) =>
       updateUser(id, body),
-    onSuccess: (_data: User, { id }: { id: number }) => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: userKeys.all })
-      qc.invalidateQueries({ queryKey: userKeys.detail(id) })
+      qc.invalidateQueries({ queryKey: userKeys.detail(variables.id) })
     },
   })
 }

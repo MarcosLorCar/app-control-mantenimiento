@@ -14,6 +14,9 @@ vi.mock('../../api/actions')
 const action = {
   id: 1, infrastructureId: 1, performedBy: 1, actionTypeId: 1,
   description: null, performedAt: '2026-01-01T00:00:00.000Z', createdAt: '2026-01-01T00:00:00.000Z',
+  actionType: { id: 1, name: 'inspection', consumesMaterials: false },
+  performer: { id: 1, fullName: 'Admin', email: 'admin@example.com' },
+  materials: [],
 }
 const material = {
   id: 1, actionId: 1, name: 'Cable', description: null, unit: 'm',
@@ -27,7 +30,7 @@ function makeWrapper() {
   )
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('useActions', () => {
   it('devuelve acciones de una infraestructura', async () => {

@@ -3,7 +3,7 @@ import {
   listActions, getAction, createAction, updateAction, deleteAction,
   listMaterials, createMaterial, updateMaterial, deleteMaterial,
 } from '../api/actions'
-import type { Action, ActionMaterial } from '../api/types'
+import type { ActionWithRelations, ActionMaterial } from '../api/types'
 
 export const actionKeys = {
   byInfra: (infraId: number) => ['actions', 'infra', infraId] as const,
@@ -32,9 +32,9 @@ export function useUpdateAction(infraId: number) {
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateAction>[1] }) =>
       updateAction(id, body),
-    onSuccess: (_data: Action, { id }: { id: number }) => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: actionKeys.byInfra(infraId) })
-      qc.invalidateQueries({ queryKey: actionKeys.detail(id) })
+      qc.invalidateQueries({ queryKey: actionKeys.detail(variables.id) })
     },
   })
 }

@@ -20,7 +20,7 @@ const infra = {
   createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z', deletedAt: null,
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('listInfrastructures', () => {
   it('llama a GET /api/v1/infrastructures y devuelve el array', async () => {

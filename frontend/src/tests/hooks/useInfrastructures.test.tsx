@@ -25,7 +25,7 @@ function makeWrapper() {
   )
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('useInfrastructures', () => {
   it('devuelve lista de infraestructuras', async () => {

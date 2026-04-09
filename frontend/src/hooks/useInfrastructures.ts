@@ -34,9 +34,9 @@ export function useUpdateInfrastructure() {
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateInfrastructure>[1] }) =>
       updateInfrastructure(id, body),
-    onSuccess: (_data: Infrastructure, { id }: { id: number }) => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: infraKeys.all })
-      qc.invalidateQueries({ queryKey: infraKeys.detail(id) })
+      qc.invalidateQueries({ queryKey: infraKeys.detail(variables.id) })
     },
   })
 }

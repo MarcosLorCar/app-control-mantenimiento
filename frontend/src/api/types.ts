@@ -44,6 +44,12 @@ export interface Action {
   createdAt: string
 }
 
+export interface ActionWithRelations extends Action {
+  actionType: Pick<ActionType, 'id' | 'name' | 'consumesMaterials'>
+  performer: { id: number; fullName: string; email: string }
+  materials: ActionMaterial[]
+}
+
 export interface ActionMaterial {
   id: number
   actionId: number

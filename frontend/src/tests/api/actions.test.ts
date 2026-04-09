@@ -21,7 +21,7 @@ const material = {
   quantity: '10.0000', unitCost: '2.50', totalCost: '25.00', supplier: null, notes: null,
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => { vi.clearAllMocks() })
 
 describe('listActions', () => {
   it('llama a GET /api/v1/infrastructures/:infraId/actions', async () => {

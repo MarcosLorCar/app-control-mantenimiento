@@ -5,6 +5,8 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
+import { InfrastructureList } from './pages/infrastructures/InfrastructureList'
+import { InfrastructureDetail } from './pages/infrastructures/InfrastructureDetail'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -20,7 +22,8 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<Layout />}>
                 <Route path="/" element={<Dashboard />} />
-                {/* Rutas adicionales se añaden en tasks posteriores */}
+                <Route path="/infrastructures" element={<InfrastructureList />} />
+                <Route path="/infrastructures/:id" element={<InfrastructureDetail />} />
               </Route>
             </Route>
           </Routes>
