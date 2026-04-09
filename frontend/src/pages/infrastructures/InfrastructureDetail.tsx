@@ -7,6 +7,7 @@ import { Badge } from '../../components/ui/Badge'
 import { RoleGuard } from '../../components/RoleGuard'
 import { InfrastructureForm } from './InfrastructureForm'
 import { ActionForm } from '../actions/ActionForm'
+import { MaterialForm } from '../actions/MaterialForm'
 
 export function InfrastructureDetail() {
   const { id } = useParams<{ id: string }>()
@@ -17,6 +18,7 @@ export function InfrastructureDetail() {
   const deleteAction = useDeleteAction(infraId)
   const [showEditInfra, setShowEditInfra] = useState(false)
   const [showNewAction, setShowNewAction] = useState(false)
+  const [materialActionId, setMaterialActionId] = useState<number | null>(null)
 
   if (isLoading) return <p className="text-gray-400 text-sm">Cargando...</p>
   if (!infra) return <p className="text-red-500 text-sm">Infraestructura no encontrada</p>
@@ -73,14 +75,26 @@ export function InfrastructureDetail() {
                   {new Date(action.performedAt).toLocaleDateString('es-ES')} · {action.performer.fullName}
                 </p>
               </div>
-              <RoleGuard require="manage">
-                <button
-                  onClick={() => deleteAction.mutate(action.id)}
-                  className="text-xs text-red-400 hover:text-red-600 ml-4"
-                >
-                  Eliminar
-                </button>
-              </RoleGuard>
+              <div className="flex items-center gap-2">
+                <RoleGuard require="write">
+                  {action.actionType.consumesMaterials && (
+                    <button
+                      onClick={() => setMaterialActionId(action.id)}
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      + Material
+                    </button>
+                  )}
+                </RoleGuard>
+                <RoleGuard require="manage">
+                  <button
+                    onClick={() => deleteAction.mutate(action.id)}
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    Eliminar
+                  </button>
+                </RoleGuard>
+              </div>
             </div>
             {action.materials.length > 0 && (
               <div className="mt-3 border-t border-gray-100 pt-3">
@@ -104,6 +118,13 @@ export function InfrastructureDetail() {
       )}
       {showNewAction && (
         <ActionForm infrastructureId={infraId} onClose={() => setShowNewAction(false)} />
+      )}
+      {materialActionId !== null && (
+        <MaterialForm
+          actionId={materialActionId}
+          infrastructureId={infraId}
+          onClose={() => setMaterialActionId(null)}
+        />
       )}
     </div>
   )
