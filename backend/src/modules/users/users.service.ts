@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { PrismaClient } from '@prisma/client'
 import { CreateUserBody, UpdateUserBody } from './users.schema'
 
 const SAFE_SELECT = {
-  id: true, email: true, fullName: true, isActive: true,
+  id: true, email: true, fullName: true, isActive: true, mustChangePassword: true,
   createdAt: true, updatedAt: true,
   role: { select: { id: true, name: true, canWrite: true, canManage: true } },
 }
@@ -21,11 +22,14 @@ export async function getUser(db: PrismaClient, id: number) {
 export async function createUser(db: PrismaClient, body: CreateUserBody) {
   const existing = await db.user.findUnique({ where: { email: body.email } })
   if (existing) throw { statusCode: 409, code: 'CONFLICT', message: 'El email ya está en uso' }
-  const passwordHash = await bcrypt.hash(body.password, 10)
-  return db.user.create({
-    data: { email: body.email, passwordHash, fullName: body.fullName, roleId: body.roleId },
+  const tempPassword = body.password ?? crypto.randomBytes(12).toString('hex')
+  const mustChangePassword = !body.password
+  const passwordHash = await bcrypt.hash(tempPassword, 10)
+  const user = await db.user.create({
+    data: { email: body.email, passwordHash, fullName: body.fullName, roleId: body.roleId, mustChangePassword },
     select: SAFE_SELECT,
   })
+  return { ...user, tempPassword: mustChangePassword ? tempPassword : undefined }
 }
 
 export async function updateUser(db: PrismaClient, id: number, body: UpdateUserBody) {

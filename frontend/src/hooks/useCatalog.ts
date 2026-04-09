@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { listActionTypes, listRoles } from '../api/catalog'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { listActionTypes, listRoles, createActionType } from '../api/catalog'
 
 export function useActionTypes() {
   return useQuery({
@@ -14,5 +14,13 @@ export function useRoles() {
     queryKey: ['catalog', 'roles'],
     queryFn: listRoles,
     staleTime: Infinity,
+  })
+}
+
+export function useCreateActionType() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: createActionType,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'action-types'] }),
   })
 }

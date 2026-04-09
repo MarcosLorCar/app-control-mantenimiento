@@ -22,6 +22,13 @@ export async function logout(): Promise<void> {
   setToken(null)
 }
 
+export async function changePassword(newPassword: string): Promise<void> {
+  await apiFetch(`${API_BASE}/auth/password`, {
+    method: 'PATCH',
+    body: JSON.stringify({ newPassword }),
+  })
+}
+
 export async function restoreSession(): Promise<JwtPayload | null> {
   try {
     const res = await fetch(`${API_BASE}/auth/refresh`, { method: 'POST' })

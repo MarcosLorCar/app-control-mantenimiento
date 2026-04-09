@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import { FastifyPluginAsync } from 'fastify'
 import { LoginBodySchema } from './auth.schema'
 import { loginService } from './auth.service'
@@ -52,6 +53,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         role: user.role.name,
         can_write: user.role.canWrite,
         can_manage: user.role.canManage,
+        must_change_password: user.mustChangePassword,
       }
 
       const accessToken = fastify.jwt.sign(payload, { expiresIn: '15m' })
@@ -59,6 +61,20 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     } catch {
       return reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Sesión expirada' } })
     }
+  })
+
+  fastify.patch('/password', { preHandler: fastify.verifyToken }, async (request, reply) => {
+    const { newPassword } = request.body as { newPassword: string }
+    if (!newPassword || newPassword.length < 8) {
+      return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'La contraseña debe tener al menos 8 caracteres' } })
+    }
+    const userId = (request.user as unknown as JwtPayload).sub
+    const passwordHash = await bcrypt.hash(newPassword, 10)
+    await fastify.db.user.update({
+      where: { id: userId },
+      data: { passwordHash, mustChangePassword: false },
+    })
+    return reply.send({ data: { ok: true } })
   })
 }
 

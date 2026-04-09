@@ -45,9 +45,9 @@ describe('useCreateUser', () => {
   it('llama a createUser con body', async () => {
     vi.mocked(usersApi.createUser).mockResolvedValue(user)
     const { result } = renderHook(() => useCreateUser(), { wrapper: makeWrapper() })
-    result.current.mutate({ email: 'a@a.com', password: 'pass1234', fullName: 'A', roleId: 1 })
+    result.current.mutate({ email: 'a@a.com', fullName: 'A', roleId: 1 })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(usersApi.createUser).toHaveBeenCalledWith({ email: 'a@a.com', password: 'pass1234', fullName: 'A', roleId: 1 })
+    expect(usersApi.createUser).toHaveBeenCalledWith({ email: 'a@a.com', fullName: 'A', roleId: 1 })
   })
 })
 

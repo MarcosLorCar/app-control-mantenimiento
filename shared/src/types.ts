@@ -4,6 +4,7 @@ export interface JwtPayload {
   role: string
   can_write: boolean
   can_manage: boolean
+  must_change_password?: boolean
   iat?: number
   exp?: number
 }

@@ -36,7 +36,7 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | 4 | API hooks con TanStack Query | ✅ completado |
 | 5 | Página Infraestructuras (listado + detalle + formulario) | ✅ completado |
 | 6 | Formularios de Acciones y Materiales | ✅ completado |
-| 7 | Páginas de administración (usuarios y catálogos) | ⬜ pendiente |
+| 7 | Páginas de administración (usuarios y catálogos) | ✅ completado |
 | 8 | Build y verificación final | ⬜ pendiente |
 
 ---

@@ -29,6 +29,7 @@ export async function loginService(
     role: user.role.name,
     can_write: user.role.canWrite,
     can_manage: user.role.canManage,
+    must_change_password: user.mustChangePassword,
   }
 
   const accessToken = app.jwt.sign(payload, { expiresIn: '15m' })

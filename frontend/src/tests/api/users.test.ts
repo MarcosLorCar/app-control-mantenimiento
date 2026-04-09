@@ -36,10 +36,10 @@ describe('getUser', () => {
 describe('createUser', () => {
   it('llama a POST /api/v1/users con body', async () => {
     mockFetch.mockResolvedValue({ data: user })
-    await createUser({ email: 'a@a.com', password: 'pass1234', fullName: 'A', roleId: 1 })
+    await createUser({ email: 'a@a.com', fullName: 'A', roleId: 1 })
     expect(mockFetch).toHaveBeenCalledWith('/api/v1/users', {
       method: 'POST',
-      body: JSON.stringify({ email: 'a@a.com', password: 'pass1234', fullName: 'A', roleId: 1 }),
+      body: JSON.stringify({ email: 'a@a.com', fullName: 'A', roleId: 1 }),
     })
   })
 })

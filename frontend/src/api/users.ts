@@ -13,11 +13,10 @@ export function getUser(id: number): Promise<User> {
 
 export function createUser(body: {
   email: string
-  password: string
   fullName: string
   roleId: number
-}): Promise<User> {
-  return apiFetch<ApiData<User>>(`${API_BASE}/users`, {
+}): Promise<User & { tempPassword?: string }> {
+  return apiFetch<ApiData<User & { tempPassword?: string }>>(`${API_BASE}/users`, {
     method: 'POST',
     body: JSON.stringify(body),
   }).then(r => r.data)

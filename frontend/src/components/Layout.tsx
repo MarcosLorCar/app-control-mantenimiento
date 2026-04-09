@@ -25,9 +25,14 @@ export function Layout() {
             `flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-gray-700 text-white' : 'hover:bg-gray-800 hover:text-white'}`
           }>Infraestructuras</NavLink>
           {user?.can_manage && (
-            <NavLink to="/admin" className={({ isActive }) =>
-              `flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-gray-700 text-white' : 'hover:bg-gray-800 hover:text-white'}`
-            }>Administración</NavLink>
+            <>
+              <NavLink to="/admin" end className={({ isActive }) =>
+                `flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-gray-700 text-white' : 'hover:bg-gray-800 hover:text-white'}`
+              }>Administración</NavLink>
+              <NavLink to="/admin/catalog" className={({ isActive }) =>
+                `flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-gray-700 text-white' : 'hover:bg-gray-800 hover:text-white'}`
+              }>Catálogos</NavLink>
+            </>
           )}
         </nav>
         <div className="p-4 border-t border-gray-700">

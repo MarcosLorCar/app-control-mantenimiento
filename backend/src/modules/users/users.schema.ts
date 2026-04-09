@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export const CreateUserSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(8).optional(),
   fullName: z.string().min(1),
   roleId: z.number().int().positive(),
 })
