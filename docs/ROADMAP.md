@@ -39,6 +39,8 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | 7 | Páginas de administración (usuarios y catálogos) | ✅ completado |
 | — | *Flujo primer login: página cambiar contraseña + guard en ProtectedRoute* | ✅ completado |
 | 8 | Build y verificación final | ✅ completado |
+| — | *Bug: rol de usuario no se muestra en página admin (verificar fix apiFetch GET)* | ⬜ pendiente |
+| — | *Separador visual en sidebar entre links generales y sección solo-admin* | ⬜ pendiente |
 
 ---
 
