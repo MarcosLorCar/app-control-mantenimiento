@@ -1,13 +1,14 @@
 :root {
-  --bg: #F5F7FA;
-  --border: #E5E7EB;
+  --bg: #F1F5F9;
+  --border: #E2E8F0;
   --card: #FFFFFF;
-  --fg: #111827;
-  --fg-secondary: #374151;
-  --muted: #6B7280;
+  --fg: #0F172A;
+  --fg-secondary: #334155;
+  --muted: #64748B;
   --primary: #2563EB;
+  --primary-hover: #1D4ED8;
   --primary-fg: #FFFFFF;
-  --radius: 8px;
+  --radius: 10px;
   --sidebar-bg: #1E293B;
   --sidebar-fg: #94A3B8;
   --sidebar-active: #334155;
@@ -24,3 +25,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    color: var(--fg);
+    background-color: var(--bg);
+  }
+}

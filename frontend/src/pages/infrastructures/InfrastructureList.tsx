@@ -26,7 +26,7 @@ export function InfrastructureList() {
         <RoleGuard require="write">
           <button
             onClick={() => setShowForm(true)}
-            className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 self-start sm:self-auto"
+            className="bg-primary text-primary-fg px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--primary-hover)] transition-colors self-start sm:self-auto"
           >
             + Nueva
           </button>

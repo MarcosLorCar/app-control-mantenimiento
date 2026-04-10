@@ -19,7 +19,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const { skipAuth, ...fetchOptions } = options
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(fetchOptions.body != null ? { 'Content-Type': 'application/json' } : {}),
     ...(fetchOptions.headers as Record<string, string>),
   }
 

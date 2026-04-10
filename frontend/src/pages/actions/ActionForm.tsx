@@ -94,7 +94,7 @@ export function ActionForm({ infrastructureId, onClose }: Props) {
           <button
             type="submit"
             disabled={createAction.isPending}
-            className="px-4 py-2 text-sm text-white bg-gray-900 rounded-md hover:bg-gray-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
           >
             {createAction.isPending ? 'Registrando...' : 'Registrar'}
           </button>

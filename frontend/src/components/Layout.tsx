@@ -168,7 +168,7 @@ export function Layout() {
           </button>
         </header>
 
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto p-5 md:p-8">
           <Outlet />
         </main>
       </div>

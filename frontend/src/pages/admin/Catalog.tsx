@@ -74,7 +74,7 @@ export function Catalog() {
                 <button
                   type="submit"
                   disabled={!typeName.trim() || addType.isPending}
-                  className="px-3 py-2 text-sm text-white bg-gray-900 rounded-md hover:bg-gray-700 disabled:opacity-50"
+                  className="px-3 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
                 >
                   {addType.isPending ? 'Añadiendo...' : 'Añadir'}
                 </button>

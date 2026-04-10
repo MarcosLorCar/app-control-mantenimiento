@@ -51,7 +51,7 @@ export function UserForm({ onClose }: Props) {
           </p>
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 text-sm text-white bg-gray-900 rounded-md hover:bg-gray-700"
+            className="w-full px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)]"
           >
             Cerrar
           </button>
@@ -116,7 +116,7 @@ export function UserForm({ onClose }: Props) {
           <button
             type="submit"
             disabled={createUser.isPending}
-            className="px-4 py-2 text-sm text-white bg-gray-900 rounded-md hover:bg-gray-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
           >
             {createUser.isPending ? 'Creando...' : 'Crear'}
           </button>

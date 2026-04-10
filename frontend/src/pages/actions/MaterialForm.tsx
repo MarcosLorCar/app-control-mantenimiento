@@ -134,7 +134,7 @@ export function MaterialForm({ actionId, infrastructureId, onClose }: Props) {
           <button
             type="submit"
             disabled={createMaterial.isPending}
-            className="px-4 py-2 text-sm text-white bg-gray-900 rounded-md hover:bg-gray-700 disabled:opacity-50"
+            className="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
           >
             {createMaterial.isPending ? 'Añadiendo...' : 'Añadir'}
           </button>
