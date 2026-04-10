@@ -50,7 +50,7 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | # | Task | Estado |
 |---|------|--------|
 | 1 | Design tokens CSS + instalar lucide-react | ✅ completado |
-| 2 | Rediseño Sidebar + Topbar (Layout.tsx) | ⬜ pendiente |
+| 2 | Rediseño Sidebar + Topbar (Layout.tsx) | ✅ completado |
 | 3 | Rediseño lista de Infraestructuras (cards ricas) | ⬜ pendiente |
 | 4 | Backend: endpoints globales GET /actions y GET /materials | ⬜ pendiente |
 | 5 | Tipos y hooks frontend para queries globales | ⬜ pendiente |

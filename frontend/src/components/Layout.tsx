@@ -1,6 +1,28 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import {
+  LayoutDashboard, ClipboardList, Warehouse, Package,
+  Users, Settings, LogOut, Bell, Menu,
+} from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+
+const NAV_ITEMS = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true, requireManage: false },
+  { to: '/actions', icon: ClipboardList, label: 'Acciones', end: false, requireManage: false },
+  { to: '/infrastructures', icon: Warehouse, label: 'Infraestructuras', end: false, requireManage: false },
+  { to: '/materials', icon: Package, label: 'Materiales', end: false, requireManage: false },
+  { to: '/admin', icon: Users, label: 'Usuarios', end: true, requireManage: true },
+  { to: '/admin/catalog', icon: Settings, label: 'Configuración', end: false, requireManage: true },
+]
+
+const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
+  '/': { title: 'Panel de Control', subtitle: 'Resumen general del sistema' },
+  '/actions': { title: 'Gestión de Acciones', subtitle: 'Registro y seguimiento de acciones' },
+  '/infrastructures': { title: 'Infraestructuras', subtitle: 'Gestión y estado de infraestructuras' },
+  '/materials': { title: 'Materiales Consumidos', subtitle: 'Registro de materiales usados por acción' },
+  '/admin': { title: 'Usuarios', subtitle: 'Gestión de usuarios del sistema' },
+  '/admin/catalog': { title: 'Configuración', subtitle: 'Tipos de acciones y roles' },
+}
 
 export function Layout() {
   const { user, logout } = useAuth()
@@ -8,21 +30,22 @@ export function Layout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Cerrar sidebar al cambiar de ruta (móvil)
-  useEffect(() => {
-    setSidebarOpen(false)
-  }, [location.pathname])
+  useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
   async function handleLogout() {
     await logout()
     navigate('/login')
   }
 
-  const navCls = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center px-3 py-2 text-sm font-medium transition-colors ${isActive ? 'bg-gray-700 text-white' : 'hover:bg-gray-800 hover:text-white'}`
+  const pageInfo = Object.entries(PAGE_TITLES)
+    .filter(([path]) => location.pathname === path || location.pathname.startsWith(path + '/'))
+    .sort((a, b) => b[0].length - a[0].length)[0]?.[1]
+    ?? { title: '', subtitle: '' }
+
+  const initials = user?.email?.slice(0, 2).toUpperCase() ?? '?'
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-app-bg">
       {/* Overlay móvil */}
       {sidebarOpen && (
         <div
@@ -33,63 +56,95 @@ export function Layout() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 w-56 bg-gray-900 text-gray-300 flex flex-col shrink-0
+        fixed inset-y-0 left-0 z-30 w-60 bg-sidebar-bg flex flex-col shrink-0
         transition-transform duration-200
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0
       `}>
-        <div className="h-14 flex items-center px-4 border-b border-gray-700">
-          <span className="text-white font-bold text-sm tracking-wide">Control Actions</span>
-          {/* Botón cerrar (solo móvil) */}
-          <button
-            className="ml-auto text-gray-400 hover:text-white lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Cerrar menú"
-          >
-            ✕
-          </button>
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 h-16 px-6 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <Warehouse className="w-[18px] h-[18px] text-white" />
+          </div>
+          <span className="text-white font-bold text-base tracking-[1px]">INFRAGEST</span>
         </div>
-        <nav className="flex-1 px-2 py-4 space-y-0.5">
-          <NavLink to="/" end className={navCls}>Dashboard</NavLink>
-          <NavLink to="/infrastructures" className={navCls}>Infraestructuras</NavLink>
-          {user?.can_manage && (
-            <>
-              <div className="px-3 pt-4 pb-1">
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Admin</p>
-              </div>
-              <NavLink to="/admin" end className={navCls}>Administración</NavLink>
-              <NavLink to="/admin/catalog" className={navCls}>Catálogos</NavLink>
-            </>
-          )}
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          <p className="px-3 pb-2 text-[10px] font-semibold tracking-[2px] text-sidebar-fg uppercase">Menú</p>
+          {NAV_ITEMS.map(({ to, icon: Icon, label, end, requireManage }) => {
+            if (requireManage && !user?.can_manage) return null
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                    isActive
+                      ? 'bg-sidebar-active text-sidebar-active-fg font-medium'
+                      : 'text-sidebar-fg hover:bg-sidebar-active/60 hover:text-white'
+                  }`
+                }
+              >
+                <Icon className="w-[18px] h-[18px] shrink-0" />
+                {label}
+              </NavLink>
+            )
+          })}
         </nav>
-        <div className="p-4 border-t border-gray-700">
-          <p className="text-xs font-medium text-white truncate mb-0.5">{user?.email}</p>
-          <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-3">{user?.role}</p>
+
+        {/* Footer */}
+        <div
+          className="flex items-center gap-3 px-6 py-4 shrink-0"
+          style={{ borderTop: '1px solid #334155' }}
+        >
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <span className="text-white text-[13px] font-semibold">{initials}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-[13px] font-medium truncate">{user?.email}</p>
+            <p className="text-sidebar-fg text-[11px] truncate">{user?.role}</p>
+          </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center py-1.5 px-3 text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 border border-gray-700 hover:border-gray-600 transition-colors"
+            title="Cerrar sesión"
+            className="text-sidebar-fg hover:text-white transition-colors shrink-0"
           >
-            Cerrar sesión
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </aside>
 
       {/* Contenido principal */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center px-4 shrink-0 gap-3">
-          {/* Hamburger (solo móvil/tablet) */}
+        {/* Topbar */}
+        <header className="h-16 bg-card flex items-center justify-between px-7 shrink-0"
+          style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-3">
+            <button
+              className="lg:hidden p-1.5 rounded text-muted hover:bg-app-bg"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Abrir menú"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-[20px] font-bold text-fg leading-tight">{pageInfo.title}</h1>
+              {pageInfo.subtitle && (
+                <p className="text-[13px] text-muted leading-tight">{pageInfo.subtitle}</p>
+              )}
+            </div>
+          </div>
           <button
-            className="lg:hidden p-1.5 rounded text-gray-500 hover:bg-gray-100"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Abrir menú"
+            className="w-9 h-9 rounded-lg border border-app-border flex items-center justify-center text-muted hover:text-fg transition-colors"
+            title="Notificaciones"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <Bell className="w-[18px] h-[18px]" />
           </button>
-          <span className="text-xs text-gray-400 font-mono">● SISTEMA ONLINE</span>
         </header>
-        <main className="flex-1 overflow-auto p-3 md:p-6">
+
+        <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
       </div>
