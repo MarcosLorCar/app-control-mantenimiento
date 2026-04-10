@@ -1,97 +1,95 @@
-// frontend/src/pages/infrastructures/InfrastructureList.tsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Warehouse, Search, Plus, ChevronRight } from 'lucide-react'
 import { useInfrastructures } from '../../hooks/useInfrastructures'
 import { RoleGuard } from '../../components/RoleGuard'
 import { InfrastructureForm } from './InfrastructureForm'
 
 export function InfrastructureList() {
-  const { data: infrastructures = [], isLoading, error } = useInfrastructures()
-  const [showForm, setShowForm] = useState(false)
-  const [search, setSearch] = useState('')
   const navigate = useNavigate()
+  const { data: infrastructures = [], isLoading, error } = useInfrastructures()
+  const [search, setSearch] = useState('')
+  const [showForm, setShowForm] = useState(false)
 
   const filtered = infrastructures.filter(i =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
     (i.location ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
-  if (isLoading) return <p className="text-gray-400 text-sm">Cargando...</p>
-  if (error) return <p className="text-red-500 text-sm">Error al cargar infraestructuras</p>
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-20 text-muted text-sm">
+      Cargando infraestructuras...
+    </div>
+  )
+
+  if (error) return (
+    <div className="flex items-center justify-center py-20 text-error text-sm">
+      Error al cargar infraestructuras.
+    </div>
+  )
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <h1 className="text-2xl font-bold text-gray-900 flex-1">Infraestructuras</h1>
+    <div className="space-y-4">
+      {/* Fila búsqueda + acción */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 bg-card border border-app-border rounded-lg px-3 h-9 flex-1 max-w-sm">
+          <Search className="w-4 h-4 text-muted shrink-0" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre o ubicación..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
+          />
+        </div>
         <RoleGuard require="write">
           <button
             onClick={() => setShowForm(true)}
-            className="bg-primary text-primary-fg px-4 py-2 rounded-lg text-sm font-medium hover:bg-[var(--primary-hover)] transition-colors self-start sm:self-auto"
+            className="flex items-center gap-1.5 bg-primary text-primary-fg text-[13px] font-medium px-4 h-9 rounded-lg hover:bg-[var(--primary-hover)] transition-colors shrink-0"
           >
-            + Nueva
+            <Plus className="w-4 h-4" />
+            Nueva
           </button>
         </RoleGuard>
       </div>
 
-      <input
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder="Buscar por nombre o ubicación..."
-        className="w-full max-w-sm border border-gray-300 rounded-md px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-gray-900"
-      />
+      {/* Contador */}
+      <p className="text-[13px] text-muted">
+        {filtered.length} infraestructura{filtered.length !== 1 ? 's' : ''}
+      </p>
 
-      {/* Vista tabla — md+ */}
-      <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Nombre
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Ubicación
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={2} className="px-4 py-6 text-center text-gray-400 text-sm">
-                  Sin resultados
-                </td>
-              </tr>
-            )}
-            {filtered.map(i => (
-              <tr
-                key={i.id}
-                onClick={() => navigate(`/infrastructures/${i.id}`)}
-                className="hover:bg-gray-50 cursor-pointer"
-              >
-                <td className="px-4 py-3 text-sm font-medium text-gray-900">{i.name}</td>
-                <td className="px-4 py-3 text-sm text-gray-500">{i.location ?? '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Vista cards — móvil */}
-      <div className="md:hidden bg-white rounded-lg shadow divide-y divide-gray-100">
+      {/* Cards */}
+      <div className="flex flex-col gap-3">
         {filtered.length === 0 && (
-          <p className="px-4 py-6 text-center text-gray-400 text-sm">Sin resultados</p>
+          <div className="bg-card rounded-xl border border-app-border p-10 text-center text-muted text-sm">
+            {search ? 'Sin resultados para la búsqueda.' : 'No hay infraestructuras registradas.'}
+          </div>
         )}
-        {filtered.map(i => (
-          <button
-            key={i.id}
-            onClick={() => navigate(`/infrastructures/${i.id}`)}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-left"
+        {filtered.map(infra => (
+          <div
+            key={infra.id}
+            className="flex items-center gap-4 p-5 bg-card rounded-xl border border-app-border hover:border-primary/30 hover:shadow-sm transition-all"
           >
-            <div>
-              <p className="text-sm font-medium text-gray-900">{i.name}</p>
-              {i.location && <p className="text-xs text-gray-500 mt-0.5">{i.location}</p>}
+            <div className="w-11 h-11 rounded-[10px] bg-info-bg flex items-center justify-center shrink-0">
+              <Warehouse className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-gray-400 ml-3">›</span>
-          </button>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-fg truncate">{infra.name}</p>
+              {infra.location && (
+                <p className="text-[13px] text-muted truncate">{infra.location}</p>
+              )}
+              {infra.description && (
+                <p className="text-[13px] text-fg-secondary truncate mt-0.5">{infra.description}</p>
+              )}
+            </div>
+            <button
+              onClick={() => navigate(`/infrastructures/${infra.id}`)}
+              className="flex items-center gap-1 text-[13px] text-primary font-medium hover:opacity-75 transition-opacity shrink-0"
+            >
+              Ver detalles
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         ))}
       </div>
 
