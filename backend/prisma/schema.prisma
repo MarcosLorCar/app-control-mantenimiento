@@ -23,6 +23,8 @@ model ActionType {
   name              String   @unique
   description       String?
   consumesMaterials Boolean  @default(false) @map("consumes_materials")
+  icon              String?
+  color             String?
   actions           Action[]
 
   @@map("action_types")
@@ -50,6 +52,7 @@ model InfrastructureType {
   id              Int              @id @default(autoincrement())
   name            String           @unique
   description     String?
+  iconUrl         String?          @map("icon_url")
   infrastructures Infrastructure[]
 
   @@map("infrastructure_types")
