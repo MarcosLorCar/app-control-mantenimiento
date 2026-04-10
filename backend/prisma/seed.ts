@@ -21,21 +21,25 @@ async function main() {
     create: { name: 'reader', description: 'Solo lectura', canWrite: false, canManage: false },
   })
 
-  // Tipos de acción
+  // Tipos de acción (renombrar a español si existen en inglés)
+  await prisma.actionType.updateMany({ where: { name: 'inspection' }, data: { name: 'Inspección' } })
+  await prisma.actionType.updateMany({ where: { name: 'repair' }, data: { name: 'Reparación' } })
+  await prisma.actionType.updateMany({ where: { name: 'installation' }, data: { name: 'Instalación' } })
+
   await prisma.actionType.upsert({
-    where: { name: 'inspection' },
+    where: { name: 'Inspección' },
     update: {},
-    create: { name: 'inspection', description: 'Inspección visual o técnica', consumesMaterials: false },
+    create: { name: 'Inspección', description: 'Inspección visual o técnica', consumesMaterials: false },
   })
   await prisma.actionType.upsert({
-    where: { name: 'repair' },
+    where: { name: 'Reparación' },
     update: {},
-    create: { name: 'repair', description: 'Reparación o sustitución', consumesMaterials: true },
+    create: { name: 'Reparación', description: 'Reparación o sustitución', consumesMaterials: true },
   })
   await prisma.actionType.upsert({
-    where: { name: 'installation' },
+    where: { name: 'Instalación' },
     update: {},
-    create: { name: 'installation', description: 'Nueva instalación', consumesMaterials: true },
+    create: { name: 'Instalación', description: 'Nueva instalación', consumesMaterials: true },
   })
 
   // Usuario admin inicial
@@ -63,6 +67,22 @@ async function main() {
       roleId: editorRole.id,
     },
   })
+
+  // Tipos de infraestructura
+  const infraTypeNames = [
+    'Colegios',
+    'Fuentes',
+    'Pistas deportivas',
+    'Centros Sociales',
+    'Dependencias municipales',
+  ]
+  for (const name of infraTypeNames) {
+    await prisma.infrastructureType.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    })
+  }
 
   console.log('Seed completado.')
 }
