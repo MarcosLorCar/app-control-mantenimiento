@@ -37,6 +37,7 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | 5 | Página Infraestructuras (listado + detalle + formulario) | ✅ completado |
 | 6 | Formularios de Acciones y Materiales | ✅ completado |
 | 7 | Páginas de administración (usuarios y catálogos) | ✅ completado |
+| — | *Flujo primer login: página cambiar contraseña + guard en ProtectedRoute* | ✅ completado |
 | 8 | Build y verificación final | ✅ completado |
 
 ---
