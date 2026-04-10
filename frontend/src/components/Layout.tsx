@@ -54,6 +54,9 @@ export function Layout() {
           <NavLink to="/infrastructures" className={navCls}>Infraestructuras</NavLink>
           {user?.can_manage && (
             <>
+              <div className="px-3 pt-4 pb-1">
+                <p className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Admin</p>
+              </div>
               <NavLink to="/admin" end className={navCls}>Administración</NavLink>
               <NavLink to="/admin/catalog" className={navCls}>Catálogos</NavLink>
             </>
