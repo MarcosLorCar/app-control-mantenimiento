@@ -26,7 +26,7 @@ export function InfrastructureDetail() {
   return (
     <div>
       {/* Cabecera */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 justify-between mb-6">
         <div>
           <button
             onClick={() => navigate('/infrastructures')}
@@ -49,7 +49,7 @@ export function InfrastructureDetail() {
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mb-3">
         <h2 className="text-lg font-semibold text-gray-800">Acciones registradas</h2>
         <RoleGuard require="write">
           <button
@@ -66,7 +66,7 @@ export function InfrastructureDetail() {
           <p className="text-gray-400 text-sm">Sin acciones registradas.</p>
         )}
         {actions.map(action => (
-          <div key={action.id} className="bg-white rounded-lg shadow p-4">
+          <div key={action.id} className="bg-white rounded-lg shadow p-3 md:p-4">
             <div className="flex items-start justify-between">
               <div>
                 <Badge label={action.actionType.name} />
@@ -97,7 +97,7 @@ export function InfrastructureDetail() {
               </div>
             </div>
             {action.materials.length > 0 && (
-              <div className="mt-3 border-t border-gray-100 pt-3">
+              <div className="mt-3 border-t border-gray-100 pt-3 overflow-x-auto">
                 <p className="text-xs font-medium text-gray-500 mb-1">Materiales</p>
                 <div className="space-y-1">
                   {action.materials.map(m => (

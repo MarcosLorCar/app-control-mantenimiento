@@ -41,7 +41,24 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 
 ---
 
-## Plan 3 — Deploy (Docker + Nginx + CI/CD)
+## Plan 3 — Alineación Frontend con Diseño
+> Plan detallado: [`docs/superpowers/plans/2026-04-09-frontend-diseño.md`](superpowers/plans/2026-04-09-frontend-diseño.md)
+
+| # | Task | Estado |
+|---|------|--------|
+| 1 | Design tokens CSS + instalar lucide-react | ⬜ pendiente |
+| 2 | Rediseño Sidebar + Topbar (Layout.tsx) | ⬜ pendiente |
+| 3 | Rediseño lista de Infraestructuras (cards ricas) | ⬜ pendiente |
+| 4 | Backend: endpoints globales GET /actions y GET /materials | ⬜ pendiente |
+| 5 | Tipos y hooks frontend para queries globales | ⬜ pendiente |
+| 6 | ActionForm con selector de infraestructura opcional | ⬜ pendiente |
+| 7 | Página Acciones (/actions) — tabla + panel lateral | ⬜ pendiente |
+| 8 | Página Materiales (/materials) — tabla global | ⬜ pendiente |
+| 9 | Rutas en App.tsx + verificación end-to-end | ⬜ pendiente |
+
+---
+
+## Plan 4 — Deploy (Docker + Nginx + CI/CD)
 > Plan detallado: [`docs/superpowers/plans/2026-04-07-deploy.md`](superpowers/plans/2026-04-07-deploy.md)
 
 | # | Task | Estado |

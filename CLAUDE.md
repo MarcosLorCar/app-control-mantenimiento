@@ -6,16 +6,86 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **control-actions** is an infrastructure management system for tracking actions (inspections, repairs, installations, etc.) performed on physical infrastructures. It manages materials consumed per action and users/roles.
 
-## Repository Contents
+Stack: React 18 + Vite + TypeScript + Tailwind (frontend) · Fastify + Prisma + PostgreSQL (backend) · npm workspaces monorepo.
 
-- `schemabbdd.txt` — Database schema in DBML format (source of truth for data model)
-- `esquema_infraestructuras.png` — ER diagram visualization of the schema
-- `frontwabb.pen` — Frontend UI design (Pencil format — only readable via the `pencil` MCP tools, not via Read/Grep)
+## Development Commands
+
+```bash
+# Full stack (DB via Docker + backend + frontend)
+./dev.sh
+
+# Individual services
+npm run dev:backend          # backend on :3000
+npm run dev:frontend         # frontend on :5173 (proxies /api → :3000)
+
+# Database
+docker compose up -d db      # start PostgreSQL in Docker
+npm run db:migrate --workspace=@control-actions/backend    # run migrations
+npm run db:seed --workspace=@control-actions/backend       # seed dev users
+npm run db:studio --workspace=@control-actions/backend     # Prisma Studio
+
+# Tests (backend only — use real DB via TEST_DATABASE_URL)
+npm run test:backend         # run all backend tests
+npm run test:watch --workspace=@control-actions/backend    # watch mode
+
+# Build
+npm run build:backend
+npm run build --workspace=@control-actions/frontend
+```
+
+Backend tests require `TEST_DATABASE_URL` env var. Tests run sequentially (`fileParallelism: false`) and use `app.inject()` — no HTTP server needed.
+
+Dev seed users: `admin@example.com / admin1234` (admin) · `editor@example.com / editor1234` (editor).
+
+## Architecture
+
+### Monorepo structure
+
+```
+backend/src/
+  app.ts              — Fastify app factory (buildApp)
+  server.ts           — entrypoint, reads env and calls buildApp
+  plugins/
+    prisma.plugin.ts  — registers PrismaClient on app instance
+    auth.plugin.ts    — decorates app with verifyToken / requireWrite / requireManage
+  modules/
+    auth/             — login, logout, refresh, change-password
+    users/            — CRUD users (requireManage)
+    catalog/          — CRUD roles & action_types (requireManage)
+    infrastructures/  — CRUD infrastructures (requireWrite)
+    actions/          — CRUD actions + action_materials (requireWrite)
+
+shared/src/types.ts   — TypeScript types shared by frontend and backend (JwtPayload, etc.)
+
+frontend/src/
+  App.tsx             — routing tree (React Router v6)
+  contexts/AuthContext.tsx — auth state, token in memory (refresh via HttpOnly cookie)
+  api/client.ts       — apiFetch wrapper: attaches Bearer token, auto-refresh on 401
+  api/*.ts            — per-resource API functions
+  hooks/use*.ts       — TanStack Query hooks wrapping the API functions
+  pages/              — Login, Dashboard, ChangePassword, infrastructures/*, admin/*
+  components/         — Layout, ProtectedRoute, shared UI
+```
+
+### Auth flow
+
+- Login → backend returns `accessToken` (short-lived JWT) in body + `refreshToken` in HttpOnly cookie.
+- `apiFetch` stores `accessToken` in memory (lost on reload). On 401, it auto-calls `/auth/refresh` using the cookie, then retries.
+- Route guards: `verifyToken` (any authenticated user) · `requireWrite` (can_write=true) · `requireManage` (can_manage=true).
+- First-login flag on user forces redirect to `/change-password` before accessing the app.
+
+### API conventions
+
+- Base URL: `/api/v1/`
+- Error shape: `{ error: { code: string, message: string } }`
+- Success shape: `{ data: ... }` (list endpoints include pagination/meta where relevant)
+- Health check: `GET /api/v1/health`
 
 ## Database Schema (DBML)
 
-Core domain entities and their relationships:
+Source of truth: `schemabbdd.txt`. ER diagram: `esquema_infraestructuras.png`.
 
+Core relationships:
 ```
 roles → users → actions → action_materials
 infrastructures → actions
@@ -38,13 +108,6 @@ action_types → actions
 | `actions` | Events on an infrastructure: who did what, when, and what type |
 | `action_types` | Catalog of action types (inspection, repair, installation…) |
 | `action_materials` | Materials consumed during an action (cost tracking included) |
-
-## API
-
-- Base URL: `/api/v1/`
-- Auth: JWT access token (Bearer) + refresh token en cookie HttpOnly
-- Error shape: `{ error: { code: string, message: string } }`
-- Health check: `GET /api/v1/health`
 
 ## Working with Design Files
 

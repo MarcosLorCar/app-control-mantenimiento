@@ -21,12 +21,12 @@ export function InfrastructureList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Infraestructuras</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+        <h1 className="text-2xl font-bold text-gray-900 flex-1">Infraestructuras</h1>
         <RoleGuard require="write">
           <button
             onClick={() => setShowForm(true)}
-            className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700"
+            className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 self-start sm:self-auto"
           >
             + Nueva
           </button>
@@ -40,7 +40,8 @@ export function InfrastructureList() {
         className="w-full max-w-sm border border-gray-300 rounded-md px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-gray-900"
       />
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Vista tabla — md+ */}
+      <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -72,6 +73,26 @@ export function InfrastructureList() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Vista cards — móvil */}
+      <div className="md:hidden bg-white rounded-lg shadow divide-y divide-gray-100">
+        {filtered.length === 0 && (
+          <p className="px-4 py-6 text-center text-gray-400 text-sm">Sin resultados</p>
+        )}
+        {filtered.map(i => (
+          <button
+            key={i.id}
+            onClick={() => navigate(`/infrastructures/${i.id}`)}
+            className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 text-left"
+          >
+            <div>
+              <p className="text-sm font-medium text-gray-900">{i.name}</p>
+              {i.location && <p className="text-xs text-gray-500 mt-0.5">{i.location}</p>}
+            </div>
+            <span className="text-gray-400 ml-3">›</span>
+          </button>
+        ))}
       </div>
 
       {showForm && <InfrastructureForm onClose={() => setShowForm(false)} />}

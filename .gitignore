@@ -8,3 +8,4 @@ dist/
 .aidesigner/*
 !.aidesigner/.gitkeep
 !.aidesigner/DESIGN.md
+.agents/skills/

@@ -1,10 +1,19 @@
 {
   "name": "control-actions",
   "private": true,
-  "workspaces": ["shared", "backend", "frontend"],
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
   "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run dev --workspace=backend\" \"npm run dev --workspace=@control-actions/frontend\"",
     "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=@control-actions/frontend",
     "test:backend": "npm run test --workspace=backend",
     "build:backend": "npm run build --workspace=backend"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.1"
   }
 }
