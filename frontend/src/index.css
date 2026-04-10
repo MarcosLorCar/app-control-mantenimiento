@@ -1,3 +1,26 @@
+:root {
+  --bg: #F5F7FA;
+  --border: #E5E7EB;
+  --card: #FFFFFF;
+  --fg: #111827;
+  --fg-secondary: #374151;
+  --muted: #6B7280;
+  --primary: #2563EB;
+  --primary-fg: #FFFFFF;
+  --radius: 8px;
+  --sidebar-bg: #1E293B;
+  --sidebar-fg: #94A3B8;
+  --sidebar-active: #334155;
+  --sidebar-active-fg: #FFFFFF;
+  --success: #059669;
+  --success-bg: #ECFDF5;
+  --warning: #D97706;
+  --warning-bg: #FFFBEB;
+  --error: #DC2626;
+  --error-bg: #FEF2F2;
+  --info-bg: #EFF6FF;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
