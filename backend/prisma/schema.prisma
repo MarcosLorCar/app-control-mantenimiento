@@ -46,16 +46,30 @@ model User {
   @@map("users")
 }
 
+model InfrastructureType {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  description     String?
+  infrastructures Infrastructure[]
+
+  @@map("infrastructure_types")
+}
+
 model Infrastructure {
-  id          Int       @id @default(autoincrement())
+  id          Int                  @id @default(autoincrement())
   name        String
   description String?
   location    String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  latitude    Float?
+  longitude   Float?
+  infraTypeId Int?                 @map("infra_type_id")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  deletedAt   DateTime?            @map("deleted_at")
+  infraType   InfrastructureType?  @relation(fields: [infraTypeId], references: [id])
   actions     Action[]
 
+  @@index([infraTypeId])
   @@map("infrastructures")
 }
 
