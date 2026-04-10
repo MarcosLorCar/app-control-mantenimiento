@@ -6,13 +6,16 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
-const NAV_ITEMS = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true, requireManage: false },
-  { to: '/actions', icon: ClipboardList, label: 'Acciones', end: false, requireManage: false },
-  { to: '/infrastructures', icon: Warehouse, label: 'Infraestructuras', end: false, requireManage: false },
-  { to: '/materials', icon: Package, label: 'Materiales', end: false, requireManage: false },
-  { to: '/admin', icon: Users, label: 'Usuarios', end: true, requireManage: true },
-  { to: '/admin/catalog', icon: Settings, label: 'Configuración', end: false, requireManage: true },
+const GENERAL_ITEMS = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/actions', icon: ClipboardList, label: 'Acciones', end: false },
+  { to: '/infrastructures', icon: Warehouse, label: 'Infraestructuras', end: false },
+  { to: '/materials', icon: Package, label: 'Materiales', end: false },
+]
+
+const ADMIN_ITEMS = [
+  { to: '/admin', icon: Users, label: 'Usuarios', end: true },
+  { to: '/admin/catalog', icon: Settings, label: 'Configuración', end: false },
 ]
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
@@ -69,12 +72,33 @@ export function Layout() {
           <span className="text-white font-bold text-base tracking-[1px]">INFRAGEST</span>
         </div>
 
-        {/* Nav */}
+        {/* Nav general */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           <p className="px-3 pb-2 text-[10px] font-semibold tracking-[2px] text-sidebar-fg uppercase">Menú</p>
-          {NAV_ITEMS.map(({ to, icon: Icon, label, end, requireManage }) => {
-            if (requireManage && !user?.can_manage) return null
-            return (
+          {GENERAL_ITEMS.map(({ to, icon: Icon, label, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                  isActive
+                    ? 'bg-sidebar-active text-sidebar-active-fg font-medium'
+                    : 'text-sidebar-fg hover:bg-sidebar-active/60 hover:text-white'
+                }`
+              }
+            >
+              <Icon className="w-[18px] h-[18px] shrink-0" />
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Sección admin — pegada al fondo */}
+        {user?.can_manage && (
+          <div className="px-3 pb-3 space-y-0.5">
+            <p className="px-3 pb-1 pt-2 text-[10px] font-semibold tracking-[2px] text-sidebar-fg uppercase">Admin</p>
+            {ADMIN_ITEMS.map(({ to, icon: Icon, label, end }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -90,9 +114,9 @@ export function Layout() {
                 <Icon className="w-[18px] h-[18px] shrink-0" />
                 {label}
               </NavLink>
-            )
-          })}
-        </nav>
+            ))}
+          </div>
+        )}
 
         {/* Footer */}
         <div
