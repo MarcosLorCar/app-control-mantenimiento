@@ -2,6 +2,7 @@ export interface InfrastructureType {
   id: number
   name: string
   description: string | null
+  iconUrl: string | null
 }
 
 export interface Infrastructure {
@@ -23,6 +24,8 @@ export interface ActionType {
   name: string
   description: string | null
   consumesMaterials: boolean
+  icon: string | null
+  color: string | null
 }
 
 export interface Role {
@@ -55,7 +58,7 @@ export interface Action {
 }
 
 export interface ActionWithRelations extends Action {
-  actionType: Pick<ActionType, 'id' | 'name' | 'consumesMaterials'>
+  actionType: Pick<ActionType, 'id' | 'name' | 'consumesMaterials' | 'icon' | 'color'>
   performer: { id: number; fullName: string; email: string }
   materials: ActionMaterial[]
 }
