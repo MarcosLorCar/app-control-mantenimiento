@@ -1,14 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  listActions, getAction, createAction, updateAction, deleteAction,
-  listMaterials, createMaterial, updateMaterial, deleteMaterial,
+  listActions, listAllActions, getAction, createAction, updateAction, deleteAction,
+  listMaterials, listAllMaterials, createMaterial, updateMaterial, deleteMaterial,
 } from '../api/actions'
-import type { ActionWithRelations, ActionMaterial } from '../api/types'
+import type { ActionWithRelations, ActionMaterial, ActionWithInfra, MaterialWithAction } from '../api/types'
 
 export const actionKeys = {
   byInfra: (infraId: number) => ['actions', 'infra', infraId] as const,
   detail: (id: number) => ['actions', id] as const,
   materials: (actionId: number) => ['actions', actionId, 'materials'] as const,
+  all: () => ['actions', 'all'] as const,
+  allMaterials: () => ['materials', 'all'] as const,
 }
 
 export function useActions(infraId: number) {
@@ -75,5 +77,39 @@ export function useDeleteMaterial(actionId: number) {
   return useMutation({
     mutationFn: (id: number) => deleteMaterial(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: actionKeys.materials(actionId) }),
+  })
+}
+
+export function useDeleteActionGlobal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => deleteAction(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: actionKeys.all() })
+      qc.invalidateQueries({ queryKey: ['actions', 'infra'] })
+    },
+  })
+}
+
+export function useUpdateActionGlobal() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateAction>[1] }) =>
+      updateAction(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: actionKeys.all() }),
+  })
+}
+
+export function useAllActions() {
+  return useQuery<ActionWithInfra[]>({
+    queryKey: actionKeys.all(),
+    queryFn: listAllActions,
+  })
+}
+
+export function useAllMaterials() {
+  return useQuery<MaterialWithAction[]>({
+    queryKey: actionKeys.allMaterials(),
+    queryFn: listAllMaterials,
   })
 }

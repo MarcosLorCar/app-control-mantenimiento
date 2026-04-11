@@ -5,7 +5,7 @@ import { useCreateMaterial, actionKeys } from '../../hooks/useActions'
 
 interface Props {
   actionId: number
-  infrastructureId: number
+  infrastructureId?: number
   onClose: () => void
 }
 
@@ -42,7 +42,11 @@ export function MaterialForm({ actionId, infrastructureId, onClose }: Props) {
       },
       {
         onSuccess: () => {
-          qc.invalidateQueries({ queryKey: actionKeys.byInfra(infrastructureId) })
+          if (infrastructureId) {
+            qc.invalidateQueries({ queryKey: actionKeys.byInfra(infrastructureId) })
+          } else {
+            qc.invalidateQueries({ queryKey: actionKeys.all() })
+          }
           onClose()
         },
         onError: (err: any) => setError(err?.error?.message ?? 'Error al añadir material'),

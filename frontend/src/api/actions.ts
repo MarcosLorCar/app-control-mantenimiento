@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE } from './client'
-import type { ActionWithRelations, ActionMaterial } from './types'
+import type { ActionWithRelations, ActionMaterial, ActionWithInfra, MaterialWithAction } from './types'
 
 type ApiData<T> = { data: T }
 
@@ -77,4 +77,12 @@ export function updateMaterial(
 
 export function deleteMaterial(id: number): Promise<void> {
   return apiFetch(`${API_BASE}/materials/${id}`, { method: 'DELETE' }).then(() => undefined)
+}
+
+export function listAllActions(): Promise<ActionWithInfra[]> {
+  return apiFetch<{ data: ActionWithInfra[] }>(`${API_BASE}/actions`).then(r => r.data)
+}
+
+export function listAllMaterials(): Promise<MaterialWithAction[]> {
+  return apiFetch<{ data: MaterialWithAction[] }>(`${API_BASE}/materials`).then(r => r.data)
 }

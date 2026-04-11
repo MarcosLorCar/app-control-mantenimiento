@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { buildApp } from './app'
 
 const JWT_SECRET = process.env.JWT_SECRET

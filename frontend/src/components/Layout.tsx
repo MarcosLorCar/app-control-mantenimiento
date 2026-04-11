@@ -59,7 +59,7 @@ export function Layout() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 w-60 bg-sidebar-bg flex flex-col shrink-0
+        fixed inset-y-0 left-0 z-30 w-60 bg-sidebar-bg border-r border-white/[0.08] flex flex-col shrink-0
         transition-transform duration-200
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0
@@ -81,10 +81,10 @@ export function Layout() {
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
                   isActive
-                    ? 'bg-sidebar-active text-sidebar-active-fg font-medium'
-                    : 'text-sidebar-fg hover:bg-sidebar-active/60 hover:text-white'
+                    ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
+                    : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
                 }`
               }
             >
@@ -104,10 +104,10 @@ export function Layout() {
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                  `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
                     isActive
-                      ? 'bg-sidebar-active text-sidebar-active-fg font-medium'
-                      : 'text-sidebar-fg hover:bg-sidebar-active/60 hover:text-white'
+                      ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
+                      : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
                   }`
                 }
               >

@@ -10,6 +10,8 @@ import { InfrastructureDetail } from './pages/infrastructures/InfrastructureDeta
 import { Users } from './pages/admin/Users'
 import { Catalog } from './pages/admin/Catalog'
 import { ChangePassword } from './pages/ChangePassword'
+import { ActionsPage } from './pages/actions/ActionsPage'
+import { MaterialsPage } from './pages/materials/MaterialsPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -28,6 +30,8 @@ export default function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/infrastructures" element={<InfrastructureList />} />
                 <Route path="/infrastructures/:id" element={<InfrastructureDetail />} />
+                <Route path="/actions" element={<ActionsPage />} />
+                <Route path="/materials" element={<MaterialsPage />} />
                 <Route path="/admin" element={<Users />} />
                 <Route path="/admin/catalog" element={<Catalog />} />
               </Route>

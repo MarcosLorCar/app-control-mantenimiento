@@ -1,11 +1,23 @@
 import { FastifyPluginAsync } from 'fastify'
 import { CreateActionSchema, UpdateActionSchema, CreateMaterialSchema, UpdateMaterialSchema } from './actions.schema'
 import {
-  listActions, getAction, createAction, updateAction, deleteAction,
-  listMaterials, createMaterial, updateMaterial, deleteMaterial,
+  listActions, listAllActions, getAction, createAction, updateAction, deleteAction,
+  listMaterials, listAllMaterials, createMaterial, updateMaterial, deleteMaterial,
 } from './actions.service'
 
 const actionsRoutes: FastifyPluginAsync = async (fastify) => {
+  // --- Listados globales (cross-infrastructure) ---
+
+  fastify.get('/actions', { preHandler: fastify.verifyToken }, async (request, reply) => {
+    const data = await listAllActions(fastify.db)
+    return reply.send({ data })
+  })
+
+  fastify.get('/materials', { preHandler: fastify.verifyToken }, async (request, reply) => {
+    const data = await listAllMaterials(fastify.db)
+    return reply.send({ data })
+  })
+
   // --- Acciones bajo una infraestructura ---
 
   fastify.get('/infrastructures/:infraId/actions', { preHandler: fastify.verifyToken }, async (request, reply) => {

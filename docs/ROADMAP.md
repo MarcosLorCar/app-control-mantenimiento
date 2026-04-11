@@ -52,12 +52,12 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | 1 | Design tokens CSS + instalar lucide-react | ✅ completado |
 | 2 | Rediseño Sidebar + Topbar (Layout.tsx) | ✅ completado |
 | 3 | Rediseño lista de Infraestructuras (cards ricas) | ✅ completado |
-| 4 | Backend: endpoints globales GET /actions y GET /materials | ⬜ pendiente |
-| 5 | Tipos y hooks frontend para queries globales | ⬜ pendiente |
-| 6 | ActionForm con selector de infraestructura opcional | ⬜ pendiente |
-| 7 | Página Acciones (/actions) — tabla + panel lateral | ⬜ pendiente |
-| 8 | Página Materiales (/materials) — tabla global | ⬜ pendiente |
-| 9 | Rutas en App.tsx + verificación end-to-end | ⬜ pendiente |
+| 4 | Backend: endpoints globales GET /actions y GET /materials | ✅ completado |
+| 5 | Tipos y hooks frontend para queries globales | ✅ completado |
+| 6 | ActionForm con selector de infraestructura opcional | ✅ completado |
+| 7 | Página Acciones (/actions) — tabla + panel lateral | ✅ completado |
+| 8 | Página Materiales (/materials) — tabla global | ✅ completado |
+| 9 | Rutas en App.tsx + verificación end-to-end | ✅ completado |
 
 ---
 

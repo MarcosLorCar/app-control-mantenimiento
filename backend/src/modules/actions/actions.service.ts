@@ -69,3 +69,33 @@ export async function deleteMaterial(db: PrismaClient, id: number) {
   await getMaterial(db, id)
   await db.actionMaterial.delete({ where: { id } })
 }
+
+// --- Global listing (cross-infrastructure) ---
+
+export function listAllActions(db: PrismaClient) {
+  return db.action.findMany({
+    include: {
+      actionType: true,
+      performer: { select: { id: true, fullName: true, email: true } },
+      materials: true,
+      infrastructure: { select: { id: true, name: true } },
+    },
+    orderBy: { performedAt: 'desc' },
+  })
+}
+
+export function listAllMaterials(db: PrismaClient) {
+  return db.actionMaterial.findMany({
+    include: {
+      action: {
+        select: {
+          id: true,
+          performedAt: true,
+          actionType: { select: { name: true } },
+          infrastructure: { select: { id: true, name: true } },
+        },
+      },
+    },
+    orderBy: { id: 'desc' },
+  })
+}
