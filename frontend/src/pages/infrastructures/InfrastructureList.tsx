@@ -154,10 +154,18 @@ export function InfrastructureList() {
                   : 'bg-card border-app-border hover:border-primary/30'
               }`}
             >
-              <div className={`w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0 ${
+              <div className={`w-11 h-11 rounded-[10px] flex items-center justify-center shrink-0 overflow-hidden ${
                 isNearby ? 'bg-white/60' : 'bg-info-bg'
               }`}>
-                <Icon className={`w-5 h-5 ${isNearby ? 'text-[var(--success)]' : 'text-primary'}`} />
+                {infra.infraType?.iconUrl ? (
+                  <img
+                    src={infra.infraType.iconUrl}
+                    alt={infra.infraType.name}
+                    className="w-7 h-7 object-contain"
+                  />
+                ) : (
+                  <Icon className={`w-5 h-5 ${isNearby ? 'text-[var(--success)]' : 'text-primary'}`} />
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 {isNearby && (
