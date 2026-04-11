@@ -102,7 +102,14 @@ export function InfrastructureDetail() {
                     }`}
                   >
                     <div className="w-14 px-4 text-gray-400 font-mono">#{action.id}</div>
-                    <div className="w-40 px-3 text-gray-800 font-medium truncate">{action.actionType.name}</div>
+                    <div className="w-40 px-3 flex items-center gap-1.5 min-w-0">
+                      {(() => {
+                        const Icon = getActionTypeIcon(action.actionType.icon)
+                        const color = action.actionType.color ?? '#6B7280'
+                        return Icon ? <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} /> : null
+                      })()}
+                      <span className="text-gray-800 font-medium truncate">{action.actionType.name}</span>
+                    </div>
                     <div className="w-36 px-3 text-gray-500 truncate">
                       {action.performer?.fullName ?? action.performer?.email ?? '—'}
                     </div>
