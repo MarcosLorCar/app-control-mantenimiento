@@ -1,6 +1,9 @@
 import Fastify, { FastifyInstance } from 'fastify'
 import fastifyJwt from '@fastify/jwt'
 import fastifyCookie from '@fastify/cookie'
+import fastifyMultipart from '@fastify/multipart'
+import fastifyStatic from '@fastify/static'
+import path from 'path'
 import prismaPlugin from './plugins/prisma.plugin'
 import authPlugin from './plugins/auth.plugin'
 import authRoutes from './modules/auth/auth.routes'
@@ -21,6 +24,12 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await app.register(fastifyJwt, {
     secret: opts.jwtSecret,
     cookie: { cookieName: 'refreshToken', signed: false },
+  })
+  await app.register(fastifyMultipart, { limits: { fileSize: 500 * 1024 } })
+  await app.register(fastifyStatic, {
+    root: path.join(__dirname, '..', 'uploads'),
+    prefix: '/uploads/',
+    decorateReply: false,
   })
   await app.register(prismaPlugin)
   await app.register(authPlugin)
