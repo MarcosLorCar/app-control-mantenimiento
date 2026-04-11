@@ -92,6 +92,12 @@ const catalogRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.code(400).send({ error: { code: 'INVALID_FILE', message: 'Solo se admiten PNG, SVG o JPEG' } })
     }
 
+    // Clean up previous file if it exists
+    if (existing.iconUrl) {
+      const prevPath = path.join(__dirname, '..', '..', '..', existing.iconUrl)
+      await fs.unlink(prevPath).catch(() => {})
+    }
+
     const ext = fileData.mimetype === 'image/svg+xml' ? 'svg' : fileData.mimetype.split('/')[1]
     const filename = `infra-type-${infraId}.${ext}`
     const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads')
