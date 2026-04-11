@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { X, Pencil, Trash2 } from 'lucide-react'
+import { getActionTypeIcon } from '../../utils/actionTypeIcons'
 import { useInfrastructure } from '../../hooks/useInfrastructures'
 import { useActions, useDeleteAction } from '../../hooks/useActions'
 import { RoleGuard } from '../../components/RoleGuard'
@@ -120,9 +121,19 @@ export function InfrastructureDetail() {
             <div className="flex items-center justify-between h-14 px-5 border-b border-gray-200 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-[14px] font-bold text-gray-900">#{selected.id}</span>
-                <span className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
-                  {selected.actionType.name}
-                </span>
+                {(() => {
+                  const Icon = getActionTypeIcon(selected.actionType.icon)
+                  const color = selected.actionType.color ?? '#6B7280'
+                  return (
+                    <span
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full"
+                      style={{ background: color + '20', color }}
+                    >
+                      {Icon && <Icon className="w-3 h-3" />}
+                      {selected.actionType.name}
+                    </span>
+                  )
+                })()}
               </div>
               <button
                 onClick={() => setSelected(null)}
