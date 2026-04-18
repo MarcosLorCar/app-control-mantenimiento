@@ -24,3 +24,10 @@ export type CreateActionBody = z.infer<typeof CreateActionSchema>
 export type UpdateActionBody = z.infer<typeof UpdateActionSchema>
 export type CreateMaterialBody = z.infer<typeof CreateMaterialSchema>
 export type UpdateMaterialBody = z.infer<typeof UpdateMaterialSchema>
+
+export const ExportQuerySchema = z.object({
+  desde: z.coerce.date().optional(),
+  hasta: z.coerce.date().optional(),
+})
+
+export type ExportQuery = z.infer<typeof ExportQuerySchema>
