@@ -71,9 +71,9 @@ export async function createMaterial(db: PrismaClient, data: CreateMaterialInput
 }
 
 export function updateMaterial(db: PrismaClient, id: number, data: UpdateMaterialInput) {
-  return db.material.update({ where: { id }, data, select: MATERIAL_SELECT })
+  return db.material.update({ where: { id, deletedAt: null }, data, select: MATERIAL_SELECT })
 }
 
 export function softDeleteMaterial(db: PrismaClient, id: number) {
-  return db.material.update({ where: { id }, data: { deletedAt: new Date() } })
+  return db.material.update({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } })
 }

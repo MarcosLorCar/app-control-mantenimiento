@@ -237,6 +237,28 @@ describe('Materials', () => {
     })
   })
 
+  describe('GET /api/v1/dependencies/:id/materials', () => {
+    it('returns materials in a dependency', async () => {
+      await testDb.material.create({
+        data: {
+          code: 'MAT-DEP',
+          name: 'Material dependencia',
+          typeId: seed.materialType.id,
+          dependencyId: seed.dep.id,
+          attributes: { power_w: 7 },
+        },
+      })
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/dependencies/${seed.dep.id}/materials`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data).toHaveLength(1)
+      expect(res.json().data[0].code).toBe('MAT-DEP')
+    })
+  })
+
   describe('PATCH /api/v1/materials/:id', () => {
     it('updates material attributes (requireWrite)', async () => {
       const res = await app.inject({
