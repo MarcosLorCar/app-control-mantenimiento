@@ -9,3 +9,4 @@ dist/
 !.aidesigner/.gitkeep
 !.aidesigner/DESIGN.md
 .agents/skills/
+.worktrees/
