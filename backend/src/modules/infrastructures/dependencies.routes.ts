@@ -26,6 +26,12 @@ const UpdateDepSchema = z.object({
   description: z.string().optional(),
 })
 
+const STRUCTURE_SELECT = {
+  id: true, code: true, name: true, description: true,
+  infrastructureId: true, dependencyId: true,
+  createdAt: true, updatedAt: true,
+}
+
 export async function dependenciesRoutes(app: FastifyInstance) {
   // List top-level dependencies of an infrastructure
   app.get('/infrastructures/:infraId/dependencies', { preHandler: [app.verifyToken] }, async (req, reply) => {
@@ -58,6 +64,7 @@ export async function dependenciesRoutes(app: FastifyInstance) {
     }
     const data = await app.db.structure.create({
       data: { ...parsed.data, infrastructureId, dependencyId: null },
+      select: STRUCTURE_SELECT,
     })
     return reply.status(201).send({ data })
   })
@@ -99,6 +106,7 @@ export async function dependenciesRoutes(app: FastifyInstance) {
     }
     const data = await app.db.structure.create({
       data: { ...parsed.data, dependencyId, infrastructureId: null },
+      select: STRUCTURE_SELECT,
     })
     return reply.status(201).send({ data })
   })
@@ -132,7 +140,10 @@ export async function dependenciesRoutes(app: FastifyInstance) {
   // Get structure detail
   app.get('/structures/:id', { preHandler: [app.verifyToken] }, async (req, reply) => {
     const id = Number((req.params as any).id)
-    const data = await app.db.structure.findFirst({ where: { id, deletedAt: null } })
+    const data = await app.db.structure.findFirst({
+      where: { id, deletedAt: null },
+      select: STRUCTURE_SELECT,
+    })
     if (!data) {
       return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Estructura no encontrada' } })
     }
@@ -150,7 +161,11 @@ export async function dependenciesRoutes(app: FastifyInstance) {
     if (!existing) {
       return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Estructura no encontrada' } })
     }
-    const data = await app.db.structure.update({ where: { id }, data: parsed.data })
+    const data = await app.db.structure.update({
+      where: { id },
+      data: parsed.data,
+      select: STRUCTURE_SELECT,
+    })
     return reply.send({ data })
   })
 

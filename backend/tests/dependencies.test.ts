@@ -173,8 +173,6 @@ describe('Structures', () => {
     viewerToken = await getViewerToken(app)
   })
 
-  afterAll(async () => { await testDb.$disconnect() })
-
   describe('POST /api/v1/dependencies/:depId/structures', () => {
     it('creates structure under dependency (requireWrite)', async () => {
       const res = await app.inject({
@@ -209,6 +207,16 @@ describe('Structures', () => {
       expect(res.statusCode).toBe(201)
       expect(res.json().data).toMatchObject({ code: 'LOBBY', infrastructureId: seed.infra.id, dependencyId: null })
     })
+
+    it('returns 403 for viewer', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/v1/infrastructures/${seed.infra.id}/structures`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+        payload: { code: 'LOBBY-2', name: 'Lobby 2' },
+      })
+      expect(res.statusCode).toBe(403)
+    })
   })
 
   describe('GET /api/v1/structures/:id', () => {
@@ -242,6 +250,16 @@ describe('Structures', () => {
       })
       expect(res.statusCode).toBe(200)
       expect(res.json().data.name).toBe('Hab 101 Renovada')
+    })
+
+    it('returns 403 for viewer', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/structures/${seed.structure.id}`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+        payload: { name: 'No permitido' },
+      })
+      expect(res.statusCode).toBe(403)
     })
   })
 
