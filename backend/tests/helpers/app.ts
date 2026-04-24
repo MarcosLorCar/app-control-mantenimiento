@@ -35,6 +35,7 @@ export async function getViewerToken(app: FastifyInstance): Promise<string> {
   return JSON.parse(res.body).data.accessToken
 }
 
+// TODO: remove aliases after tasks 3-8 migrate all test files to manager/editor/viewer naming
 // Backwards-compat aliases
 export const getAdminToken = getManagerToken
 export const getReaderToken = getViewerToken

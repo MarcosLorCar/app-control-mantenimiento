@@ -100,4 +100,6 @@ async function main() {
   console.log('Seed completado.')
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect())
+main()
+  .catch((e) => { console.error(e); process.exit(1) })
+  .finally(() => prisma.$disconnect())

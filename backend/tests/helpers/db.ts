@@ -1,7 +1,10 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL!
+if (!process.env.TEST_DATABASE_URL) {
+  throw new Error('TEST_DATABASE_URL is required for tests')
+}
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL
 
 export const testDb = new PrismaClient()
 
@@ -111,6 +114,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
     },
   })
 
+  // TODO: remove aliases after tasks 3-8 migrate all test files to manager/editor/viewer naming
   // Keep backwards-compatible aliases
   const adminRole = managerRole
   const adminUser = manager
