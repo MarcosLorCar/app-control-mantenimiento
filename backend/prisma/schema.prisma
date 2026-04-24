@@ -23,7 +23,7 @@ model Role {
 
 model User {
   id                 Int       @id @default(autoincrement())
-  email              String    @unique
+  email              String
   passwordHash       String
   fullName           String
   roleId             Int
@@ -44,7 +44,7 @@ model User {
 
 model Infrastructure {
   id          Int       @id @default(autoincrement())
-  code        String    @unique
+  code        String
   name        String
   description String?
   createdAt   DateTime  @default(now())
@@ -117,7 +117,7 @@ enum DataType {
 
 model MaterialType {
   id          Int       @id @default(autoincrement())
-  code        String    @unique
+  code        String
   name        String
   description String?
   icon        String?
@@ -155,7 +155,7 @@ model MaterialCategory {
 
 model Material {
   id           Int       @id @default(autoincrement())
-  code         String    @unique
+  code         String
   name         String
   description  String?
   serialNumber String?
@@ -190,7 +190,7 @@ model Material {
 
 model ActionType {
   id          Int       @id @default(autoincrement())
-  code        String    @unique
+  code        String
   name        String
   description String?
   icon        String?
@@ -204,7 +204,7 @@ model ActionType {
 
 model ActionStatus {
   id         Int       @id @default(autoincrement())
-  code       String    @unique
+  code       String
   name       String
   isTerminal Boolean   @default(false)
   color      String?
