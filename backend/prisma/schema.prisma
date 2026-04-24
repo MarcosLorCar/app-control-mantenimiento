@@ -7,108 +7,238 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== AUTH / USERS ====================
+
 model Role {
   id          Int     @id @default(autoincrement())
   name        String  @unique
   description String?
-  canWrite    Boolean @default(false) @map("can_write")
-  canManage   Boolean @default(false) @map("can_manage")
-  users       User[]
+  canWrite    Boolean @default(false)
+  canManage   Boolean @default(false)
+
+  users User[]
 
   @@map("roles")
 }
 
-model ActionType {
-  id                Int      @id @default(autoincrement())
-  name              String   @unique
-  description       String?
-  consumesMaterials Boolean  @default(false) @map("consumes_materials")
-  icon              String?
-  color             String?
-  actions           Action[]
-
-  @@map("action_types")
-}
-
 model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  passwordHash String    @map("password_hash")
-  fullName     String    @map("full_name")
-  roleId       Int       @map("role_id")
-  isActive           Boolean   @default(true) @map("is_active")
-  mustChangePassword Boolean   @default(false) @map("must_change_password")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-  deletedAt          DateTime? @map("deleted_at")
-  role               Role      @relation(fields: [roleId], references: [id])
-  actions      Action[]
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  passwordHash       String
+  fullName           String
+  roleId             Int
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  role    Role     @relation(fields: [roleId], references: [id])
+  actions Action[]
 
   @@index([roleId])
   @@map("users")
 }
 
-model InfrastructureType {
-  id              Int              @id @default(autoincrement())
-  name            String           @unique
-  description     String?
-  iconUrl         String?          @map("icon_url")
-  infrastructures Infrastructure[]
-
-  @@map("infrastructure_types")
-}
+// ==================== LOCATION HIERARCHY ====================
 
 model Infrastructure {
-  id          Int                  @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
   name        String
   description String?
-  location    String?
-  latitude    Float?
-  longitude   Float?
-  infraTypeId Int?                 @map("infra_type_id")
-  createdAt   DateTime             @default(now()) @map("created_at")
-  updatedAt   DateTime             @updatedAt @map("updated_at")
-  deletedAt   DateTime?            @map("deleted_at")
-  infraType   InfrastructureType?  @relation(fields: [infraTypeId], references: [id])
-  actions     Action[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
-  @@index([infraTypeId])
+  dependencies Dependency[]
+  structures   Structure[]
+  materials    Material[]
+
   @@map("infrastructures")
 }
 
-model Action {
-  id               Int              @id @default(autoincrement())
-  infrastructureId Int              @map("infrastructure_id")
-  performedBy      Int              @map("performed_by")
-  actionTypeId     Int              @map("action_type_id")
+model Dependency {
+  id               Int       @id @default(autoincrement())
+  code             String
+  name             String
   description      String?
-  performedAt      DateTime         @default(now()) @map("performed_at")
-  createdAt        DateTime         @default(now()) @map("created_at")
-  infrastructure   Infrastructure   @relation(fields: [infrastructureId], references: [id])
-  performer        User             @relation(fields: [performedBy], references: [id])
-  actionType       ActionType       @relation(fields: [actionTypeId], references: [id])
-  materials        ActionMaterial[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
+  infrastructureId Int
+  infrastructure   Infrastructure @relation(fields: [infrastructureId], references: [id])
+
+  parentId Int?
+  parent   Dependency?  @relation("DependencyTree", fields: [parentId], references: [id])
+  children Dependency[] @relation("DependencyTree")
+
+  structures Structure[]
+  materials  Material[]
+
+  @@unique([infrastructureId, parentId, code])
   @@index([infrastructureId])
-  @@index([performedBy])
-  @@index([actionTypeId])
-  @@index([performedAt])
-  @@map("actions")
+  @@index([parentId])
+  @@map("dependencies")
 }
 
-model ActionMaterial {
-  id          Int      @id @default(autoincrement())
-  actionId    Int      @map("action_id")
+model Structure {
+  id               Int       @id @default(autoincrement())
+  code             String
+  name             String
+  description      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  infrastructureId Int?
+  infrastructure   Infrastructure? @relation(fields: [infrastructureId], references: [id])
+
+  dependencyId Int?
+  dependency   Dependency? @relation(fields: [dependencyId], references: [id])
+
+  materials Material[]
+
+  @@index([infrastructureId])
+  @@index([dependencyId])
+  @@map("structures")
+}
+
+// ==================== MATERIAL CATALOG ====================
+
+enum DataType {
+  STRING
+  NUMBER
+  BOOLEAN
+  DATE
+  ENUM
+}
+
+model MaterialType {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
   name        String
   description String?
-  unit        String
-  quantity    Decimal  @db.Decimal(12, 4)
-  unitCost    Decimal? @db.Decimal(12, 2) @map("unit_cost")
-  totalCost   Decimal? @db.Decimal(12, 2) @map("total_cost")
-  supplier    String?
-  notes       String?
-  action      Action   @relation(fields: [actionId], references: [id])
+  icon        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
-  @@index([actionId])
-  @@map("action_materials")
+  categories MaterialCategory[]
+  materials  Material[]
+
+  @@map("material_types")
+}
+
+model MaterialCategory {
+  id          Int      @id @default(autoincrement())
+  code        String
+  name        String
+  description String?
+  dataType    DataType
+  unit        String?
+  required    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  enumValues  String[]
+  validation  Json?
+
+  materialTypeId Int
+  materialType   MaterialType @relation(fields: [materialTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([materialTypeId, code])
+  @@index([materialTypeId])
+  @@map("material_categories")
+}
+
+// ==================== MATERIAL INSTANCES ====================
+
+model Material {
+  id           Int       @id @default(autoincrement())
+  code         String    @unique
+  name         String
+  description  String?
+  serialNumber String?
+  installedAt  DateTime  @default(now())
+  attributes   Json      @default("{}")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  typeId Int
+  type   MaterialType @relation(fields: [typeId], references: [id])
+
+  infrastructureId Int?
+  infrastructure   Infrastructure? @relation(fields: [infrastructureId], references: [id])
+
+  dependencyId Int?
+  dependency   Dependency? @relation(fields: [dependencyId], references: [id])
+
+  structureId Int?
+  structure   Structure? @relation(fields: [structureId], references: [id])
+
+  actions Action[]
+
+  @@index([typeId])
+  @@index([infrastructureId])
+  @@index([dependencyId])
+  @@index([structureId])
+  @@map("materials")
+}
+
+// ==================== ACTIONS ====================
+
+model ActionType {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  name        String
+  description String?
+  icon        String?
+  color       String?
+  deletedAt   DateTime?
+
+  actions Action[]
+
+  @@map("action_types")
+}
+
+model ActionStatus {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique
+  name       String
+  isTerminal Boolean   @default(false)
+  color      String?
+  sortOrder  Int       @default(0)
+  deletedAt  DateTime?
+
+  actions Action[]
+
+  @@map("action_statuses")
+}
+
+model Action {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  performedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  typeId Int
+  type   ActionType @relation(fields: [typeId], references: [id])
+
+  statusId Int
+  status   ActionStatus @relation(fields: [statusId], references: [id])
+
+  materialId Int
+  material   Material @relation(fields: [materialId], references: [id])
+
+  performedBy Int
+  performer   User    @relation(fields: [performedBy], references: [id])
+
+  @@index([materialId])
+  @@index([performedBy])
+  @@index([performedAt])
+  @@index([statusId])
+  @@map("actions")
 }
