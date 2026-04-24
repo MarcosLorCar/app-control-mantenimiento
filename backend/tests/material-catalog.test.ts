@@ -107,6 +107,15 @@ describe('Material Catalog', () => {
       expect(body.data).toBeInstanceOf(Array)
       expect(body.data[0]).toMatchObject({ code: 'power_w', dataType: 'NUMBER', required: true })
     })
+
+    it('returns 404 for unknown material type', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/v1/material-types/99999/categories',
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(404)
+    })
   })
 
   describe('POST /api/v1/material-types/:id/categories', () => {

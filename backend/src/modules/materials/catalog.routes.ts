@@ -44,6 +44,10 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
 
   app.get('/material-types/:id/categories', { preHandler: [app.verifyToken] }, async (req, reply) => {
     const id = Number((req.params as any).id)
+    const type = await app.db.materialType.findFirst({ where: { id, deletedAt: null } })
+    if (!type) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Tipo de material no encontrado' } })
+    }
     return reply.send({ data: await listCategories(app.db, id) })
   })
 

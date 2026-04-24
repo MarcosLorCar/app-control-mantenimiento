@@ -73,6 +73,8 @@ export async function validateAttributes(
     }
     if ((cat.dataType === 'STRING' || cat.dataType === 'DATE') && typeof value !== 'string') {
       errors.push(`${cat.code}: se esperaba un string`)
+    } else if (cat.dataType === 'DATE' && typeof value === 'string' && isNaN(Date.parse(value as string))) {
+      errors.push(`${cat.code}: formato de fecha inválido (se esperaba ISO 8601)`)
     }
     if (cat.dataType === 'ENUM' && !cat.enumValues.includes(value as string)) {
       errors.push(`${cat.code}: valor inválido. Opciones: ${cat.enumValues.join(', ')}`)
