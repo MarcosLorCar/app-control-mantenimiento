@@ -23,7 +23,7 @@ describe('POST /api/v1/auth/login', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/login',
-      payload: { email: 'admin@test.com', password: 'admin1234' },
+      payload: { email: 'manager@test.com', password: 'password123' },
     })
     expect(res.statusCode).toBe(200)
     const body = JSON.parse(res.body)
@@ -35,7 +35,7 @@ describe('POST /api/v1/auth/login', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/login',
-      payload: { email: 'admin@test.com', password: 'wrongpassword' },
+      payload: { email: 'manager@test.com', password: 'wrongpassword' },
     })
     expect(res.statusCode).toBe(401)
     const body = JSON.parse(res.body)
@@ -66,7 +66,7 @@ describe('POST /api/v1/auth/refresh', () => {
     const loginRes = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/login',
-      payload: { email: 'admin@test.com', password: 'admin1234' },
+      payload: { email: 'manager@test.com', password: 'password123' },
     })
     expect(loginRes.statusCode).toBe(200)
     const cookie = loginRes.cookies.find(c => c.name === 'refreshToken')
@@ -103,7 +103,7 @@ describe('POST /api/v1/auth/logout', () => {
     const loginRes = await app.inject({
       method: 'POST',
       url: '/api/v1/auth/login',
-      payload: { email: 'admin@test.com', password: 'admin1234' },
+      payload: { email: 'manager@test.com', password: 'password123' },
     })
     const { accessToken } = JSON.parse(loginRes.body).data
 

@@ -11,7 +11,7 @@ import usersRoutes from './modules/users/users.routes'
 import catalogRoutes from './modules/catalog/catalog.routes'
 import { infrastructuresRoutes } from './modules/infrastructures/infrastructures.routes'
 import { dependenciesRoutes } from './modules/infrastructures/dependencies.routes'
-import actionsRoutes from './modules/actions/actions.routes'
+import { actionsRoutes } from './modules/actions/actions.routes'
 import { materialCatalogRoutes } from './modules/materials/catalog.routes'
 import { materialsRoutes } from './modules/materials/materials.routes'
 

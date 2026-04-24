@@ -20,7 +20,7 @@ export async function getUser(db: PrismaClient, id: number) {
 }
 
 export async function createUser(db: PrismaClient, body: CreateUserBody) {
-  const existing = await db.user.findUnique({ where: { email: body.email } })
+  const existing = await db.user.findFirst({ where: { email: body.email } })
   if (existing) throw { statusCode: 409, code: 'CONFLICT', message: 'El email ya está en uso' }
   const tempPassword = body.password ?? crypto.randomBytes(12).toString('hex')
   const mustChangePassword = !body.password
