@@ -1,0 +1,77 @@
+import type { FastifyInstance } from 'fastify'
+import { CreateMaterialSchema, UpdateMaterialSchema } from './materials.schema'
+import { listMaterials, getMaterial, createMaterial, updateMaterial, softDeleteMaterial } from './materials.service'
+
+export async function materialsRoutes(app: FastifyInstance) {
+  app.get('/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: await listMaterials(app.db) })
+  })
+
+  app.post('/materials', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const parsed = CreateMaterialSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    try {
+      const data = await createMaterial(app.db, parsed.data)
+      return reply.status(201).send({ data })
+    } catch (err: any) {
+      if (err.code === 'INVALID_ATTRIBUTES') {
+        return reply.status(422).send({ error: { code: 'INVALID_ATTRIBUTES', message: err.message, details: err.errors } })
+      }
+      if (err.code === 'DUPLICATE_CODE') {
+        return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: err.message } })
+      }
+      throw err
+    }
+  })
+
+  app.get('/materials/:id', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const data = await getMaterial(app.db, id)
+    if (!data) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Material no encontrado' } })
+    }
+    return reply.send({ data })
+  })
+
+  app.patch('/materials/:id', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const existing = await getMaterial(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Material no encontrado' } })
+    }
+    const parsed = UpdateMaterialSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    const data = await updateMaterial(app.db, id, parsed.data)
+    return reply.send({ data })
+  })
+
+  app.delete('/materials/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const existing = await getMaterial(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Material no encontrado' } })
+    }
+    await softDeleteMaterial(app.db, id)
+    return reply.status(204).send()
+  })
+
+  // Materials filtered by location
+  app.get('/infrastructures/:infraId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const infrastructureId = Number((req.params as any).infraId)
+    return reply.send({ data: await listMaterials(app.db, { infrastructureId }) })
+  })
+
+  app.get('/dependencies/:depId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const dependencyId = Number((req.params as any).depId)
+    return reply.send({ data: await listMaterials(app.db, { dependencyId }) })
+  })
+
+  app.get('/structures/:structId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const structureId = Number((req.params as any).structId)
+    return reply.send({ data: await listMaterials(app.db, { structureId }) })
+  })
+}

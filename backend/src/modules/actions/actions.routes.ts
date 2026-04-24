@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from 'fastify'
-import { CreateActionSchema, UpdateActionSchema, CreateMaterialSchema, UpdateMaterialSchema } from './actions.schema'
+import { CreateActionSchema, UpdateActionSchema, CreateMaterialSchema } from './actions.schema'
 import {
   listActions, listAllActions, getAction, createAction, updateAction, deleteAction,
-  listMaterials, listAllMaterials, createMaterial, updateMaterial, deleteMaterial,
+  listMaterials, createMaterial,
 } from './actions.service'
 
 const actionsRoutes: FastifyPluginAsync = async (fastify) => {
@@ -10,11 +10,6 @@ const actionsRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/actions', { preHandler: fastify.verifyToken }, async (request, reply) => {
     const data = await listAllActions(fastify.db)
-    return reply.send({ data })
-  })
-
-  fastify.get('/materials', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const data = await listAllMaterials(fastify.db)
     return reply.send({ data })
   })
 
@@ -92,29 +87,6 @@ const actionsRoutes: FastifyPluginAsync = async (fastify) => {
     }
   })
 
-  // --- CRUD directo de materiales ---
-
-  fastify.patch('/materials/:id', { preHandler: fastify.requireWrite }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const result = UpdateMaterialSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await updateMaterial(fastify.db, Number(id), result.data)
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
-
-  fastify.delete('/materials/:id', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    try {
-      await deleteMaterial(fastify.db, Number(id))
-      return reply.send({ data: { ok: true } })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
 }
 
 export default actionsRoutes

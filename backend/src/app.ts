@@ -13,6 +13,7 @@ import { infrastructuresRoutes } from './modules/infrastructures/infrastructures
 import { dependenciesRoutes } from './modules/infrastructures/dependencies.routes'
 import actionsRoutes from './modules/actions/actions.routes'
 import { materialCatalogRoutes } from './modules/materials/catalog.routes'
+import { materialsRoutes } from './modules/materials/materials.routes'
 
 export interface AppOptions {
   jwtSecret: string
@@ -53,6 +54,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await app.register(dependenciesRoutes, { prefix: '/api/v1' })
   await app.register(actionsRoutes, { prefix: '/api/v1' })
   await app.register(materialCatalogRoutes, { prefix: '/api/v1' })
+  await app.register(materialsRoutes, { prefix: '/api/v1' })
 
   return app
 }
