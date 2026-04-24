@@ -1,55 +1,64 @@
-import { FastifyPluginAsync } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { CreateInfrastructureSchema, UpdateInfrastructureSchema } from './infrastructures.schema'
-import { listInfrastructures, getInfrastructure, createInfrastructure, updateInfrastructure, deleteInfrastructure } from './infrastructures.service'
+import {
+  listInfrastructures,
+  getInfrastructure,
+  createInfrastructure,
+  updateInfrastructure,
+  softDeleteInfrastructure,
+} from './infrastructures.service'
 
-const infrastructuresRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/', { preHandler: fastify.verifyToken }, async (_req, reply) => {
-    const data = await listInfrastructures(fastify.db)
+export async function infrastructuresRoutes(app: FastifyInstance) {
+  app.get('/', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const data = await listInfrastructures(app.db)
     return reply.send({ data })
   })
 
-  fastify.get('/:id', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    try {
-      const data = await getInfrastructure(fastify.db, Number(id))
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+  app.post('/', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const parsed = CreateInfrastructureSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
+    const existing = await app.db.infrastructure.findFirst({
+      where: { code: parsed.data.code, deletedAt: null },
+    })
+    if (existing) {
+      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código ya existe' } })
+    }
+    const data = await createInfrastructure(app.db, parsed.data)
+    return reply.status(201).send({ data })
   })
 
-  fastify.post('/', { preHandler: fastify.requireWrite }, async (request, reply) => {
-    const result = CreateInfrastructureSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await createInfrastructure(fastify.db, result.data)
-      return reply.code(201).send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+  app.get('/:id', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const id = Number((req.params as { id: string }).id)
+    const data = await getInfrastructure(app.db, id)
+    if (!data) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Infraestructura no encontrada' } })
     }
+    return reply.send({ data })
   })
 
-  fastify.patch('/:id', { preHandler: fastify.requireWrite }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const result = UpdateInfrastructureSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await updateInfrastructure(fastify.db, Number(id), result.data)
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+  app.patch('/:id', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const id = Number((req.params as { id: string }).id)
+    const existing = await getInfrastructure(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Infraestructura no encontrada' } })
     }
+    const parsed = UpdateInfrastructureSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    const data = await updateInfrastructure(app.db, id, parsed.data)
+    return reply.send({ data })
   })
 
-  fastify.delete('/:id', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    try {
-      await deleteInfrastructure(fastify.db, Number(id))
-      return reply.send({ data: { ok: true } })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+  app.delete('/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const id = Number((req.params as { id: string }).id)
+    const existing = await getInfrastructure(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Infraestructura no encontrada' } })
     }
+    await softDeleteInfrastructure(app.db, id)
+    return reply.status(204).send()
   })
 }
-
-export default infrastructuresRoutes

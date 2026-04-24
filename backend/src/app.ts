@@ -9,7 +9,7 @@ import authPlugin from './plugins/auth.plugin'
 import authRoutes from './modules/auth/auth.routes'
 import usersRoutes from './modules/users/users.routes'
 import catalogRoutes from './modules/catalog/catalog.routes'
-import infrastructuresRoutes from './modules/infrastructures/infrastructures.routes'
+import { infrastructuresRoutes } from './modules/infrastructures/infrastructures.routes'
 import actionsRoutes from './modules/actions/actions.routes'
 
 export interface AppOptions {

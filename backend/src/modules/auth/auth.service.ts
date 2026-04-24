@@ -9,8 +9,8 @@ export async function loginService(
   app: FastifyInstance,
   body: LoginBody
 ): Promise<{ accessToken: string; refreshToken: string }> {
-  const user = await db.user.findUnique({
-    where: { email: body.email },
+  const user = await db.user.findFirst({
+    where: { email: body.email, deletedAt: null },
     include: { role: true },
   })
 
