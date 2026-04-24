@@ -1,23 +1,36 @@
 import { z } from 'zod'
 
 export const CreateActionTypeSchema = z.object({
-  name: z.string().min(1),
+  code: z.string().min(1).max(50),
+  name: z.string().min(1).max(255),
   description: z.string().optional(),
-  consumesMaterials: z.boolean().default(false),
   icon: z.string().optional(),
   color: z.string().optional(),
 })
 
-export const UpdateActionTypeSchema = CreateActionTypeSchema.partial()
-
-export const CreateInfrastructureTypeSchema = z.object({
-  name: z.string().min(1),
+export const UpdateActionTypeSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
 })
 
-export const UpdateInfrastructureTypeSchema = CreateInfrastructureTypeSchema.partial()
+export const CreateActionStatusSchema = z.object({
+  code: z.string().min(1).max(50),
+  name: z.string().min(1).max(255),
+  isTerminal: z.boolean().default(false),
+  color: z.string().optional(),
+  sortOrder: z.number().int().default(0),
+})
 
-export type CreateActionTypeBody = z.infer<typeof CreateActionTypeSchema>
-export type UpdateActionTypeBody = z.infer<typeof UpdateActionTypeSchema>
-export type CreateInfrastructureTypeBody = z.infer<typeof CreateInfrastructureTypeSchema>
-export type UpdateInfrastructureTypeBody = z.infer<typeof UpdateInfrastructureTypeSchema>
+export const UpdateActionStatusSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  isTerminal: z.boolean().optional(),
+  color: z.string().optional(),
+  sortOrder: z.number().int().optional(),
+})
+
+export type CreateActionTypeInput = z.infer<typeof CreateActionTypeSchema>
+export type UpdateActionTypeInput = z.infer<typeof UpdateActionTypeSchema>
+export type CreateActionStatusInput = z.infer<typeof CreateActionStatusSchema>
+export type UpdateActionStatusInput = z.infer<typeof UpdateActionStatusSchema>

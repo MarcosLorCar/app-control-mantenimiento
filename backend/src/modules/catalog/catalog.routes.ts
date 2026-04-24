@@ -1,112 +1,84 @@
-import { FastifyPluginAsync } from 'fastify'
-import { pipeline } from 'stream/promises'
-import { createWriteStream } from 'fs'
-import fs from 'fs/promises'
-import path from 'path'
+import type { FastifyInstance } from 'fastify'
 import {
   CreateActionTypeSchema, UpdateActionTypeSchema,
-  CreateInfrastructureTypeSchema, UpdateInfrastructureTypeSchema,
+  CreateActionStatusSchema, UpdateActionStatusSchema,
 } from './catalog.schema'
 import {
-  listRoles, listActionTypes, createActionType, updateActionType,
-  listInfrastructureTypes, createInfrastructureType, updateInfrastructureType,
-  setInfrastructureTypeIcon,
+  listRoles, listActionTypes, getActionType, createActionType, updateActionType,
+  listActionStatuses, getActionStatus, createActionStatus, updateActionStatus,
 } from './catalog.service'
 
-const ALLOWED_MIMES = ['image/png', 'image/svg+xml', 'image/jpeg']
+export async function catalogRoutes(app: FastifyInstance) {
+  // Roles
+  app.get('/roles', { preHandler: [app.requireManage] }, async (req, reply) => {
+    return reply.send({ data: await listRoles(app.db) })
+  })
 
-const catalogRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/roles', { preHandler: fastify.requireManage }, async (_req, reply) => {
-    const data = await listRoles(fastify.db)
+  // Action Types
+  app.get('/action-types', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: await listActionTypes(app.db) })
+  })
+
+  app.post('/action-types', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const parsed = CreateActionTypeSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    const existing = await app.db.actionType.findFirst({
+      where: { code: parsed.data.code, deletedAt: null },
+    })
+    if (existing) {
+      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de tipo ya existe' } })
+    }
+    const data = await createActionType(app.db, parsed.data)
+    return reply.status(201).send({ data })
+  })
+
+  app.patch('/action-types/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const existing = await getActionType(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Tipo de acción no encontrado' } })
+    }
+    const parsed = UpdateActionTypeSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    const data = await updateActionType(app.db, id, parsed.data)
     return reply.send({ data })
   })
 
-  fastify.get('/action-types', { preHandler: fastify.verifyToken }, async (_req, reply) => {
-    const data = await listActionTypes(fastify.db)
-    return reply.send({ data })
+  // Action Statuses
+  app.get('/action-statuses', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: await listActionStatuses(app.db) })
   })
 
-  fastify.post('/action-types', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const result = CreateActionTypeSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await createActionType(fastify.db, result.data)
-      return reply.code(201).send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+  app.post('/action-statuses', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const parsed = CreateActionStatusSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
+    const existing = await app.db.actionStatus.findFirst({
+      where: { code: parsed.data.code, deletedAt: null },
+    })
+    if (existing) {
+      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de estado ya existe' } })
+    }
+    const data = await createActionStatus(app.db, parsed.data)
+    return reply.status(201).send({ data })
   })
 
-  fastify.patch('/action-types/:id', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const result = UpdateActionTypeSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await updateActionType(fastify.db, Number(id), result.data)
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+  app.patch('/action-statuses/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const existing = await getActionStatus(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Estado de acción no encontrado' } })
     }
-  })
-
-  fastify.get('/infrastructure-types', { preHandler: fastify.verifyToken }, async (_req, reply) => {
-    const data = await listInfrastructureTypes(fastify.db)
-    return reply.send({ data })
-  })
-
-  fastify.post('/infrastructure-types', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const result = CreateInfrastructureTypeSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await createInfrastructureType(fastify.db, result.data)
-      return reply.code(201).send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+    const parsed = UpdateActionStatusSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
-  })
-
-  fastify.patch('/infrastructure-types/:id', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const result = UpdateInfrastructureTypeSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await updateInfrastructureType(fastify.db, Number(id), result.data)
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
-
-  fastify.post('/infrastructure-types/:id/icon', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const infraId = Number(id)
-
-    const existing = await fastify.db.infrastructureType.findUnique({ where: { id: infraId } })
-    if (!existing) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Tipo de infraestructura no encontrado' } })
-
-    const fileData = await request.file()
-    if (!fileData) return reply.code(400).send({ error: { code: 'NO_FILE', message: 'No se subió ningún archivo' } })
-
-    if (!ALLOWED_MIMES.includes(fileData.mimetype)) {
-      fileData.file.resume()
-      return reply.code(400).send({ error: { code: 'INVALID_FILE', message: 'Solo se admiten PNG, SVG o JPEG' } })
-    }
-
-    // Clean up previous file if it exists
-    if (existing.iconUrl) {
-      const prevPath = path.join(__dirname, '..', '..', '..', existing.iconUrl)
-      await fs.unlink(prevPath).catch(() => {})
-    }
-
-    const ext = fileData.mimetype === 'image/svg+xml' ? 'svg' : fileData.mimetype.split('/')[1]
-    const filename = `infra-type-${infraId}.${ext}`
-    const uploadsDir = path.join(__dirname, '..', '..', '..', 'uploads')
-    await fs.mkdir(uploadsDir, { recursive: true })
-    const filePath = path.join(uploadsDir, filename)
-
-    await pipeline(fileData.file, createWriteStream(filePath))
-
-    const data = await setInfrastructureTypeIcon(fastify.db, infraId, `/uploads/${filename}`)
+    const data = await updateActionStatus(app.db, id, parsed.data)
     return reply.send({ data })
   })
 }
