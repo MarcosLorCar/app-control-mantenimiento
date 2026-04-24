@@ -4,89 +4,100 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
+  // Borrar en orden seguro (FK constraints)
+  await prisma.action.deleteMany()
+  await prisma.material.deleteMany()
+  await prisma.structure.deleteMany()
+  await prisma.dependency.deleteMany()
+  await prisma.infrastructure.deleteMany()
+  await prisma.materialCategory.deleteMany()
+  await prisma.materialType.deleteMany()
+  await prisma.actionStatus.deleteMany()
+  await prisma.actionType.deleteMany()
+  await prisma.user.deleteMany()
+  await prisma.role.deleteMany()
+
   // Roles
-  const adminRole = await prisma.role.upsert({
-    where: { name: 'admin' },
-    update: {},
-    create: { name: 'admin', description: 'Administrador completo', canWrite: true, canManage: true },
+  const managerRole = await prisma.role.create({
+    data: { name: 'admin', description: 'Administrador', canWrite: true, canManage: true },
   })
-  const editorRole = await prisma.role.upsert({
-    where: { name: 'editor' },
-    update: {},
-    create: { name: 'editor', description: 'Puede registrar acciones', canWrite: true, canManage: false },
+  const editorRole = await prisma.role.create({
+    data: { name: 'editor', description: 'Editor', canWrite: true, canManage: false },
   })
-  await prisma.role.upsert({
-    where: { name: 'reader' },
-    update: {},
-    create: { name: 'reader', description: 'Solo lectura', canWrite: false, canManage: false },
+  await prisma.role.create({
+    data: { name: 'viewer', description: 'Lector', canWrite: false, canManage: false },
   })
 
-  // Tipos de acción (renombrar a español si existen en inglés)
-  await prisma.actionType.updateMany({ where: { name: 'inspection' }, data: { name: 'Inspección' } })
-  await prisma.actionType.updateMany({ where: { name: 'repair' }, data: { name: 'Reparación' } })
-  await prisma.actionType.updateMany({ where: { name: 'installation' }, data: { name: 'Instalación' } })
-
-  await prisma.actionType.upsert({
-    where: { name: 'Inspección' },
-    update: {},
-    create: { name: 'Inspección', description: 'Inspección visual o técnica', consumesMaterials: false },
-  })
-  await prisma.actionType.upsert({
-    where: { name: 'Reparación' },
-    update: {},
-    create: { name: 'Reparación', description: 'Reparación o sustitución', consumesMaterials: true },
-  })
-  await prisma.actionType.upsert({
-    where: { name: 'Instalación' },
-    update: {},
-    create: { name: 'Instalación', description: 'Nueva instalación', consumesMaterials: true },
-  })
-
-  // Usuario admin inicial
+  // Usuarios
   const hash = await bcrypt.hash('admin1234', 10)
-  await prisma.user.upsert({
-    where: { email: 'admin@example.com' },
-    update: {},
-    create: {
+  await prisma.user.create({
+    data: {
       email: 'admin@example.com',
       passwordHash: hash,
-      fullName: 'Administrador',
-      roleId: adminRole.id,
+      fullName: 'Admin',
+      roleId: managerRole.id,
+      mustChangePassword: false,
     },
   })
 
-  // Usuario editor de ejemplo
   const editorHash = await bcrypt.hash('editor1234', 10)
-  await prisma.user.upsert({
-    where: { email: 'editor@example.com' },
-    update: {},
-    create: {
+  await prisma.user.create({
+    data: {
       email: 'editor@example.com',
       passwordHash: editorHash,
-      fullName: 'Editor Ejemplo',
+      fullName: 'Editor',
       roleId: editorRole.id,
+      mustChangePassword: false,
     },
   })
 
-  // Tipos de infraestructura
-  const infraTypeNames = [
-    'Colegios',
-    'Fuentes',
-    'Pistas deportivas',
-    'Centros Sociales',
-    'Dependencias municipales',
-  ]
-  for (const name of infraTypeNames) {
-    await prisma.infrastructureType.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    })
-  }
+  // Tipos de acción
+  await prisma.actionType.create({
+    data: { code: 'inspection', name: 'Inspección', icon: 'search', color: '#3B82F6' },
+  })
+  await prisma.actionType.create({
+    data: { code: 'repair', name: 'Reparación', icon: 'wrench', color: '#F59E0B' },
+  })
+
+  // Estados de acción
+  await prisma.actionStatus.create({
+    data: { code: 'pending', name: 'Pendiente', isTerminal: false, color: '#F59E0B', sortOrder: 1 },
+  })
+  await prisma.actionStatus.create({
+    data: { code: 'done', name: 'Completada', isTerminal: true, color: '#10B981', sortOrder: 2 },
+  })
+
+  // Tipos de material
+  await prisma.materialType.create({
+    data: {
+      code: 'led_bulb',
+      name: 'Bombilla LED',
+      description: 'Bombilla LED de uso general',
+      categories: {
+        create: [
+          {
+            code: 'power_w',
+            name: 'Potencia (W)',
+            dataType: 'NUMBER',
+            unit: 'W',
+            required: true,
+            sortOrder: 1,
+            enumValues: [],
+          },
+          {
+            code: 'manufacturer',
+            name: 'Fabricante',
+            dataType: 'STRING',
+            required: false,
+            sortOrder: 2,
+            enumValues: [],
+          },
+        ],
+      },
+    },
+  })
 
   console.log('Seed completado.')
 }
 
-main()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect())
+main().catch(console.error).finally(() => prisma.$disconnect())
