@@ -1,11 +1,41 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
+  listInfrastructureTypes, createInfrastructureType, updateInfrastructureType, deleteInfrastructureType,
   listRoles,
   listActionTypes, createActionType, updateActionType,
   listActionStatuses, createActionStatus, updateActionStatus,
   listMaterialTypes, createMaterialType, updateMaterialType,
   listMaterialCategories, createMaterialCategory, updateMaterialCategory, deleteMaterialCategory,
 } from '../api/catalog'
+
+export function useInfrastructureTypes() {
+  return useQuery({ queryKey: ['catalog', 'infrastructure-types'], queryFn: listInfrastructureTypes, staleTime: Infinity })
+}
+
+export function useCreateInfrastructureType() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: createInfrastructureType,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'infrastructure-types'] }),
+  })
+}
+
+export function useUpdateInfrastructureType() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateInfrastructureType>[1] }) =>
+      updateInfrastructureType(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'infrastructure-types'] }),
+  })
+}
+
+export function useDeleteInfrastructureType() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: deleteInfrastructureType,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'infrastructure-types'] }),
+  })
+}
 
 export function useRoles() {
   return useQuery({ queryKey: ['catalog', 'roles'], queryFn: listRoles, staleTime: Infinity })

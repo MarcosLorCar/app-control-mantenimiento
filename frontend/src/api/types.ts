@@ -23,11 +23,22 @@ export interface User {
 
 // ==================== LOCATION HIERARCHY ====================
 
-export interface Infrastructure {
+export interface InfrastructureType {
   id: number
-  code: string
   name: string
   description: string | null
+  icon: string | null
+  color: string | null
+  deletedAt: string | null
+}
+
+export interface Infrastructure {
+  id: number
+  code: string | null
+  name: string
+  description: string | null
+  infraTypeId: number | null
+  infraType: { id: number; name: string; icon: string | null; color: string | null } | null
   createdAt: string
   updatedAt: string
   deletedAt: string | null

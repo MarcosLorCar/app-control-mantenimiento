@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { useCreateInfrastructure, useUpdateInfrastructure } from '../../hooks/useInfrastructures'
+import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import type { Infrastructure } from '../../api/types'
 
 interface Props {
@@ -12,8 +13,10 @@ export function InfrastructureForm({ onClose, existing }: Props) {
   const [code, setCode] = useState(existing?.code ?? '')
   const [name, setName] = useState(existing?.name ?? '')
   const [description, setDescription] = useState(existing?.description ?? '')
+  const [infraTypeId, setInfraTypeId] = useState<number | ''>(existing?.infraTypeId ?? '')
   const [error, setError] = useState('')
 
+  const { data: infraTypes = [] } = useInfrastructureTypes()
   const createMutation = useCreateInfrastructure()
   const updateMutation = useUpdateInfrastructure()
   const isPending = createMutation.isPending || updateMutation.isPending
@@ -22,9 +25,10 @@ export function InfrastructureForm({ onClose, existing }: Props) {
     e.preventDefault()
     setError('')
     const body = {
-      code,
+      code: code || undefined,
       name,
       description: description || undefined,
+      infraTypeId: infraTypeId === '' ? undefined : Number(infraTypeId),
     }
     try {
       if (existing) {
@@ -45,18 +49,6 @@ export function InfrastructureForm({ onClose, existing }: Props) {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">
-            Código <span className="text-error">*</span>
-          </label>
-          <input
-            value={code}
-            onChange={e => setCode(e.target.value)}
-            required
-            placeholder="Ej: HOSP-001"
-            className={inputCls}
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-fg-secondary mb-1">
             Nombre <span className="text-error">*</span>
           </label>
           <input
@@ -65,6 +57,30 @@ export function InfrastructureForm({ onClose, existing }: Props) {
             required
             className={inputCls}
           />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">
+            Código <span className="text-fg-secondary font-normal">(opcional)</span>
+          </label>
+          <input
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            placeholder="Ej: HOSP-001"
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">Tipo</label>
+          <select
+            value={infraTypeId}
+            onChange={e => setInfraTypeId(e.target.value ? Number(e.target.value) : '')}
+            className={inputCls}
+          >
+            <option value="">Sin tipo</option>
+            {infraTypes.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">Descripción</label>

@@ -42,25 +42,42 @@ model User {
 
 // ==================== LOCATION HIERARCHY ====================
 
+model InfrastructureType {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  icon        String?
+  color       String?
+  deletedAt   DateTime?
+
+  infrastructures Infrastructure[]
+
+  @@map("infrastructure_types")
+}
+
 model Infrastructure {
   id          Int       @id @default(autoincrement())
-  code        String
+  code        String?
   name        String
   description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
+  infraTypeId Int?
+  infraType   InfrastructureType? @relation(fields: [infraTypeId], references: [id])
+
   dependencies Dependency[]
   structures   Structure[]
   materials    Material[]
 
+  @@index([infraTypeId])
   @@map("infrastructures")
 }
 
 model Dependency {
   id               Int       @id @default(autoincrement())
-  code             String
+  code             String?
   name             String
   description      String?
   createdAt        DateTime  @default(now())
@@ -77,7 +94,7 @@ model Dependency {
   structures Structure[]
   materials  Material[]
 
-  @@unique([infrastructureId, parentId, code])
+  @@unique([infrastructureId, parentId, code], map: "dependencies_infra_parent_code_key")
   @@index([infrastructureId])
   @@index([parentId])
   @@map("dependencies")
@@ -85,7 +102,7 @@ model Dependency {
 
 model Structure {
   id               Int       @id @default(autoincrement())
-  code             String
+  code             String?
   name             String
   description      String?
   createdAt        DateTime  @default(now())
@@ -155,7 +172,7 @@ model MaterialCategory {
 
 model Material {
   id           Int       @id @default(autoincrement())
-  code         String
+  code         String?
   name         String
   description  String?
   serialNumber String?

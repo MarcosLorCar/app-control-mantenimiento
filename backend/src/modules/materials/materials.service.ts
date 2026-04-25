@@ -60,7 +60,7 @@ export async function createMaterial(db: PrismaClient, data: CreateMaterialInput
   const { infrastructureId, dependencyId, structureId, installedAt, ...rest } = data
   return db.material.create({
     data: {
-      ...rest,
+      ...(rest as any),
       infrastructureId: infrastructureId ?? null,
       dependencyId: dependencyId ?? null,
       structureId: structureId ?? null,
@@ -71,7 +71,7 @@ export async function createMaterial(db: PrismaClient, data: CreateMaterialInput
 }
 
 export function updateMaterial(db: PrismaClient, id: number, data: UpdateMaterialInput) {
-  return db.material.update({ where: { id, deletedAt: null }, data, select: MATERIAL_SELECT })
+  return db.material.update({ where: { id, deletedAt: null }, data: data as any, select: MATERIAL_SELECT })
 }
 
 export function softDeleteMaterial(db: PrismaClient, id: number) {

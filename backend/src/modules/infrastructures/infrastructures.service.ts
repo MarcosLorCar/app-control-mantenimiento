@@ -6,6 +6,8 @@ const INFRA_SELECT = {
   code: true,
   name: true,
   description: true,
+  infraTypeId: true,
+  infraType: { select: { id: true, name: true, icon: true, color: true } },
   createdAt: true,
   updatedAt: true,
   deletedAt: true,

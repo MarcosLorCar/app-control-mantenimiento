@@ -1,7 +1,39 @@
 import { apiFetch, API_BASE } from './client'
-import type { Role, ActionType, ActionStatus, MaterialType, MaterialCategory } from './types'
+import type { Role, InfrastructureType, ActionType, ActionStatus, MaterialType, MaterialCategory } from './types'
 
 type ApiData<T> = { data: T }
+
+// ==================== INFRASTRUCTURE TYPES ====================
+
+export function listInfrastructureTypes(): Promise<InfrastructureType[]> {
+  return apiFetch<{ data: InfrastructureType[] }>(`${API_BASE}/infrastructure-types`).then(r => r.data)
+}
+
+export function createInfrastructureType(body: {
+  name: string
+  description?: string
+  icon?: string
+  color?: string
+}): Promise<InfrastructureType> {
+  return apiFetch<{ data: InfrastructureType }>(`${API_BASE}/infrastructure-types`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).then(r => r.data)
+}
+
+export function updateInfrastructureType(
+  id: number,
+  body: { name?: string; description?: string; icon?: string | null; color?: string | null },
+): Promise<InfrastructureType> {
+  return apiFetch<{ data: InfrastructureType }>(`${API_BASE}/infrastructure-types/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  }).then(r => r.data)
+}
+
+export function deleteInfrastructureType(id: number): Promise<void> {
+  return apiFetch(`${API_BASE}/infrastructure-types/${id}`, { method: 'DELETE' }).then(() => undefined)
+}
 
 // ==================== ROLES ====================
 

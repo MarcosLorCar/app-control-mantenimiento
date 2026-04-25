@@ -37,11 +37,11 @@ export function listCategories(db: PrismaClient, materialTypeId: number) {
 }
 
 export function createCategory(db: PrismaClient, materialTypeId: number, data: CreateMaterialCategoryInput) {
-  return db.materialCategory.create({ data: { ...data, materialTypeId }, select: CAT_SELECT })
+  return db.materialCategory.create({ data: { ...(data as any), materialTypeId }, select: CAT_SELECT })
 }
 
 export function updateCategory(db: PrismaClient, id: number, data: UpdateMaterialCategoryInput) {
-  return db.materialCategory.update({ where: { id }, data, select: CAT_SELECT })
+  return db.materialCategory.update({ where: { id }, data: data as any, select: CAT_SELECT })
 }
 
 export function deleteCategory(db: PrismaClient, id: number) {

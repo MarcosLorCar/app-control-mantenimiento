@@ -15,6 +15,7 @@ vi.mock('../../api/infrastructures')
 
 const infra = {
   id: 1, code: 'HQ-001', name: 'HQ', description: null,
+  infraTypeId: null, infraType: null,
   createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z', deletedAt: null,
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  useInfrastructureTypes, useCreateInfrastructureType,
   useActionTypes, useRoles, useCreateActionType, useUpdateActionType,
   useActionStatuses, useCreateActionStatus,
   useMaterialTypes, useCreateMaterialType,
@@ -117,14 +118,21 @@ export function Catalog() {
   const { user } = useAuth()
   const canManage = !!user?.can_manage
 
+  const { data: infraTypes = [] } = useInfrastructureTypes()
   const { data: actionTypes = [] } = useActionTypes()
   const { data: actionStatuses = [] } = useActionStatuses()
   const { data: materialTypes = [] } = useMaterialTypes()
   const { data: roles = [] } = useRoles()
 
+  const addInfraType = useCreateInfrastructureType()
   const addActionType = useCreateActionType()
   const addActionStatus = useCreateActionStatus()
   const addMaterialType = useCreateMaterialType()
+
+  // InfraType form state
+  const [itName, setItName] = useState('')
+  const [itColor, setItColor] = useState('#6B7280')
+  const [itError, setItError] = useState('')
 
   // ActionType form state
   const [atCode, setAtCode] = useState('')
@@ -143,6 +151,19 @@ export function Catalog() {
   const [mtCode, setMtCode] = useState('')
   const [mtName, setMtName] = useState('')
   const [mtError, setMtError] = useState('')
+
+  function handleAddInfraType(e: React.FormEvent) {
+    e.preventDefault()
+    if (!itName.trim()) return
+    setItError('')
+    addInfraType.mutate(
+      { name: itName.trim(), color: itColor },
+      {
+        onSuccess: () => { setItName(''); setItColor('#6B7280') },
+        onError: (err: any) => setItError(err?.error?.message ?? 'Error al añadir'),
+      }
+    )
+  }
 
   function handleAddActionType(e: React.FormEvent) {
     e.preventDefault()
@@ -186,6 +207,54 @@ export function Catalog() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+
+        {/* Tipos de infraestructura */}
+        <div className="bg-card rounded-xl border border-app-border p-5">
+          <h2 className="text-[15px] font-semibold text-fg mb-4">Tipos de infraestructura</h2>
+          <ul className="divide-y divide-app-border mb-4">
+            {infraTypes.length === 0 && (
+              <li className="py-2 text-sm text-muted">Sin tipos definidos</li>
+            )}
+            {infraTypes.map(it => (
+              <li key={it.id} className="py-2.5 flex items-center gap-2">
+                {it.color && (
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: it.color }} />
+                )}
+                <span className="text-sm text-fg truncate">{it.name}</span>
+              </li>
+            ))}
+          </ul>
+          {canManage && (
+            <form onSubmit={handleAddInfraType} className="border-t border-app-border pt-4 space-y-2">
+              <input
+                type="text"
+                value={itName}
+                onChange={e => setItName(e.target.value)}
+                placeholder="Nombre del tipo"
+                className={inputCls}
+              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={itColor}
+                  onChange={e => setItColor(e.target.value)}
+                  className="w-10 h-9 rounded-lg border border-app-border cursor-pointer bg-transparent shrink-0"
+                />
+                <span className="text-[11px] text-muted font-mono">{itColor}</span>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={!itName.trim() || addInfraType.isPending}
+                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
+                >
+                  {addInfraType.isPending ? 'Añadiendo...' : 'Añadir'}
+                </button>
+              </div>
+              {itError && <p className="text-error text-xs">{itError}</p>}
+            </form>
+          )}
+        </div>
 
         {/* Tipos de acción */}
         <div className="bg-card rounded-xl border border-app-border p-5">
