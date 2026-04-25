@@ -2,12 +2,10 @@ import type { FastifyInstance } from 'fastify'
 import {
   CreateInfrastructureTypeSchema, UpdateInfrastructureTypeSchema,
   CreateActionTypeSchema, UpdateActionTypeSchema,
-  CreateActionStatusSchema, UpdateActionStatusSchema,
 } from './catalog.schema'
 import {
   listInfrastructureTypes, getInfrastructureType, createInfrastructureType, updateInfrastructureType, softDeleteInfrastructureType,
   listRoles, listActionTypes, getActionType, createActionType, updateActionType,
-  listActionStatuses, getActionStatus, createActionStatus, updateActionStatus,
 } from './catalog.service'
 
 export async function catalogRoutes(app: FastifyInstance) {
@@ -92,39 +90,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     return reply.send({ data })
   })
 
-  // Action Statuses
-  app.get('/action-statuses', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    return reply.send({ data: await listActionStatuses(app.db) })
-  })
 
-  app.post('/action-statuses', { preHandler: [app.requireManage] }, async (req, reply) => {
-    const parsed = CreateActionStatusSchema.safeParse(req.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
-    }
-    const existing = await app.db.actionStatus.findFirst({
-      where: { code: parsed.data.code, deletedAt: null },
-    })
-    if (existing) {
-      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de estado ya existe' } })
-    }
-    const data = await createActionStatus(app.db, parsed.data)
-    return reply.status(201).send({ data })
-  })
-
-  app.patch('/action-statuses/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
-    const id = Number((req.params as any).id)
-    const existing = await getActionStatus(app.db, id)
-    if (!existing) {
-      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Estado de acción no encontrado' } })
-    }
-    const parsed = UpdateActionStatusSchema.safeParse(req.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
-    }
-    const data = await updateActionStatus(app.db, id, parsed.data)
-    return reply.send({ data })
-  })
 }
 
 export default catalogRoutes

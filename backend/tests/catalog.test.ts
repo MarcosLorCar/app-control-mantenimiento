@@ -104,99 +104,20 @@ describe('Catalog — ActionTypes', () => {
   })
 })
 
-describe('Catalog — ActionStatuses', () => {
+describe('Catalog — Roles', () => {
   let app: Awaited<ReturnType<typeof buildTestApp>>
-  let seed: Awaited<ReturnType<typeof seedTestData>>
   let managerToken: string
   let editorToken: string
-  let viewerToken: string
 
   beforeEach(async () => {
     await clearDb(testDb)
-    seed = await seedTestData(testDb)
+    await seedTestData(testDb)
     app = await buildTestApp()
     managerToken = await getManagerToken(app)
     editorToken = await getEditorToken(app)
-    viewerToken = await getViewerToken(app)
   })
 
   afterAll(async () => { await testDb.$disconnect() })
-
-  describe('GET /api/v1/action-statuses', () => {
-    it('returns list ordered by sortOrder', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/action-statuses',
-        headers: { authorization: `Bearer ${viewerToken}` },
-      })
-      expect(res.statusCode).toBe(200)
-      const data = res.json().data
-      expect(data).toBeInstanceOf(Array)
-      expect(data[0]).toMatchObject({ code: 'pending', isTerminal: false })
-      expect(data[1]).toMatchObject({ code: 'done', isTerminal: true })
-    })
-
-    it('returns 401 without auth', async () => {
-      const res = await app.inject({ method: 'GET', url: '/api/v1/action-statuses' })
-      expect(res.statusCode).toBe(401)
-    })
-  })
-
-  describe('POST /api/v1/action-statuses', () => {
-    it('creates action status (requireManage)', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/action-statuses',
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: { code: 'cancelled', name: 'Cancelada', isTerminal: true, color: '#EF4444', sortOrder: 3 },
-      })
-      expect(res.statusCode).toBe(201)
-      expect(res.json().data).toMatchObject({ code: 'cancelled', isTerminal: true })
-    })
-
-    it('rejects duplicate code', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/action-statuses',
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: { code: 'pending', name: 'Dup', sortOrder: 99 },
-      })
-      expect(res.statusCode).toBe(409)
-    })
-
-    it('returns 403 for editor', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/action-statuses',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: { code: 'x', name: 'X' },
-      })
-      expect(res.statusCode).toBe(403)
-    })
-  })
-
-  describe('PATCH /api/v1/action-statuses/:id', () => {
-    it('updates action status (requireManage)', async () => {
-      const res = await app.inject({
-        method: 'PATCH',
-        url: `/api/v1/action-statuses/${seed.actionStatus.id}`,
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: { name: 'Pendiente de revisión' },
-      })
-      expect(res.statusCode).toBe(200)
-      expect(res.json().data.name).toBe('Pendiente de revisión')
-    })
-
-    it('returns 404 for unknown id', async () => {
-      const res = await app.inject({
-        method: 'PATCH',
-        url: '/api/v1/action-statuses/99999',
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: { name: 'X' },
-      })
-      expect(res.statusCode).toBe(404)
-    })
-  })
 
   describe('GET /api/v1/roles', () => {
     it('returns roles list (requireManage)', async () => {

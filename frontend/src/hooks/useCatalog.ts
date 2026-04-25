@@ -3,7 +3,6 @@ import {
   listInfrastructureTypes, createInfrastructureType, updateInfrastructureType, deleteInfrastructureType,
   listRoles,
   listActionTypes, createActionType, updateActionType,
-  listActionStatuses, createActionStatus, updateActionStatus,
   listMaterialTypes, createMaterialType, updateMaterialType,
   listMaterialCategories, createMaterialCategory, updateMaterialCategory, deleteMaterialCategory,
 } from '../api/catalog'
@@ -63,31 +62,6 @@ export function useUpdateActionType() {
     mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateActionType>[1] }) =>
       updateActionType(id, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'action-types'] }),
-  })
-}
-
-export function useActionStatuses() {
-  return useQuery({
-    queryKey: ['catalog', 'action-statuses'],
-    queryFn: listActionStatuses,
-    staleTime: Infinity,
-  })
-}
-
-export function useCreateActionStatus() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: createActionStatus,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'action-statuses'] }),
-  })
-}
-
-export function useUpdateActionStatus() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateActionStatus>[1] }) =>
-      updateActionStatus(id, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'action-statuses'] }),
   })
 }
 

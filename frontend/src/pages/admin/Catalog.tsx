@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   useInfrastructureTypes, useCreateInfrastructureType,
   useActionTypes, useRoles, useCreateActionType, useUpdateActionType,
-  useActionStatuses, useCreateActionStatus,
   useMaterialTypes, useCreateMaterialType,
 } from '../../hooks/useCatalog'
 import { useAuth } from '../../hooks/useAuth'
@@ -120,13 +119,11 @@ export function Catalog() {
 
   const { data: infraTypes = [] } = useInfrastructureTypes()
   const { data: actionTypes = [] } = useActionTypes()
-  const { data: actionStatuses = [] } = useActionStatuses()
   const { data: materialTypes = [] } = useMaterialTypes()
   const { data: roles = [] } = useRoles()
 
   const addInfraType = useCreateInfrastructureType()
   const addActionType = useCreateActionType()
-  const addActionStatus = useCreateActionStatus()
   const addMaterialType = useCreateMaterialType()
 
   // InfraType form state
@@ -138,14 +135,6 @@ export function Catalog() {
   const [atCode, setAtCode] = useState('')
   const [atName, setAtName] = useState('')
   const [atError, setAtError] = useState('')
-
-  // ActionStatus form state
-  const [asCode, setAsCode] = useState('')
-  const [asName, setAsName] = useState('')
-  const [asColor, setAsColor] = useState('#6B7280')
-  const [asTerminal, setAsTerminal] = useState(false)
-  const [asSortOrder, setAsSortOrder] = useState('')
-  const [asError, setAsError] = useState('')
 
   // MaterialType form state
   const [mtCode, setMtCode] = useState('')
@@ -174,19 +163,6 @@ export function Catalog() {
       {
         onSuccess: () => { setAtCode(''); setAtName('') },
         onError: (err: any) => setAtError(err?.error?.message ?? 'Error al añadir'),
-      }
-    )
-  }
-
-  function handleAddActionStatus(e: React.FormEvent) {
-    e.preventDefault()
-    if (!asCode.trim() || !asName.trim() || !asSortOrder) return
-    setAsError('')
-    addActionStatus.mutate(
-      { code: asCode.trim(), name: asName.trim(), color: asColor, isTerminal: asTerminal, sortOrder: Number(asSortOrder) },
-      {
-        onSuccess: () => { setAsCode(''); setAsName(''); setAsSortOrder(''); setAsTerminal(false) },
-        onError: (err: any) => setAsError(err?.error?.message ?? 'Error al añadir'),
       }
     )
   }
@@ -293,84 +269,6 @@ export function Catalog() {
                 </button>
               </div>
               {atError && <p className="text-error text-xs">{atError}</p>}
-            </form>
-          )}
-        </div>
-
-        {/* Estados de acción */}
-        <div className="bg-card rounded-xl border border-app-border p-5">
-          <h2 className="text-[15px] font-semibold text-fg mb-4">Estados de acción</h2>
-          <ul className="divide-y divide-app-border mb-4">
-            {actionStatuses.length === 0 && (
-              <li className="py-2 text-sm text-muted">Sin estados definidos</li>
-            )}
-            {actionStatuses.map(s => (
-              <li key={s.id} className="py-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  {s.color && (
-                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                  )}
-                  <span className="text-sm text-fg truncate">{s.name}</span>
-                  <span className="text-[11px] font-mono text-muted">{s.code}</span>
-                  {s.isTerminal && (
-                    <span className="text-[10px] bg-success-bg text-success px-1.5 py-0.5 rounded shrink-0">terminal</span>
-                  )}
-                </div>
-                <span className="text-[11px] text-muted shrink-0">#{s.sortOrder}</span>
-              </li>
-            ))}
-          </ul>
-          {canManage && (
-            <form onSubmit={handleAddActionStatus} className="border-t border-app-border pt-4 space-y-2">
-              <input
-                type="text"
-                value={asCode}
-                onChange={e => setAsCode(e.target.value)}
-                placeholder="Código (ej: pending)"
-                className={inputCls}
-              />
-              <input
-                type="text"
-                value={asName}
-                onChange={e => setAsName(e.target.value)}
-                placeholder="Nombre"
-                className={inputCls}
-              />
-              <div className="flex items-center gap-3">
-                <input
-                  type="number"
-                  value={asSortOrder}
-                  onChange={e => setAsSortOrder(e.target.value)}
-                  placeholder="Orden"
-                  min="1"
-                  className={inputCls}
-                />
-                <input
-                  type="color"
-                  value={asColor}
-                  onChange={e => setAsColor(e.target.value)}
-                  className="w-10 h-9 rounded-lg border border-app-border cursor-pointer bg-transparent shrink-0"
-                />
-              </div>
-              <label className="flex items-center gap-2 text-sm text-fg-secondary cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={asTerminal}
-                  onChange={e => setAsTerminal(e.target.checked)}
-                  className="rounded"
-                />
-                Estado terminal (fin de ciclo)
-              </label>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={!asCode.trim() || !asName.trim() || !asSortOrder || addActionStatus.isPending}
-                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
-                >
-                  {addActionStatus.isPending ? 'Añadiendo...' : 'Añadir'}
-                </button>
-              </div>
-              {asError && <p className="text-error text-xs">{asError}</p>}
             </form>
           )}
         </div>

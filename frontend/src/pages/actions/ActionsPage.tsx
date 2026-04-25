@@ -77,7 +77,6 @@ export function ActionsPage() {
                 <div className="w-32 px-3">Tipo</div>
                 <div className="flex-1 px-3">Título</div>
                 <div className="w-40 px-3">Material</div>
-                <div className="w-28 px-3">Estado</div>
                 <div className="w-24 px-3">Fecha</div>
               </div>
 
@@ -107,19 +106,8 @@ export function ActionsPage() {
                     </div>
                     <div className="flex-1 px-3 text-fg truncate">{action.title}</div>
                     <div className="w-40 px-3 text-fg-secondary truncate">
-                      <span className="font-mono text-[11px] text-muted mr-1">{action.material.code}</span>
+                      {action.material.code && <span className="font-mono text-[11px] text-muted mr-1">{action.material.code}</span>}
                       {action.material.name}
-                    </div>
-                    <div className="w-28 px-3">
-                      <span
-                        className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
-                        style={{
-                          backgroundColor: action.status.color ? `${action.status.color}20` : 'var(--bg)',
-                          color: action.status.color ?? 'var(--fg-secondary)',
-                        }}
-                      >
-                        {action.status.name}
-                      </span>
                     </div>
                     <div className="w-24 px-3 text-muted">{formatDate(action.performedAt)}</div>
                   </div>
@@ -172,20 +160,6 @@ export function ActionsPage() {
                   <span className="font-mono text-[11px] text-muted mr-1">{selected.material.code}</span>
                   {selected.material.name}
                 </p>
-              </div>
-
-              <div>
-                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Estado</p>
-                <span
-                  className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
-                  style={{
-                    backgroundColor: selected.status.color ? `${selected.status.color}20` : 'var(--bg)',
-                    color: selected.status.color ?? 'var(--fg-secondary)',
-                  }}
-                >
-                  {selected.status.name}
-                  {selected.status.isTerminal && ' ✓'}
-                </span>
               </div>
 
               <div>

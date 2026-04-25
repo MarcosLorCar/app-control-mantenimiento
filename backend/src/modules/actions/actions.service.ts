@@ -3,7 +3,6 @@ import type { CreateActionInput, UpdateActionInput } from './actions.schema'
 
 const ACTION_INCLUDE = {
   type: { select: { id: true, code: true, name: true, icon: true, color: true } },
-  status: { select: { id: true, code: true, name: true, color: true, isTerminal: true, sortOrder: true } },
   material: { select: { id: true, code: true, name: true, typeId: true } },
   performer: { select: { id: true, fullName: true, email: true } },
 }

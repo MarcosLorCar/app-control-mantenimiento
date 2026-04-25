@@ -14,7 +14,6 @@ export function getAction(id: number): Promise<Action> {
 export function createAction(body: {
   title: string
   typeId: number
-  statusId: number
   materialId: number
   description?: string
   performedAt?: string
@@ -27,7 +26,7 @@ export function createAction(body: {
 
 export function updateAction(
   id: number,
-  body: { title?: string; description?: string; statusId?: number; performedAt?: string },
+  body: { title?: string; description?: string; performedAt?: string },
 ): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${id}`, {
     method: 'PATCH',

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { useCreateAction, useUpdateAction } from '../../hooks/useActions'
-import { useActionTypes, useActionStatuses } from '../../hooks/useCatalog'
+import { useActionTypes, useCreateActionType } from '../../hooks/useCatalog'
 import { useMaterials } from '../../hooks/useMaterials'
 import type { Action } from '../../api/types'
 
@@ -14,7 +14,6 @@ export function ActionForm({ action, onClose }: Props) {
   const isEdit = !!action
   const [title, setTitle] = useState(action?.title ?? '')
   const [typeId, setTypeId] = useState(action?.typeId ?? 0)
-  const [statusId, setStatusId] = useState(action?.statusId ?? 0)
   const [materialId, setMaterialId] = useState(action?.materialId ?? 0)
   const [description, setDescription] = useState(action?.description ?? '')
   const [performedAt, setPerformedAt] = useState(
@@ -22,13 +21,40 @@ export function ActionForm({ action, onClose }: Props) {
   )
   const [error, setError] = useState('')
 
-  const { data: actionTypes = [] } = useActionTypes()
-  const { data: actionStatuses = [] } = useActionStatuses()
-  const { data: materials = [] } = useMaterials()
+  // Inline "nuevo tipo de acción"
+  const [newTypeName, setNewTypeName] = useState('')
+  const [showNewType, setShowNewType] = useState(false)
 
+  const { data: actionTypes = [] } = useActionTypes()
+  const { data: materials = [] } = useMaterials()
   const createMut = useCreateAction()
   const updateMut = useUpdateAction()
+  const createTypeMut = useCreateActionType()
   const isPending = createMut.isPending || updateMut.isPending
+
+  function handleTypeChange(val: string) {
+    if (val === '__new__') {
+      setShowNewType(true)
+    } else {
+      setShowNewType(false)
+      setTypeId(Number(val))
+    }
+  }
+
+  function handleCreateType() {
+    if (!newTypeName.trim()) return
+    const code = newTypeName.trim().toLowerCase().replace(/\s+/g, '_')
+    createTypeMut.mutate(
+      { code, name: newTypeName.trim() },
+      {
+        onSuccess: (created) => {
+          setTypeId(created.id)
+          setNewTypeName('')
+          setShowNewType(false)
+        },
+      }
+    )
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,7 +66,6 @@ export function ActionForm({ action, onClose }: Props) {
           body: {
             title: title || undefined,
             description: description || undefined,
-            statusId: statusId || undefined,
             performedAt: new Date(performedAt).toISOString(),
           },
         },
@@ -50,15 +75,14 @@ export function ActionForm({ action, onClose }: Props) {
         }
       )
     } else {
-      if (!title || !typeId || !statusId || !materialId) {
-        setError('Completa todos los campos obligatorios.')
+      if (!title || !typeId || !materialId) {
+        setError('Completa título, tipo y material.')
         return
       }
       createMut.mutate(
         {
           title,
           typeId,
-          statusId,
           materialId,
           description: description || undefined,
           performedAt: new Date(performedAt).toISOString(),
@@ -104,48 +128,56 @@ export function ActionForm({ action, onClose }: Props) {
               <option value={0}>Seleccionar material...</option>
               {materials.map(m => (
                 <option key={m.id} value={m.id}>
-                  {m.code} — {m.name} ({m.type.name})
+                  {m.code ? `${m.code} — ` : ''}{m.name} ({m.type.name})
                 </option>
               ))}
             </select>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-fg-secondary mb-1">
-              Tipo <span className="text-error">*</span>
-            </label>
-            <select
-              value={typeId}
-              onChange={e => setTypeId(Number(e.target.value))}
-              className={inputCls}
-              disabled={isEdit}
-              required={!isEdit}
-            >
-              <option value={0}>Seleccionar tipo...</option>
-              {actionTypes.map(at => (
-                <option key={at.id} value={at.id}>{at.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-fg-secondary mb-1">
-              Estado <span className="text-error">*</span>
-            </label>
-            <select
-              value={statusId}
-              onChange={e => setStatusId(Number(e.target.value))}
-              className={inputCls}
-              required
-            >
-              <option value={0}>Seleccionar estado...</option>
-              {actionStatuses.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">
+            Tipo <span className="text-error">*</span>
+          </label>
+          <select
+            value={showNewType ? '__new__' : (typeId || 0)}
+            onChange={e => handleTypeChange(e.target.value)}
+            className={inputCls}
+            disabled={isEdit}
+          >
+            <option value={0}>Seleccionar tipo...</option>
+            {actionTypes.map(at => (
+              <option key={at.id} value={at.id}>{at.name}</option>
+            ))}
+            <option value="__new__">+ Nuevo tipo de acción...</option>
+          </select>
+          {showNewType && (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={newTypeName}
+                onChange={e => setNewTypeName(e.target.value)}
+                placeholder="Nombre del nuevo tipo"
+                className={inputCls}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleCreateType}
+                disabled={!newTypeName.trim() || createTypeMut.isPending}
+                className="px-3 py-2 text-xs text-primary-fg bg-primary rounded-lg disabled:opacity-50 shrink-0"
+              >
+                Crear
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowNewType(false); setNewTypeName('') }}
+                className="px-3 py-2 text-xs border border-app-border rounded-lg shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </div>
 
         <div>

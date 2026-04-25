@@ -37,7 +37,7 @@ describe('Actions', () => {
         data: {
           title: 'Revisión inicial',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -73,7 +73,7 @@ describe('Actions', () => {
           title: 'Inspección bombilla',
           description: 'Revisión periódica',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
         },
       })
@@ -94,7 +94,7 @@ describe('Actions', () => {
         payload: {
           title: 'Test performer',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
         },
       })
@@ -107,7 +107,7 @@ describe('Actions', () => {
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { title: 'Sin material', typeId: seed.actionType.id, statusId: seed.actionStatus.id },
+        payload: { title: 'Sin material', typeId: seed.actionType.id },
       })
       expect(res.statusCode).toBe(400)
     })
@@ -120,7 +120,7 @@ describe('Actions', () => {
         payload: {
           title: 'Test',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
         },
       })
@@ -134,7 +134,7 @@ describe('Actions', () => {
         data: {
           title: 'Detalle test',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -169,7 +169,7 @@ describe('Actions', () => {
         data: {
           title: 'Acción material',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -201,7 +201,7 @@ describe('Actions', () => {
         data: {
           title: 'Para actualizar',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -210,10 +210,10 @@ describe('Actions', () => {
         method: 'PATCH',
         url: `/api/v1/actions/${action.id}`,
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { statusId: seed.doneStatus.id, description: 'Completado sin incidencias' },
+        payload: { description: 'Completado sin incidencias' },
       })
       expect(res.statusCode).toBe(200)
-      expect(res.json().data.statusId).toBe(seed.doneStatus.id)
+      expect(res.json().data.description).toBe('Completado sin incidencias')
     })
 
     it('returns 404 for unknown id', async () => {
@@ -221,7 +221,7 @@ describe('Actions', () => {
         method: 'PATCH',
         url: '/api/v1/actions/99999',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { statusId: seed.doneStatus.id },
+        payload: { description: 'x' },
       })
       expect(res.statusCode).toBe(404)
     })
@@ -231,7 +231,6 @@ describe('Actions', () => {
         data: {
           title: 'Test',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -240,7 +239,7 @@ describe('Actions', () => {
         method: 'PATCH',
         url: `/api/v1/actions/${action.id}`,
         headers: { authorization: `Bearer ${viewerToken}` },
-        payload: { statusId: seed.doneStatus.id },
+        payload: { description: 'x' },
       })
       expect(res.statusCode).toBe(403)
     })
@@ -252,7 +251,7 @@ describe('Actions', () => {
         data: {
           title: 'Para borrar',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -272,7 +271,7 @@ describe('Actions', () => {
         data: {
           title: 'Test',
           typeId: seed.actionType.id,
-          statusId: seed.actionStatus.id,
+
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },

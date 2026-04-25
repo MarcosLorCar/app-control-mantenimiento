@@ -14,9 +14,8 @@ const mockFetch = vi.mocked(client.apiFetch)
 const action = {
   id: 1, title: 'Revisión', description: null,
   performedAt: '2026-01-01T00:00:00.000Z', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
-  typeId: 1, statusId: 1, materialId: 1, performedBy: 1,
+  typeId: 1, materialId: 1, performedBy: 1,
   type: { id: 1, code: 'inspection', name: 'Inspección', icon: null, color: null },
-  status: { id: 1, code: 'pending', name: 'Pendiente', color: null, isTerminal: false, sortOrder: 1 },
   material: { id: 1, code: 'MAT-001', name: 'Bombilla', typeId: 1 },
   performer: { id: 1, fullName: 'Admin', email: 'admin@example.com' },
 }
@@ -43,10 +42,10 @@ describe('getAction', () => {
 describe('createAction', () => {
   it('llama a POST /api/v1/actions con el body', async () => {
     mockFetch.mockResolvedValue({ data: action })
-    await createAction({ title: 'Revisión', typeId: 1, statusId: 1, materialId: 1 })
+    await createAction({ title: 'Revisión', typeId: 1, materialId: 1 })
     expect(mockFetch).toHaveBeenCalledWith('/api/v1/actions', {
       method: 'POST',
-      body: JSON.stringify({ title: 'Revisión', typeId: 1, statusId: 1, materialId: 1 }),
+      body: JSON.stringify({ title: 'Revisión', typeId: 1, materialId: 1 }),
     })
   })
 })

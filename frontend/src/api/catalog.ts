@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE } from './client'
-import type { Role, InfrastructureType, ActionType, ActionStatus, MaterialType, MaterialCategory } from './types'
+import type { Role, InfrastructureType, ActionType, MaterialType, MaterialCategory } from './types'
 
 type ApiData<T> = { data: T }
 
@@ -65,35 +65,6 @@ export function updateActionType(
   body: { name?: string; description?: string; icon?: string | null; color?: string | null },
 ): Promise<ActionType> {
   return apiFetch<ApiData<ActionType>>(`${API_BASE}/action-types/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(body),
-  }).then(r => r.data)
-}
-
-// ==================== ACTION STATUSES ====================
-
-export function listActionStatuses(): Promise<ActionStatus[]> {
-  return apiFetch<ApiData<ActionStatus[]>>(`${API_BASE}/action-statuses`).then(r => r.data)
-}
-
-export function createActionStatus(body: {
-  code: string
-  name: string
-  isTerminal?: boolean
-  color?: string
-  sortOrder: number
-}): Promise<ActionStatus> {
-  return apiFetch<ApiData<ActionStatus>>(`${API_BASE}/action-statuses`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  }).then(r => r.data)
-}
-
-export function updateActionStatus(
-  id: number,
-  body: { name?: string; color?: string | null; isTerminal?: boolean; sortOrder?: number },
-): Promise<ActionStatus> {
-  return apiFetch<ApiData<ActionStatus>>(`${API_BASE}/action-statuses/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
   }).then(r => r.data)

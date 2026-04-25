@@ -219,20 +219,6 @@ model ActionType {
   @@map("action_types")
 }
 
-model ActionStatus {
-  id         Int       @id @default(autoincrement())
-  code       String
-  name       String
-  isTerminal Boolean   @default(false)
-  color      String?
-  sortOrder  Int       @default(0)
-  deletedAt  DateTime?
-
-  actions Action[]
-
-  @@map("action_statuses")
-}
-
 model Action {
   id          Int      @id @default(autoincrement())
   title       String
@@ -244,9 +230,6 @@ model Action {
   typeId Int
   type   ActionType @relation(fields: [typeId], references: [id])
 
-  statusId Int
-  status   ActionStatus @relation(fields: [statusId], references: [id])
-
   materialId Int
   material   Material @relation(fields: [materialId], references: [id])
 
@@ -256,6 +239,5 @@ model Action {
   @@index([materialId])
   @@index([performedBy])
   @@index([performedAt])
-  @@index([statusId])
   @@map("actions")
 }

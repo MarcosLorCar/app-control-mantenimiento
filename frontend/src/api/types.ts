@@ -128,16 +128,6 @@ export interface ActionType {
   deletedAt: string | null
 }
 
-export interface ActionStatus {
-  id: number
-  code: string
-  name: string
-  color: string | null
-  isTerminal: boolean
-  sortOrder: number
-  deletedAt: string | null
-}
-
 export interface Action {
   id: number
   title: string
@@ -146,11 +136,9 @@ export interface Action {
   createdAt: string
   updatedAt: string
   typeId: number
-  statusId: number
   materialId: number
   performedBy: number
   type: { id: number; code: string; name: string; icon: string | null; color: string | null }
-  status: { id: number; code: string; name: string; color: string | null; isTerminal: boolean; sortOrder: number }
   material: { id: number; code: string; name: string; typeId: number }
   performer: { id: number; fullName: string; email: string }
 }

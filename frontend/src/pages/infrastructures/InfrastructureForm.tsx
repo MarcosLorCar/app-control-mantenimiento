@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { useCreateInfrastructure, useUpdateInfrastructure } from '../../hooks/useInfrastructures'
-import { useInfrastructureTypes } from '../../hooks/useCatalog'
+import { useInfrastructureTypes, useCreateInfrastructureType } from '../../hooks/useCatalog'
 import type { Infrastructure } from '../../api/types'
 
 interface Props {
@@ -16,10 +16,38 @@ export function InfrastructureForm({ onClose, existing }: Props) {
   const [infraTypeId, setInfraTypeId] = useState<number | ''>(existing?.infraTypeId ?? '')
   const [error, setError] = useState('')
 
+  // Inline "nuevo tipo"
+  const [newTypeName, setNewTypeName] = useState('')
+  const [showNewType, setShowNewType] = useState(false)
+
   const { data: infraTypes = [] } = useInfrastructureTypes()
+  const createTypeMut = useCreateInfrastructureType()
   const createMutation = useCreateInfrastructure()
   const updateMutation = useUpdateInfrastructure()
   const isPending = createMutation.isPending || updateMutation.isPending
+
+  function handleTypeChange(val: string) {
+    if (val === '__new__') {
+      setShowNewType(true)
+    } else {
+      setShowNewType(false)
+      setInfraTypeId(val ? Number(val) : '')
+    }
+  }
+
+  function handleCreateType() {
+    if (!newTypeName.trim()) return
+    createTypeMut.mutate(
+      { name: newTypeName.trim() },
+      {
+        onSuccess: (created) => {
+          setInfraTypeId(created.id)
+          setNewTypeName('')
+          setShowNewType(false)
+        },
+      }
+    )
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -72,15 +100,43 @@ export function InfrastructureForm({ onClose, existing }: Props) {
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">Tipo</label>
           <select
-            value={infraTypeId}
-            onChange={e => setInfraTypeId(e.target.value ? Number(e.target.value) : '')}
+            value={showNewType ? '__new__' : (infraTypeId ?? '')}
+            onChange={e => handleTypeChange(e.target.value)}
             className={inputCls}
           >
             <option value="">Sin tipo</option>
             {infraTypes.map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
+            <option value="__new__">+ Nuevo tipo de infraestructura...</option>
           </select>
+          {showNewType && (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={newTypeName}
+                onChange={e => setNewTypeName(e.target.value)}
+                placeholder="Nombre del nuevo tipo"
+                className={inputCls}
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleCreateType}
+                disabled={!newTypeName.trim() || createTypeMut.isPending}
+                className="px-3 py-2 text-xs text-primary-fg bg-primary rounded-lg disabled:opacity-50 shrink-0"
+              >
+                Crear
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowNewType(false); setNewTypeName('') }}
+                className="px-3 py-2 text-xs border border-app-border rounded-lg shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">Descripción</label>

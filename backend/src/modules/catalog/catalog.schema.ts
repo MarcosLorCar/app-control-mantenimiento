@@ -32,22 +32,5 @@ export const UpdateActionTypeSchema = z.object({
   color: z.string().optional(),
 })
 
-export const CreateActionStatusSchema = z.object({
-  code: z.string().min(1).max(50),
-  name: z.string().min(1).max(255),
-  isTerminal: z.boolean().default(false),
-  color: z.string().optional(),
-  sortOrder: z.number().int().default(0),
-})
-
-export const UpdateActionStatusSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  isTerminal: z.boolean().optional(),
-  color: z.string().optional(),
-  sortOrder: z.number().int().optional(),
-})
-
 export type CreateActionTypeInput = z.infer<typeof CreateActionTypeSchema>
 export type UpdateActionTypeInput = z.infer<typeof UpdateActionTypeSchema>
-export type CreateActionStatusInput = z.infer<typeof CreateActionStatusSchema>
-export type UpdateActionStatusInput = z.infer<typeof UpdateActionStatusSchema>

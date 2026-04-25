@@ -16,7 +16,6 @@ export async function clearDb(db: PrismaClient = testDb) {
   await db.infrastructure.deleteMany()
   await db.materialCategory.deleteMany()
   await db.materialType.deleteMany()
-  await db.actionStatus.deleteMany()
   await db.actionType.deleteMany()
   await db.user.deleteMany()
   await db.role.deleteMany()
@@ -65,13 +64,6 @@ export async function seedTestData(db: PrismaClient = testDb) {
   const actionType = await db.actionType.create({
     data: { code: 'inspection', name: 'Inspección' },
   })
-  const actionStatus = await db.actionStatus.create({
-    data: { code: 'pending', name: 'Pendiente', sortOrder: 1 },
-  })
-  const doneStatus = await db.actionStatus.create({
-    data: { code: 'done', name: 'Completada', isTerminal: true, sortOrder: 2 },
-  })
-
   const materialType = await db.materialType.create({
     data: {
       code: 'led_bulb',
@@ -126,7 +118,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
   return {
     managerRole, editorRole, viewerRole,
     manager, editor, viewer,
-    actionType, actionStatus, doneStatus,
+    actionType,
     materialType,
     infra, dep, structure, material,
     // backwards-compat aliases
