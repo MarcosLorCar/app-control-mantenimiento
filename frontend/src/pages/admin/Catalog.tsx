@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react'
-import { Upload } from 'lucide-react'
+import { useState } from 'react'
 import {
   useActionTypes, useRoles, useCreateActionType, useUpdateActionType,
-  useInfrastructureTypes, useCreateInfrastructureType, useUploadInfraTypeIcon,
+  useActionStatuses, useCreateActionStatus,
+  useMaterialTypes, useCreateMaterialType,
 } from '../../hooks/useCatalog'
 import { useAuth } from '../../hooks/useAuth'
 import { ICON_MAP, ICON_OPTIONS } from '../../utils/actionTypeIcons'
@@ -10,7 +10,7 @@ import { ICON_MAP, ICON_OPTIONS } from '../../utils/actionTypeIcons'
 const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
 
 function ActionTypeRow({ at, canManage }: {
-  at: { id: number; name: string; consumesMaterials: boolean; icon: string | null; color: string | null }
+  at: { id: number; code: string; name: string; icon: string | null; color: string | null }
   canManage: boolean
 }) {
   const [editing, setEditing] = useState(false)
@@ -43,11 +43,7 @@ function ActionTypeRow({ at, canManage }: {
             <span className="w-6 h-6 rounded-md bg-gray-100 shrink-0" />
           )}
           <span className="text-sm text-fg truncate">{at.name}</span>
-          {at.consumesMaterials && (
-            <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-info-bg text-primary">
-              materiales
-            </span>
-          )}
+          <span className="text-[11px] font-mono text-muted">{at.code}</span>
         </div>
         {canManage && (
           <button
@@ -61,7 +57,6 @@ function ActionTypeRow({ at, canManage }: {
 
       {editing && (
         <div className="mt-2 p-3 bg-app-bg rounded-lg border border-app-border space-y-3">
-          {/* Icon picker */}
           <div>
             <p className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wide mb-1.5">Icono</p>
             <div className="grid grid-cols-10 gap-1">
@@ -85,8 +80,6 @@ function ActionTypeRow({ at, canManage }: {
               })}
             </div>
           </div>
-
-          {/* Color picker */}
           <div className="flex items-center gap-3">
             <p className="text-[11px] font-semibold text-fg-secondary uppercase tracking-wide">Color</p>
             <input
@@ -97,7 +90,6 @@ function ActionTypeRow({ at, canManage }: {
             />
             <span className="text-[11px] text-muted font-mono">{color}</span>
           </div>
-
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -121,103 +113,72 @@ function ActionTypeRow({ at, canManage }: {
   )
 }
 
-function InfraTypeRow({ it, canManage }: {
-  it: { id: number; name: string; iconUrl: string | null }
-  canManage: boolean
-}) {
-  const uploadMut = useUploadInfraTypeIcon()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploadError, setUploadError] = useState('')
-
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploadError('')
-    uploadMut.mutate(
-      { id: it.id, file },
-      { onError: (err: any) => setUploadError(err?.error?.message ?? 'Error al subir icono') }
-    )
-    e.target.value = ''
-  }
-
-  return (
-    <li className="py-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          {it.iconUrl ? (
-            <img
-              src={it.iconUrl}
-              alt={it.name}
-              className="w-6 h-6 object-contain rounded-sm shrink-0"
-            />
-          ) : (
-            <span className="w-6 h-6 rounded-sm bg-gray-100 shrink-0" />
-          )}
-          <span className="text-sm text-fg truncate">{it.name}</span>
-        </div>
-        {canManage && (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadMut.isPending}
-            className="flex items-center gap-1 text-[11px] text-muted hover:text-fg-secondary shrink-0 transition-colors disabled:opacity-50"
-          >
-            <Upload className="w-3 h-3" />
-            {uploadMut.isPending ? 'Subiendo...' : 'Subir'}
-          </button>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/svg+xml,image/jpeg"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </div>
-      {uploadError && <p className="text-[11px] text-error mt-1">{uploadError}</p>}
-    </li>
-  )
-}
-
 export function Catalog() {
-  const [typeName, setTypeName] = useState('')
-  const [consumesMaterials, setConsumesMaterials] = useState(false)
-  const [typeError, setTypeError] = useState('')
-
-  const [infraTypeName, setInfraTypeName] = useState('')
-  const [infraTypeError, setInfraTypeError] = useState('')
-
   const { user } = useAuth()
-  const { data: actionTypes = [] } = useActionTypes()
-  const { data: roles = [] } = useRoles()
-  const { data: infraTypes = [] } = useInfrastructureTypes()
-  const addType = useCreateActionType()
-  const addInfraType = useCreateInfrastructureType()
-
   const canManage = !!user?.can_manage
 
-  function handleAddType(e: React.FormEvent) {
+  const { data: actionTypes = [] } = useActionTypes()
+  const { data: actionStatuses = [] } = useActionStatuses()
+  const { data: materialTypes = [] } = useMaterialTypes()
+  const { data: roles = [] } = useRoles()
+
+  const addActionType = useCreateActionType()
+  const addActionStatus = useCreateActionStatus()
+  const addMaterialType = useCreateMaterialType()
+
+  // ActionType form state
+  const [atCode, setAtCode] = useState('')
+  const [atName, setAtName] = useState('')
+  const [atError, setAtError] = useState('')
+
+  // ActionStatus form state
+  const [asCode, setAsCode] = useState('')
+  const [asName, setAsName] = useState('')
+  const [asColor, setAsColor] = useState('#6B7280')
+  const [asTerminal, setAsTerminal] = useState(false)
+  const [asSortOrder, setAsSortOrder] = useState('')
+  const [asError, setAsError] = useState('')
+
+  // MaterialType form state
+  const [mtCode, setMtCode] = useState('')
+  const [mtName, setMtName] = useState('')
+  const [mtError, setMtError] = useState('')
+
+  function handleAddActionType(e: React.FormEvent) {
     e.preventDefault()
-    if (!typeName.trim()) return
-    setTypeError('')
-    addType.mutate(
-      { name: typeName.trim(), consumesMaterials },
+    if (!atCode.trim() || !atName.trim()) return
+    setAtError('')
+    addActionType.mutate(
+      { code: atCode.trim(), name: atName.trim() },
       {
-        onSuccess: () => { setTypeName(''); setConsumesMaterials(false) },
-        onError: (err: any) => setTypeError(err?.error?.message ?? 'Error al añadir tipo'),
+        onSuccess: () => { setAtCode(''); setAtName('') },
+        onError: (err: any) => setAtError(err?.error?.message ?? 'Error al añadir'),
       }
     )
   }
 
-  function handleAddInfraType(e: React.FormEvent) {
+  function handleAddActionStatus(e: React.FormEvent) {
     e.preventDefault()
-    if (!infraTypeName.trim()) return
-    setInfraTypeError('')
-    addInfraType.mutate(
-      { name: infraTypeName.trim() },
+    if (!asCode.trim() || !asName.trim() || !asSortOrder) return
+    setAsError('')
+    addActionStatus.mutate(
+      { code: asCode.trim(), name: asName.trim(), color: asColor, isTerminal: asTerminal, sortOrder: Number(asSortOrder) },
       {
-        onSuccess: () => setInfraTypeName(''),
-        onError: (err: any) => setInfraTypeError(err?.error?.message ?? 'Error al añadir tipo'),
+        onSuccess: () => { setAsCode(''); setAsName(''); setAsSortOrder(''); setAsTerminal(false) },
+        onError: (err: any) => setAsError(err?.error?.message ?? 'Error al añadir'),
+      }
+    )
+  }
+
+  function handleAddMaterialType(e: React.FormEvent) {
+    e.preventDefault()
+    if (!mtCode.trim() || !mtName.trim()) return
+    setMtError('')
+    addMaterialType.mutate(
+      { code: mtCode.trim(), name: mtName.trim() },
+      {
+        onSuccess: () => { setMtCode(''); setMtName('') },
+        onError: (err: any) => setMtError(err?.error?.message ?? 'Error al añadir'),
       }
     )
   }
@@ -238,67 +199,153 @@ export function Catalog() {
             ))}
           </ul>
           {canManage && (
-            <form onSubmit={handleAddType} className="border-t border-app-border pt-4 space-y-2">
+            <form onSubmit={handleAddActionType} className="border-t border-app-border pt-4 space-y-2">
               <input
                 type="text"
-                value={typeName}
-                onChange={e => setTypeName(e.target.value)}
-                placeholder="Nombre del tipo"
+                value={atCode}
+                onChange={e => setAtCode(e.target.value)}
+                placeholder="Código (ej: inspection)"
                 className={inputCls}
               />
-              <div className="flex items-center justify-between gap-3">
-                <label className="flex items-center gap-2 text-sm text-fg-secondary cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={consumesMaterials}
-                    onChange={e => setConsumesMaterials(e.target.checked)}
-                    className="rounded"
-                  />
-                  Consume materiales
-                </label>
-                <button
-                  type="submit"
-                  disabled={!typeName.trim() || addType.isPending}
-                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors shrink-0"
-                >
-                  {addType.isPending ? 'Añadiendo...' : 'Añadir'}
-                </button>
-              </div>
-              {typeError && <p className="text-error text-xs">{typeError}</p>}
-            </form>
-          )}
-        </div>
-
-        {/* Tipos de infraestructura */}
-        <div className="bg-card rounded-xl border border-app-border p-5">
-          <h2 className="text-[15px] font-semibold text-fg mb-4">Tipos de infraestructura</h2>
-          <ul className="divide-y divide-app-border mb-4">
-            {infraTypes.length === 0 && (
-              <li className="py-2 text-sm text-muted">Sin tipos definidos</li>
-            )}
-            {infraTypes.map(it => (
-              <InfraTypeRow key={it.id} it={it} canManage={canManage} />
-            ))}
-          </ul>
-          {canManage && (
-            <form onSubmit={handleAddInfraType} className="border-t border-app-border pt-4 space-y-2">
               <input
                 type="text"
-                value={infraTypeName}
-                onChange={e => setInfraTypeName(e.target.value)}
-                placeholder="Nombre del tipo"
+                value={atName}
+                onChange={e => setAtName(e.target.value)}
+                placeholder="Nombre"
                 className={inputCls}
               />
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={!infraTypeName.trim() || addInfraType.isPending}
+                  disabled={!atCode.trim() || !atName.trim() || addActionType.isPending}
                   className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
                 >
-                  {addInfraType.isPending ? 'Añadiendo...' : 'Añadir'}
+                  {addActionType.isPending ? 'Añadiendo...' : 'Añadir'}
                 </button>
               </div>
-              {infraTypeError && <p className="text-error text-xs">{infraTypeError}</p>}
+              {atError && <p className="text-error text-xs">{atError}</p>}
+            </form>
+          )}
+        </div>
+
+        {/* Estados de acción */}
+        <div className="bg-card rounded-xl border border-app-border p-5">
+          <h2 className="text-[15px] font-semibold text-fg mb-4">Estados de acción</h2>
+          <ul className="divide-y divide-app-border mb-4">
+            {actionStatuses.length === 0 && (
+              <li className="py-2 text-sm text-muted">Sin estados definidos</li>
+            )}
+            {actionStatuses.map(s => (
+              <li key={s.id} className="py-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {s.color && (
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  )}
+                  <span className="text-sm text-fg truncate">{s.name}</span>
+                  <span className="text-[11px] font-mono text-muted">{s.code}</span>
+                  {s.isTerminal && (
+                    <span className="text-[10px] bg-success-bg text-success px-1.5 py-0.5 rounded shrink-0">terminal</span>
+                  )}
+                </div>
+                <span className="text-[11px] text-muted shrink-0">#{s.sortOrder}</span>
+              </li>
+            ))}
+          </ul>
+          {canManage && (
+            <form onSubmit={handleAddActionStatus} className="border-t border-app-border pt-4 space-y-2">
+              <input
+                type="text"
+                value={asCode}
+                onChange={e => setAsCode(e.target.value)}
+                placeholder="Código (ej: pending)"
+                className={inputCls}
+              />
+              <input
+                type="text"
+                value={asName}
+                onChange={e => setAsName(e.target.value)}
+                placeholder="Nombre"
+                className={inputCls}
+              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  value={asSortOrder}
+                  onChange={e => setAsSortOrder(e.target.value)}
+                  placeholder="Orden"
+                  min="1"
+                  className={inputCls}
+                />
+                <input
+                  type="color"
+                  value={asColor}
+                  onChange={e => setAsColor(e.target.value)}
+                  className="w-10 h-9 rounded-lg border border-app-border cursor-pointer bg-transparent shrink-0"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-sm text-fg-secondary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={asTerminal}
+                  onChange={e => setAsTerminal(e.target.checked)}
+                  className="rounded"
+                />
+                Estado terminal (fin de ciclo)
+              </label>
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={!asCode.trim() || !asName.trim() || !asSortOrder || addActionStatus.isPending}
+                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
+                >
+                  {addActionStatus.isPending ? 'Añadiendo...' : 'Añadir'}
+                </button>
+              </div>
+              {asError && <p className="text-error text-xs">{asError}</p>}
+            </form>
+          )}
+        </div>
+
+        {/* Tipos de material */}
+        <div className="bg-card rounded-xl border border-app-border p-5">
+          <h2 className="text-[15px] font-semibold text-fg mb-4">Tipos de material</h2>
+          <ul className="divide-y divide-app-border mb-4">
+            {materialTypes.length === 0 && (
+              <li className="py-2 text-sm text-muted">Sin tipos definidos</li>
+            )}
+            {materialTypes.map(mt => (
+              <li key={mt.id} className="py-2.5 flex items-center gap-2">
+                <span className="text-sm text-fg truncate">{mt.name}</span>
+                <span className="text-[11px] font-mono text-muted">{mt.code}</span>
+              </li>
+            ))}
+          </ul>
+          {canManage && (
+            <form onSubmit={handleAddMaterialType} className="border-t border-app-border pt-4 space-y-2">
+              <input
+                type="text"
+                value={mtCode}
+                onChange={e => setMtCode(e.target.value)}
+                placeholder="Código (ej: led_bulb)"
+                className={inputCls}
+              />
+              <input
+                type="text"
+                value={mtName}
+                onChange={e => setMtName(e.target.value)}
+                placeholder="Nombre"
+                className={inputCls}
+              />
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={!mtCode.trim() || !mtName.trim() || addMaterialType.isPending}
+                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
+                >
+                  {addMaterialType.isPending ? 'Añadiendo...' : 'Añadir'}
+                </button>
+              </div>
+              {mtError && <p className="text-error text-xs">{mtError}</p>}
             </form>
           )}
         </div>

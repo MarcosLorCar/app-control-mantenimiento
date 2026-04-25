@@ -1,36 +1,33 @@
 import { useState } from 'react'
 import { Search, Plus, X, Pencil, Trash2 } from 'lucide-react'
 import { getActionTypeIcon } from '../../utils/actionTypeIcons'
-import { useAllActions, useDeleteActionGlobal } from '../../hooks/useActions'
+import { useActions, useDeleteAction } from '../../hooks/useActions'
 import { RoleGuard } from '../../components/RoleGuard'
 import { ActionForm } from './ActionForm'
-import { MaterialForm } from './MaterialForm'
-import type { ActionWithInfra } from '../../api/types'
+import type { Action } from '../../api/types'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 export function ActionsPage() {
-  const { data: actions = [], isLoading } = useAllActions()
-  const deleteMut = useDeleteActionGlobal()
+  const { data: actions = [], isLoading } = useActions()
+  const deleteMut = useDeleteAction()
   const [search, setSearch] = useState('')
-  const [selected, setSelected] = useState<ActionWithInfra | null>(null)
+  const [selected, setSelected] = useState<Action | null>(null)
   const [showNewForm, setShowNewForm] = useState(false)
   const [showEditForm, setShowEditForm] = useState(false)
-  const [showMaterialForm, setShowMaterialForm] = useState(false)
 
   const filtered = actions.filter(a =>
-    a.infrastructure.name.toLowerCase().includes(search.toLowerCase()) ||
-    a.actionType.name.toLowerCase().includes(search.toLowerCase()) ||
+    a.title.toLowerCase().includes(search.toLowerCase()) ||
+    a.type.name.toLowerCase().includes(search.toLowerCase()) ||
+    a.material.name.toLowerCase().includes(search.toLowerCase()) ||
     (a.performer?.fullName ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
   function handleDelete(id: number) {
     if (!confirm('¿Eliminar esta acción?')) return
-    deleteMut.mutate(id, {
-      onSuccess: () => setSelected(null),
-    })
+    deleteMut.mutate(id, { onSuccess: () => setSelected(null) })
   }
 
   return (
@@ -44,7 +41,7 @@ export function ActionsPage() {
           <Search className="w-4 h-4 text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar tipo, infra, responsable..."
+            placeholder="Buscar título, tipo, material..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
@@ -63,7 +60,6 @@ export function ActionsPage() {
 
       {/* Tabla + Panel lateral */}
       <div className="flex flex-1 overflow-hidden p-5 md:p-7 gap-5">
-        {/* Tabla */}
         <div className="flex-1 min-w-0 flex flex-col">
           <p className="text-[13px] text-muted mb-3">
             {filtered.length} acción{filtered.length !== 1 ? 'es' : ''}
@@ -73,19 +69,18 @@ export function ActionsPage() {
             <div className="flex-1 flex items-center justify-center text-muted text-sm">Cargando...</div>
           ) : (
             <div className="bg-card rounded-xl border border-app-border overflow-hidden flex flex-col">
-              {/* Cabecera */}
               <div
                 className="flex items-center h-10 bg-app-bg text-[11px] font-semibold text-muted uppercase tracking-wider shrink-0"
                 style={{ borderBottom: '1px solid var(--border)' }}
               >
                 <div className="w-14 px-4">ID</div>
-                <div className="w-36 px-3">Tipo</div>
-                <div className="flex-1 px-3">Infraestructura</div>
-                <div className="w-36 px-3">Responsable</div>
+                <div className="w-32 px-3">Tipo</div>
+                <div className="flex-1 px-3">Título</div>
+                <div className="w-40 px-3">Material</div>
+                <div className="w-28 px-3">Estado</div>
                 <div className="w-24 px-3">Fecha</div>
               </div>
 
-              {/* Filas */}
               <div className="overflow-y-auto">
                 {filtered.length === 0 && (
                   <div className="flex items-center justify-center h-24 text-muted text-sm">
@@ -102,17 +97,29 @@ export function ActionsPage() {
                     style={{ borderBottom: '1px solid var(--border)' }}
                   >
                     <div className="w-14 px-4 text-muted font-mono">#{action.id}</div>
-                    <div className="w-36 px-3 flex items-center gap-1.5 min-w-0">
+                    <div className="w-32 px-3 flex items-center gap-1.5 min-w-0">
                       {(() => {
-                        const Icon = getActionTypeIcon(action.actionType.icon)
-                        const color = action.actionType.color ?? '#6B7280'
+                        const Icon = getActionTypeIcon(action.type.icon)
+                        const color = action.type.color ?? '#6B7280'
                         return Icon ? <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} /> : null
                       })()}
-                      <span className="text-fg font-medium truncate">{action.actionType.name}</span>
+                      <span className="text-fg font-medium truncate">{action.type.name}</span>
                     </div>
-                    <div className="flex-1 px-3 text-fg-secondary truncate">{action.infrastructure.name}</div>
-                    <div className="w-36 px-3 text-fg-secondary truncate">
-                      {action.performer?.fullName ?? action.performer?.email ?? '—'}
+                    <div className="flex-1 px-3 text-fg truncate">{action.title}</div>
+                    <div className="w-40 px-3 text-fg-secondary truncate">
+                      <span className="font-mono text-[11px] text-muted mr-1">{action.material.code}</span>
+                      {action.material.name}
+                    </div>
+                    <div className="w-28 px-3">
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
+                        style={{
+                          backgroundColor: action.status.color ? `${action.status.color}20` : 'var(--bg)',
+                          color: action.status.color ?? 'var(--fg-secondary)',
+                        }}
+                      >
+                        {action.status.name}
+                      </span>
                     </div>
                     <div className="w-24 px-3 text-muted">{formatDate(action.performedAt)}</div>
                   </div>
@@ -122,97 +129,82 @@ export function ActionsPage() {
           )}
         </div>
 
-        {/* Panel lateral de detalle */}
+        {/* Panel lateral */}
         {selected && (
           <div className="w-[360px] shrink-0 bg-card rounded-xl border border-app-border flex flex-col overflow-hidden">
-            {/* Header */}
             <div
               className="flex items-center justify-between h-14 px-5 shrink-0"
               style={{ borderBottom: '1px solid var(--border)' }}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-[14px] font-bold text-fg">#{selected.id}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[14px] font-bold text-fg shrink-0">#{selected.id}</span>
                 {(() => {
-                  const Icon = getActionTypeIcon(selected.actionType.icon)
-                  const color = selected.actionType.color ?? '#6B7280'
+                  const Icon = getActionTypeIcon(selected.type.icon)
+                  const color = selected.type.color ?? '#6B7280'
                   return (
                     <span
-                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full"
+                      className="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0"
                       style={{ background: color + '20', color }}
                     >
                       {Icon && <Icon className="w-3 h-3" />}
-                      {selected.actionType.name}
+                      {selected.type.name}
                     </span>
                   )
                 })()}
               </div>
               <button
                 onClick={() => setSelected(null)}
-                className="w-7 h-7 rounded-md flex items-center justify-center text-muted hover:bg-app-bg transition-colors"
+                className="w-7 h-7 rounded-md flex items-center justify-center text-muted hover:bg-app-bg transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Body */}
             <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 text-[13px]">
-              <div className="flex flex-col gap-1">
-                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase">Infraestructura</p>
-                <p className="text-fg">{selected.infrastructure.name}</p>
+              <div>
+                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Título</p>
+                <p className="text-fg font-medium">{selected.title}</p>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase">Descripción</p>
+              <div>
+                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Material</p>
+                <p className="text-fg">
+                  <span className="font-mono text-[11px] text-muted mr-1">{selected.material.code}</span>
+                  {selected.material.name}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Estado</p>
+                <span
+                  className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium"
+                  style={{
+                    backgroundColor: selected.status.color ? `${selected.status.color}20` : 'var(--bg)',
+                    color: selected.status.color ?? 'var(--fg-secondary)',
+                  }}
+                >
+                  {selected.status.name}
+                  {selected.status.isTerminal && ' ✓'}
+                </span>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Descripción</p>
                 <p className="text-fg leading-relaxed">{selected.description || '—'}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase">Responsable</p>
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Responsable</p>
                   <p className="text-fg truncate">{selected.performer?.fullName ?? selected.performer?.email ?? '—'}</p>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase">Fecha</p>
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Fecha</p>
                   <p className="text-fg">{formatDate(selected.performedAt)}</p>
                 </div>
               </div>
-
-              <hr style={{ borderColor: 'var(--border)' }} />
-
-              <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase">
-                  Materiales consumidos
-                </p>
-                {selected.materials.length === 0 ? (
-                  <p className="text-muted">Sin materiales registrados.</p>
-                ) : (
-                  selected.materials.map(m => (
-                    <div
-                      key={m.id}
-                      className="flex items-center justify-between bg-app-bg rounded-lg px-3 py-2"
-                    >
-                      <span className="text-fg truncate">{m.name}</span>
-                      <span className="text-muted text-[12px] shrink-0 ml-2">
-                        {String(m.quantity)} {m.unit}
-                        {m.totalCost != null && ` · ${Number(m.totalCost).toFixed(2)}€`}
-                      </span>
-                    </div>
-                  ))
-                )}
-                <RoleGuard require="write">
-                  {selected.actionType.consumesMaterials && (
-                    <button
-                      onClick={() => setShowMaterialForm(true)}
-                      className="text-[12px] text-primary font-medium mt-1 text-left hover:underline"
-                    >
-                      + Añadir material
-                    </button>
-                  )}
-                </RoleGuard>
-              </div>
             </div>
 
-            {/* Footer */}
             <div
               className="flex items-center justify-end gap-2 px-5 py-3 shrink-0"
               style={{ borderTop: '1px solid var(--border)' }}
@@ -241,21 +233,11 @@ export function ActionsPage() {
         )}
       </div>
 
-      {/* Modales */}
-      {showNewForm && (
-        <ActionForm onClose={() => setShowNewForm(false)} />
-      )}
+      {showNewForm && <ActionForm onClose={() => setShowNewForm(false)} />}
       {showEditForm && selected && (
         <ActionForm
-          infrastructureId={selected.infrastructureId}
           action={selected}
           onClose={() => { setShowEditForm(false) }}
-        />
-      )}
-      {showMaterialForm && selected && (
-        <MaterialForm
-          actionId={selected.id}
-          onClose={() => setShowMaterialForm(false)}
         />
       )}
     </div>

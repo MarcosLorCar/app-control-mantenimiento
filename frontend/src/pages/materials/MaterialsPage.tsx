@@ -1,26 +1,28 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
-import { useAllMaterials } from '../../hooks/useActions'
+import { Search, Package } from 'lucide-react'
+import { useMaterials } from '../../hooks/useMaterials'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 export function MaterialsPage() {
-  const { data: materials = [], isLoading } = useAllMaterials()
+  const { data: materials = [], isLoading } = useMaterials()
   const [search, setSearch] = useState('')
-  const [infraFilter, setInfraFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState('')
 
-  const allInfras = Array.from(
-    new Map(materials.map(m => [m.action.infrastructure.id, m.action.infrastructure.name])).entries()
+  const allTypes = Array.from(
+    new Map(materials.map(m => [m.type.id, m.type.name])).entries()
   ).sort((a, b) => a[1].localeCompare(b[1]))
 
   const filtered = materials.filter(m => {
     const matchesSearch =
       m.name.toLowerCase().includes(search.toLowerCase()) ||
-      (m.supplier ?? '').toLowerCase().includes(search.toLowerCase())
-    const matchesInfra = !infraFilter || String(m.action.infrastructure.id) === infraFilter
-    return matchesSearch && matchesInfra
+      m.code.toLowerCase().includes(search.toLowerCase()) ||
+      m.type.name.toLowerCase().includes(search.toLowerCase()) ||
+      (m.serialNumber ?? '').toLowerCase().includes(search.toLowerCase())
+    const matchesType = !typeFilter || String(m.type.id) === typeFilter
+    return matchesSearch && matchesType
   })
 
   return (
@@ -34,54 +36,50 @@ export function MaterialsPage() {
           <Search className="w-4 h-4 text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por material o proveedor..."
+            placeholder="Buscar por código, nombre o tipo..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
           />
         </div>
-        <select
-          value={infraFilter}
-          onChange={e => setInfraFilter(e.target.value)}
-          className="h-9 border border-app-border rounded-lg px-3 text-[13px] text-fg bg-app-bg focus:outline-none focus:ring-2 focus:ring-primary/40"
-        >
-          <option value="">Todas las infraestructuras</option>
-          {allInfras.map(([id, name]) => (
-            <option key={id} value={String(id)}>{name}</option>
-          ))}
-        </select>
+        {allTypes.length > 0 && (
+          <select
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+            className="h-9 border border-app-border rounded-lg px-3 text-[13px] text-fg bg-app-bg focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <option value="">Todos los tipos</option>
+            {allTypes.map(([id, name]) => (
+              <option key={id} value={String(id)}>{name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Contenido */}
       <div className="flex-1 overflow-auto p-5 md:p-7 flex flex-col gap-3">
         <p className="text-[13px] text-muted">
-          {filtered.length} registro{filtered.length !== 1 ? 's' : ''}
+          {filtered.length} material{filtered.length !== 1 ? 'es' : ''}
         </p>
 
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center text-muted text-sm">Cargando...</div>
         ) : (
           <div className="bg-card rounded-xl border border-app-border overflow-hidden">
-            {/* Cabecera */}
             <div
               className="flex items-center h-10 bg-app-bg text-[11px] font-semibold text-muted uppercase tracking-wider shrink-0"
               style={{ borderBottom: '1px solid var(--border)' }}
             >
-              <div className="flex-1 px-4">Material</div>
-              <div className="w-20 px-3">Cant.</div>
-              <div className="w-20 px-3">Unidad</div>
-              <div className="w-24 px-3">C. Unit.</div>
-              <div className="w-24 px-3">Total</div>
-              <div className="w-32 px-3">Proveedor</div>
-              <div className="w-32 px-3">Tipo acción</div>
-              <div className="w-40 px-3">Infraestructura</div>
-              <div className="w-24 px-3">Fecha</div>
+              <div className="w-32 px-4">Código</div>
+              <div className="flex-1 px-3">Nombre</div>
+              <div className="w-40 px-3">Tipo</div>
+              <div className="w-36 px-3">Nº Serie</div>
+              <div className="w-28 px-3">Instalado</div>
             </div>
 
-            {/* Filas */}
             {filtered.length === 0 ? (
               <div className="flex items-center justify-center h-24 text-muted text-sm">
-                {search || infraFilter ? 'Sin resultados.' : 'No hay materiales registrados.'}
+                {search || typeFilter ? 'Sin resultados.' : 'No hay materiales registrados.'}
               </div>
             ) : (
               filtered.map(m => (
@@ -90,19 +88,16 @@ export function MaterialsPage() {
                   className="flex items-center h-[50px] text-[13px] hover:bg-app-bg transition-colors"
                   style={{ borderBottom: '1px solid var(--border)' }}
                 >
-                  <div className="flex-1 px-4 font-medium text-fg truncate">{m.name}</div>
-                  <div className="w-20 px-3 text-muted tabular-nums">{String(m.quantity)}</div>
-                  <div className="w-20 px-3 text-muted">{m.unit}</div>
-                  <div className="w-24 px-3 text-muted tabular-nums">
-                    {m.unitCost != null ? `${Number(m.unitCost).toFixed(2)}€` : '—'}
+                  <div className="w-32 px-4 font-mono text-xs text-muted">{m.code}</div>
+                  <div className="flex-1 px-3 flex items-center gap-2 min-w-0">
+                    <Package className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <span className="font-medium text-fg truncate">{m.name}</span>
                   </div>
-                  <div className="w-24 px-3 text-fg font-medium tabular-nums">
-                    {m.totalCost != null ? `${Number(m.totalCost).toFixed(2)}€` : '—'}
+                  <div className="w-40 px-3 text-fg-secondary truncate">{m.type.name}</div>
+                  <div className="w-36 px-3 text-muted truncate">{m.serialNumber ?? '—'}</div>
+                  <div className="w-28 px-3 text-muted">
+                    {m.installedAt ? formatDate(m.installedAt) : '—'}
                   </div>
-                  <div className="w-32 px-3 text-fg-secondary truncate">{m.supplier ?? '—'}</div>
-                  <div className="w-32 px-3 text-fg-secondary truncate">{m.action.actionType.name}</div>
-                  <div className="w-40 px-3 text-fg-secondary truncate">{m.action.infrastructure.name}</div>
-                  <div className="w-24 px-3 text-muted">{formatDate(m.action.performedAt)}</div>
                 </div>
               ))
             )}

@@ -18,7 +18,7 @@ function makeWrapper() {
 describe('useActionTypes', () => {
   it('devuelve tipos de acción', async () => {
     vi.mocked(catalogApi.listActionTypes).mockResolvedValue([
-      { id: 1, name: 'inspection', description: null, consumesMaterials: false, icon: null, color: null },
+      { id: 1, code: 'inspection', name: 'Inspección', description: null, icon: null, color: null, deletedAt: null },
     ])
     const { result } = renderHook(() => useActionTypes(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
