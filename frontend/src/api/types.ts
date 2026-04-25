@@ -1,32 +1,4 @@
-export interface InfrastructureType {
-  id: number
-  name: string
-  description: string | null
-  iconUrl: string | null
-}
-
-export interface Infrastructure {
-  id: number
-  name: string
-  description: string | null
-  location: string | null
-  latitude: number | null
-  longitude: number | null
-  infraTypeId: number | null
-  infraType: InfrastructureType | null
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
-}
-
-export interface ActionType {
-  id: number
-  name: string
-  description: string | null
-  consumesMaterials: boolean
-  icon: string | null
-  color: string | null
-}
+// ==================== AUTH ====================
 
 export interface Role {
   id: number
@@ -42,49 +14,132 @@ export interface User {
   fullName: string
   roleId: number
   isActive: boolean
+  mustChangePassword: boolean
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  role?: Role
+}
+
+// ==================== LOCATION HIERARCHY ====================
+
+export interface Infrastructure {
+  id: number
+  code: string
+  name: string
+  description: string | null
   createdAt: string
   updatedAt: string
   deletedAt: string | null
 }
 
+export interface Dependency {
+  id: number
+  code: string
+  name: string
+  description: string | null
+  infrastructureId: number
+  parentId: number | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+export interface DependencyWithChildren extends Dependency {
+  children: Dependency[]
+  structures: Structure[]
+}
+
+export interface Structure {
+  id: number
+  code: string
+  name: string
+  description: string | null
+  infrastructureId: number | null
+  dependencyId: number | null
+  createdAt: string
+  updatedAt: string
+}
+
+// ==================== MATERIAL CATALOG ====================
+
+export type MaterialCategoryDataType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM'
+
+export interface MaterialCategory {
+  id: number
+  code: string
+  name: string
+  description: string | null
+  dataType: MaterialCategoryDataType
+  unit: string | null
+  required: boolean
+  sortOrder: number
+  enumValues: string[]
+  materialTypeId: number
+}
+
+export interface MaterialType {
+  id: number
+  code: string
+  name: string
+  description: string | null
+  icon: string | null
+  deletedAt: string | null
+}
+
+export interface Material {
+  id: number
+  code: string
+  name: string
+  description: string | null
+  serialNumber: string | null
+  installedAt: string | null
+  attributes: Record<string, unknown>
+  typeId: number
+  type: { id: number; code: string; name: string; icon: string | null }
+  infrastructureId: number | null
+  dependencyId: number | null
+  structureId: number | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
+
+// ==================== ACTIONS ====================
+
+export interface ActionType {
+  id: number
+  code: string
+  name: string
+  description: string | null
+  icon: string | null
+  color: string | null
+  deletedAt: string | null
+}
+
+export interface ActionStatus {
+  id: number
+  code: string
+  name: string
+  color: string | null
+  isTerminal: boolean
+  sortOrder: number
+  deletedAt: string | null
+}
+
 export interface Action {
   id: number
-  infrastructureId: number
-  performedBy: number
-  actionTypeId: number
+  title: string
   description: string | null
   performedAt: string
   createdAt: string
-}
-
-export interface ActionWithRelations extends Action {
-  actionType: Pick<ActionType, 'id' | 'name' | 'consumesMaterials' | 'icon' | 'color'>
+  updatedAt: string
+  typeId: number
+  statusId: number
+  materialId: number
+  performedBy: number
+  type: { id: number; code: string; name: string; icon: string | null; color: string | null }
+  status: { id: number; code: string; name: string; color: string | null; isTerminal: boolean; sortOrder: number }
+  material: { id: number; code: string; name: string; typeId: number }
   performer: { id: number; fullName: string; email: string }
-  materials: ActionMaterial[]
-}
-
-export interface ActionMaterial {
-  id: number
-  actionId: number
-  name: string
-  description: string | null
-  unit: string
-  quantity: string
-  unitCost: string | null
-  totalCost: string | null
-  supplier: string | null
-  notes: string | null
-}
-
-export interface ActionWithInfra extends ActionWithRelations {
-  infrastructure: { id: number; name: string }
-}
-
-export interface MaterialWithAction extends ActionMaterial {
-  action: {
-    id: number
-    performedAt: string
-    actionType: { name: string }
-    infrastructure: { id: number; name: string }
-  }
 }

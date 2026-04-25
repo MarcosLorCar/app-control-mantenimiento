@@ -12,9 +12,9 @@ export function getInfrastructure(id: number): Promise<Infrastructure> {
 }
 
 export function createInfrastructure(body: {
+  code: string
   name: string
   description?: string
-  location?: string
 }): Promise<Infrastructure> {
   return apiFetch<ApiData<Infrastructure>>(`${API_BASE}/infrastructures`, {
     method: 'POST',
@@ -24,7 +24,7 @@ export function createInfrastructure(body: {
 
 export function updateInfrastructure(
   id: number,
-  body: { name?: string; description?: string; location?: string },
+  body: { name?: string; code?: string; description?: string },
 ): Promise<Infrastructure> {
   return apiFetch<ApiData<Infrastructure>>(`${API_BASE}/infrastructures/${id}`, {
     method: 'PATCH',
