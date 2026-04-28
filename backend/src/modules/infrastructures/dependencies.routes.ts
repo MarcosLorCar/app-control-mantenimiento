@@ -7,6 +7,7 @@ import {
   createChildDependency,
   updateDependency,
   softDeleteDependency,
+  listStructuresByInfra,
 } from './dependencies.service'
 
 const CreateDepSchema = z.object({
@@ -49,6 +50,13 @@ export async function dependenciesRoutes(app: FastifyInstance) {
     }
     const data = await createTopLevelDependency(app.db, infraId, parsed.data)
     return reply.status(201).send({ data })
+  })
+
+  // List structures under infrastructure
+  app.get('/infrastructures/:infraId/structures', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const infraId = Number((req.params as any).infraId)
+    const structures = await listStructuresByInfra(app.db, infraId)
+    return reply.send({ data: structures })
   })
 
   // Create structure directly under infrastructure

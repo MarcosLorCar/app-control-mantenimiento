@@ -75,3 +75,10 @@ export function updateDependency(
 export function softDeleteDependency(db: PrismaClient, id: number) {
   return db.dependency.update({ where: { id }, data: { deletedAt: new Date() } })
 }
+
+export async function listStructuresByInfra(db: PrismaClient, infraId: number) {
+  return db.structure.findMany({
+    where: { infrastructureId: infraId, deletedAt: null },
+    orderBy: { createdAt: 'asc' },
+  })
+}
