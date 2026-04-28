@@ -5,10 +5,12 @@ set -e
 trap 'kill 0' EXIT
 
 echo "→ Iniciando base de datos..."
-docker compose up -d db
+if ! docker ps -q --filter "name=^/control-actions-db$" | grep -q .; then
+  docker compose up -d db
+fi
 
 echo "→ Esperando a PostgreSQL..."
-until docker compose exec -T db pg_isready -U postgres -q; do
+until docker exec control-actions-db pg_isready -U postgres -q; do
   sleep 1
 done
 
