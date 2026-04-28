@@ -9,7 +9,7 @@
     "test:watch": "vitest",
     "db:setup": "tsx scripts/db-setup.ts",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "tsc --noEmit && tsx prisma/seed.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {
@@ -25,7 +25,7 @@
     "zod": "^3.23.8"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsc --noEmit && tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@control-actions/shared": "*",
