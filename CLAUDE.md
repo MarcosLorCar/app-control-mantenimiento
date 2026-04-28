@@ -2,6 +2,52 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## MemPalace
+
+Este proyecto tiene un palace inicializado. Al inicio de cada sesión, ejecuta `wake-up` para cargar el contexto previo:
+
+```bash
+PYTHONUTF8=1 python -m mempalace wake-up
+```
+
+Para buscar en el palace:
+
+```bash
+PYTHONUTF8=1 python -m mempalace search "query"
+```
+
+Para minar nuevos archivos tras cambios significativos:
+
+```bash
+PYTHONUTF8=1 python -m mempalace mine "C:\Users\javie\Proyectos\control-actions"
+```
+
+> `mempalace` no está en el PATH — siempre usar `python -m mempalace` con `PYTHONUTF8=1`.
+
+# Instrucciones de orquestación
+
+## Subagentes disponibles via MCP (run_subagent)
+
+Cuando ejecutes tareas del plan, delega usando run_subagent según el tipo:
+
+| Tarea | Agent |
+|-------|-------|
+| Generar código, componentes, queries SQL/Prisma | `subagent-code` |
+| Análisis, revisión de arquitectura, decisiones complejas | `subagent-analysis` |
+| Tareas simples, formateo, transformaciones | `subagent-fast` |
+| Tareas con imágenes o contexto muy amplio | `subagent-vision` |
+
+## Flujo esperado
+
+1. `/plan` → Opus planifica (tú)
+2. Ejecución → delega cada tarea al subagente apropiado via run_subagent
+3. Opus revisa el resultado y continúa
+
+## Regla general
+
+Si una tarea no requiere tu contexto completo del proyecto ni decisiones arquitectónicas, 
+delégala a un subagente en lugar de resolverla tú directamente.
+
 ## Project Overview
 
 **control-actions** is an infrastructure management system for tracking actions (inspections, repairs, installations, etc.) performed on physical infrastructures. It manages materials consumed per action and users/roles.
