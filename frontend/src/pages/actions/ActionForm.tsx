@@ -3,14 +3,15 @@ import { Modal } from '../../components/ui/Modal'
 import { useCreateAction, useUpdateAction } from '../../hooks/useActions'
 import { useActionTypes, useCreateActionType } from '../../hooks/useCatalog'
 import { useMaterials } from '../../hooks/useMaterials'
-import type { Action } from '../../api/types'
+import type { Action, Material } from '../../api/types'
 
 interface Props {
   action?: Action
+  materials?: Material[]
   onClose: () => void
 }
 
-export function ActionForm({ action, onClose }: Props) {
+export function ActionForm({ action, materials: propMaterials, onClose }: Props) {
   const isEdit = !!action
   const [title, setTitle] = useState(action?.title ?? '')
   const [typeId, setTypeId] = useState(action?.typeId ?? 0)
@@ -26,7 +27,8 @@ export function ActionForm({ action, onClose }: Props) {
   const [showNewType, setShowNewType] = useState(false)
 
   const { data: actionTypes = [] } = useActionTypes()
-  const { data: materials = [] } = useMaterials()
+  const { data: allMaterials = [] } = useMaterials()
+  const materials = propMaterials ?? allMaterials
   const createMut = useCreateAction()
   const updateMut = useUpdateAction()
   const createTypeMut = useCreateActionType()
