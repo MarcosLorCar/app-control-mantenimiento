@@ -1,33 +1,18 @@
 import { z } from 'zod'
 
 export const CreateActionSchema = z.object({
-  actionTypeId: z.number().int().positive(),
+  title: z.string().min(1).max(255),
   description: z.string().optional(),
-  performedAt: z.coerce.date().optional(),
+  performedAt: z.string().datetime().optional(),
+  typeId: z.number().int().positive(),
+  materialId: z.number().int().positive(),
 })
 
-export const UpdateActionSchema = CreateActionSchema.partial()
-
-export const CreateMaterialSchema = z.object({
-  name: z.string().min(1),
+export const UpdateActionSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
-  unit: z.string().min(1),
-  quantity: z.number().positive(),
-  unitCost: z.number().nonnegative().optional(),
-  supplier: z.string().optional(),
-  notes: z.string().optional(),
+  performedAt: z.string().datetime().optional(),
 })
 
-export const UpdateMaterialSchema = CreateMaterialSchema.partial()
-
-export type CreateActionBody = z.infer<typeof CreateActionSchema>
-export type UpdateActionBody = z.infer<typeof UpdateActionSchema>
-export type CreateMaterialBody = z.infer<typeof CreateMaterialSchema>
-export type UpdateMaterialBody = z.infer<typeof UpdateMaterialSchema>
-
-export const ExportQuerySchema = z.object({
-  desde: z.coerce.date().optional(),
-  hasta: z.coerce.date().optional(),
-})
-
-export type ExportQuery = z.infer<typeof ExportQuerySchema>
+export type CreateActionInput = z.infer<typeof CreateActionSchema>
+export type UpdateActionInput = z.infer<typeof UpdateActionSchema>

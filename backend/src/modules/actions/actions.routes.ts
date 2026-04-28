@@ -1,120 +1,62 @@
-import { FastifyPluginAsync } from 'fastify'
-import { CreateActionSchema, UpdateActionSchema, CreateMaterialSchema, UpdateMaterialSchema } from './actions.schema'
-import {
-  listActions, listAllActions, getAction, createAction, updateAction, deleteAction,
-  listMaterials, listAllMaterials, createMaterial, updateMaterial, deleteMaterial,
-} from './actions.service'
+import type { FastifyInstance } from 'fastify'
+import { CreateActionSchema, UpdateActionSchema } from './actions.schema'
+import { listActions, getAction, createAction, updateAction, deleteAction } from './actions.service'
 
-const actionsRoutes: FastifyPluginAsync = async (fastify) => {
-  // --- Listados globales (cross-infrastructure) ---
+export async function actionsRoutes(app: FastifyInstance) {
+  // List all actions
+  app.get('/actions', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: await listActions(app.db) })
+  })
 
-  fastify.get('/actions', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const data = await listAllActions(fastify.db)
+  // Create action (performedBy comes from JWT)
+  app.post('/actions', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const parsed = CreateActionSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    const data = await createAction(app.db, parsed.data, req.user.sub)
+    return reply.status(201).send({ data })
+  })
+
+  // Get action detail
+  app.get('/actions/:id', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const data = await getAction(app.db, id)
+    if (!data) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Acción no encontrada' } })
+    }
     return reply.send({ data })
   })
 
-  fastify.get('/materials', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const data = await listAllMaterials(fastify.db)
+  // Update action
+  app.patch('/actions/:id', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const existing = await getAction(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Acción no encontrada' } })
+    }
+    const parsed = UpdateActionSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    const data = await updateAction(app.db, id, parsed.data)
     return reply.send({ data })
   })
 
-  // --- Acciones bajo una infraestructura ---
-
-  fastify.get('/infrastructures/:infraId/actions', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const { infraId } = request.params as { infraId: string }
-    const data = await listActions(fastify.db, Number(infraId))
-    return reply.send({ data })
-  })
-
-  fastify.post('/infrastructures/:infraId/actions', { preHandler: fastify.requireWrite }, async (request, reply) => {
-    const { infraId } = request.params as { infraId: string }
-    const result = CreateActionSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await createAction(fastify.db, Number(infraId), request.user.sub, result.data)
-      return reply.code(201).send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+  // Hard-delete action
+  app.delete('/actions/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const existing = await getAction(app.db, id)
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Acción no encontrada' } })
     }
+    await deleteAction(app.db, id)
+    return reply.status(204).send()
   })
 
-  // --- CRUD directo de acciones ---
-
-  fastify.get('/actions/:id', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    try {
-      const data = await getAction(fastify.db, Number(id))
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
-
-  fastify.patch('/actions/:id', { preHandler: fastify.requireWrite }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const result = UpdateActionSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await updateAction(fastify.db, Number(id), result.data)
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
-
-  fastify.delete('/actions/:id', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    try {
-      await deleteAction(fastify.db, Number(id))
-      return reply.send({ data: { ok: true } })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
-
-  // --- Materiales de una acción ---
-
-  fastify.get('/actions/:id/materials', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const data = await listMaterials(fastify.db, Number(id))
-    return reply.send({ data })
-  })
-
-  fastify.post('/actions/:id/materials', { preHandler: fastify.requireWrite }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const result = CreateMaterialSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await createMaterial(fastify.db, Number(id), result.data)
-      return reply.code(201).send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
-
-  // --- CRUD directo de materiales ---
-
-  fastify.patch('/materials/:id', { preHandler: fastify.requireWrite }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    const result = UpdateMaterialSchema.safeParse(request.body)
-    if (!result.success) return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
-    try {
-      const data = await updateMaterial(fastify.db, Number(id), result.data)
-      return reply.send({ data })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
-  })
-
-  fastify.delete('/materials/:id', { preHandler: fastify.requireManage }, async (request, reply) => {
-    const { id } = request.params as { id: string }
-    try {
-      await deleteMaterial(fastify.db, Number(id))
-      return reply.send({ data: { ok: true } })
-    } catch (err: any) {
-      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
-    }
+  // Actions by material
+  app.get('/materials/:materialId/actions', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const materialId = Number((req.params as any).materialId)
+    return reply.send({ data: await listActions(app.db, { materialId }) })
   })
 }
-
-export default actionsRoutes

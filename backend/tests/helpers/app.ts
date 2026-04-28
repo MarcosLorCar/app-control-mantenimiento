@@ -8,11 +8,11 @@ export async function buildTestApp(): Promise<FastifyInstance> {
   })
 }
 
-export async function getAdminToken(app: FastifyInstance): Promise<string> {
+export async function getManagerToken(app: FastifyInstance): Promise<string> {
   const res = await app.inject({
     method: 'POST',
     url: '/api/v1/auth/login',
-    payload: { email: 'admin@test.com', password: 'admin1234' },
+    payload: { email: 'manager@test.com', password: 'password123' },
   })
   return JSON.parse(res.body).data.accessToken
 }
@@ -21,16 +21,21 @@ export async function getEditorToken(app: FastifyInstance): Promise<string> {
   const res = await app.inject({
     method: 'POST',
     url: '/api/v1/auth/login',
-    payload: { email: 'editor@test.com', password: 'editor1234' },
+    payload: { email: 'editor@test.com', password: 'password123' },
   })
   return JSON.parse(res.body).data.accessToken
 }
 
-export async function getReaderToken(app: FastifyInstance): Promise<string> {
+export async function getViewerToken(app: FastifyInstance): Promise<string> {
   const res = await app.inject({
     method: 'POST',
     url: '/api/v1/auth/login',
-    payload: { email: 'reader@test.com', password: 'reader1234' },
+    payload: { email: 'viewer@test.com', password: 'password123' },
   })
   return JSON.parse(res.body).data.accessToken
 }
+
+// TODO: remove aliases after tasks 3-8 migrate all test files to manager/editor/viewer naming
+// Backwards-compat aliases
+export const getAdminToken = getManagerToken
+export const getReaderToken = getViewerToken

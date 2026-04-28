@@ -1,117 +1,287 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
-import { FastifyInstance } from 'fastify'
-import { buildTestApp, getEditorToken, getReaderToken } from './helpers/app'
-import { clearDb, seedTestData, testDb } from './helpers/db'
+import { describe, it, expect, beforeEach, afterAll } from 'vitest'
+import { buildTestApp, getManagerToken, getEditorToken, getViewerToken } from './helpers/app'
+import { testDb, clearDb, seedTestData } from './helpers/db'
 
-let app: FastifyInstance
-let editorToken: string
-let readerToken: string
+describe('Actions', () => {
+  let app: Awaited<ReturnType<typeof buildTestApp>>
+  let seed: Awaited<ReturnType<typeof seedTestData>>
+  let editorToken: string
+  let managerToken: string
+  let viewerToken: string
 
-// Creados inline en beforeEach
-let infraId: number
-let actionId: number
-let inspectionTypeId: number
-let adminUserId: number
-
-beforeAll(async () => { app = await buildTestApp() })
-afterAll(async () => { await app.close() })
-beforeEach(async () => {
-  await clearDb()
-  const seed = await seedTestData()
-  inspectionTypeId = seed.inspectionType.id
-  adminUserId = seed.adminUser.id
-  editorToken = await getEditorToken(app)
-  readerToken = await getReaderToken(app)
-
-  const infra = await testDb.infrastructure.create({ data: { name: 'Torre Control' } })
-  infraId = infra.id
-
-  const action = await testDb.action.create({
-    data: {
-      infrastructureId: infra.id,
-      performedBy: seed.adminUser.id,
-      actionTypeId: seed.inspectionType.id,
-      description: 'Inspección inicial',
-    },
-  })
-  actionId = action.id
-})
-
-describe('GET /api/v1/infrastructures/:infraId/actions', () => {
-  it('usuario autenticado puede listar acciones', async () => {
-    const res = await app.inject({
-      method: 'GET', url: `/api/v1/infrastructures/${infraId}/actions`,
-      headers: { authorization: `Bearer ${readerToken}` },
-    })
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    expect(Array.isArray(body.data)).toBe(true)
-    expect(body.data.length).toBe(1)
-    expect(body.data[0].description).toBe('Inspección inicial')
+  beforeEach(async () => {
+    await clearDb(testDb)
+    seed = await seedTestData(testDb)
+    app = await buildTestApp()
+    editorToken = await getEditorToken(app)
+    managerToken = await getManagerToken(app)
+    viewerToken = await getViewerToken(app)
   })
 
-  it('sin token devuelve 401', async () => {
-    const res = await app.inject({ method: 'GET', url: `/api/v1/infrastructures/${infraId}/actions` })
-    expect(res.statusCode).toBe(401)
-  })
-})
+  afterAll(async () => { await testDb.$disconnect() })
 
-describe('POST /api/v1/infrastructures/:infraId/actions', () => {
-  it('editor puede registrar una acción', async () => {
-    const res = await app.inject({
-      method: 'POST', url: `/api/v1/infrastructures/${infraId}/actions`,
-      headers: { authorization: `Bearer ${editorToken}` },
-      payload: { actionTypeId: inspectionTypeId, description: 'Revisión de cables' },
+  describe('GET /api/v1/actions', () => {
+    it('returns empty list when no actions', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data).toBeInstanceOf(Array)
+      expect(res.json().data).toHaveLength(0)
     })
-    expect(res.statusCode).toBe(201)
-    expect(JSON.parse(res.body).data.description).toBe('Revisión de cables')
+
+    it('returns actions list with relations', async () => {
+      await testDb.action.create({
+        data: {
+          title: 'Revisión inicial',
+          typeId: seed.actionType.id,
+
+          materialId: seed.material.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(200)
+      const data = res.json().data
+      expect(data).toHaveLength(1)
+      expect(data[0]).toMatchObject({ title: 'Revisión inicial' })
+      expect(data[0].type).toBeDefined()
+      expect(data[0].status).toBeDefined()
+      expect(data[0].material).toBeDefined()
+      expect(data[0].performer).toBeDefined()
+    })
+
+    it('returns 401 without auth', async () => {
+      const res = await app.inject({ method: 'GET', url: '/api/v1/actions' })
+      expect(res.statusCode).toBe(401)
+    })
   })
 
-  it('reader no puede registrar una acción (403)', async () => {
-    const res = await app.inject({
-      method: 'POST', url: `/api/v1/infrastructures/${infraId}/actions`,
-      headers: { authorization: `Bearer ${readerToken}` },
-      payload: { actionTypeId: inspectionTypeId, description: 'Test' },
-    })
-    expect(res.statusCode).toBe(403)
-  })
-})
+  describe('POST /api/v1/actions', () => {
+    it('creates action linked to material (requireWrite)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Inspección bombilla',
+          description: 'Revisión periódica',
+          typeId: seed.actionType.id,
 
-describe('POST /api/v1/actions/:id/materials', () => {
-  it('editor puede añadir material con totalCost calculado', async () => {
-    const res = await app.inject({
-      method: 'POST', url: `/api/v1/actions/${actionId}/materials`,
-      headers: { authorization: `Bearer ${editorToken}` },
-      payload: { name: 'Cable UTP cat6', unit: 'metros', quantity: 50, unitCost: 1.5 },
+          materialId: seed.material.id,
+        },
+      })
+      expect(res.statusCode).toBe(201)
+      const body = res.json().data
+      expect(body).toMatchObject({ title: 'Inspección bombilla', materialId: seed.material.id })
+      expect(body.type).toMatchObject({ code: 'inspection' })
+      expect(body.status).toMatchObject({ code: 'pending' })
+      expect(body.material).toMatchObject({ code: 'MAT-001' })
+      expect(body.performer).toBeDefined()
     })
-    expect(res.statusCode).toBe(201)
-    const data = JSON.parse(res.body).data
-    expect(data.name).toBe('Cable UTP cat6')
-    expect(Number(data.totalCost)).toBeCloseTo(75)
+
+    it('sets performedBy from JWT (current user)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Test performer',
+          typeId: seed.actionType.id,
+
+          materialId: seed.material.id,
+        },
+      })
+      expect(res.statusCode).toBe(201)
+      expect(res.json().data.performedBy).toBe(seed.editor.id)
+    })
+
+    it('returns 400 when materialId missing', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: { title: 'Sin material', typeId: seed.actionType.id },
+      })
+      expect(res.statusCode).toBe(400)
+    })
+
+    it('returns 403 for viewer', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${viewerToken}` },
+        payload: {
+          title: 'Test',
+          typeId: seed.actionType.id,
+
+          materialId: seed.material.id,
+        },
+      })
+      expect(res.statusCode).toBe(403)
+    })
   })
 
-  it('reader no puede añadir material (403)', async () => {
-    const res = await app.inject({
-      method: 'POST', url: `/api/v1/actions/${actionId}/materials`,
-      headers: { authorization: `Bearer ${readerToken}` },
-      payload: { name: 'Cable', unit: 'metros', quantity: 10 },
-    })
-    expect(res.statusCode).toBe(403)
-  })
-})
+  describe('GET /api/v1/actions/:id', () => {
+    it('returns action detail with all relations', async () => {
+      const action = await testDb.action.create({
+        data: {
+          title: 'Detalle test',
+          typeId: seed.actionType.id,
 
-describe('GET /api/v1/actions/:id/materials', () => {
-  it('usuario autenticado puede listar materiales', async () => {
-    await testDb.actionMaterial.create({
-      data: { actionId, name: 'Tornillo M8', unit: 'unidades', quantity: 20 },
+          materialId: seed.material.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/actions/${action.id}`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json().data
+      expect(body.id).toBe(action.id)
+      expect(body.type).toBeDefined()
+      expect(body.status).toBeDefined()
+      expect(body.material).toBeDefined()
+      expect(body.performer).toBeDefined()
     })
-    const res = await app.inject({
-      method: 'GET', url: `/api/v1/actions/${actionId}/materials`,
-      headers: { authorization: `Bearer ${readerToken}` },
+
+    it('returns 404 for unknown id', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: '/api/v1/actions/99999',
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(404)
     })
-    expect(res.statusCode).toBe(200)
-    const body = JSON.parse(res.body)
-    expect(body.data.length).toBe(1)
-    expect(body.data[0].name).toBe('Tornillo M8')
+  })
+
+  describe('GET /api/v1/materials/:materialId/actions', () => {
+    it('returns actions for a material', async () => {
+      await testDb.action.create({
+        data: {
+          title: 'Acción material',
+          typeId: seed.actionType.id,
+
+          materialId: seed.material.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/materials/${seed.material.id}/actions`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data).toHaveLength(1)
+      expect(res.json().data[0].title).toBe('Acción material')
+    })
+
+    it('returns empty list for material with no actions', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/materials/${seed.material.id}/actions`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data).toHaveLength(0)
+    })
+  })
+
+  describe('PATCH /api/v1/actions/:id', () => {
+    it('updates status (requireWrite)', async () => {
+      const action = await testDb.action.create({
+        data: {
+          title: 'Para actualizar',
+          typeId: seed.actionType.id,
+
+          materialId: seed.material.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/actions/${action.id}`,
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: { description: 'Completado sin incidencias' },
+      })
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.description).toBe('Completado sin incidencias')
+    })
+
+    it('returns 404 for unknown id', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: '/api/v1/actions/99999',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: { description: 'x' },
+      })
+      expect(res.statusCode).toBe(404)
+    })
+
+    it('returns 403 for viewer', async () => {
+      const action = await testDb.action.create({
+        data: {
+          title: 'Test',
+          typeId: seed.actionType.id,
+          materialId: seed.material.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/actions/${action.id}`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+        payload: { description: 'x' },
+      })
+      expect(res.statusCode).toBe(403)
+    })
+  })
+
+  describe('DELETE /api/v1/actions/:id', () => {
+    it('hard-deletes action (requireManage)', async () => {
+      const action = await testDb.action.create({
+        data: {
+          title: 'Para borrar',
+          typeId: seed.actionType.id,
+
+          materialId: seed.material.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/actions/${action.id}`,
+        headers: { authorization: `Bearer ${managerToken}` },
+      })
+      expect(res.statusCode).toBe(204)
+      const check = await testDb.action.findUnique({ where: { id: action.id } })
+      expect(check).toBeNull()
+    })
+
+    it('returns 403 for editor', async () => {
+      const action = await testDb.action.create({
+        data: {
+          title: 'Test',
+          typeId: seed.actionType.id,
+
+          materialId: seed.material.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/actions/${action.id}`,
+        headers: { authorization: `Bearer ${editorToken}` },
+      })
+      expect(res.statusCode).toBe(403)
+    })
   })
 })

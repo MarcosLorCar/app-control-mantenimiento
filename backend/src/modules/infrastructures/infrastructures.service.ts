@@ -1,28 +1,41 @@
 import { PrismaClient } from '@prisma/client'
-import { CreateInfrastructureBody, UpdateInfrastructureBody } from './infrastructures.schema'
+import type { CreateInfrastructureInput, UpdateInfrastructureInput } from './infrastructures.schema'
 
-const INFRA_INCLUDE = { infraType: true } as const
-
-export async function listInfrastructures(db: PrismaClient) {
-  return db.infrastructure.findMany({ include: INFRA_INCLUDE, orderBy: { createdAt: 'desc' } })
+const INFRA_SELECT = {
+  id: true,
+  code: true,
+  name: true,
+  description: true,
+  infraTypeId: true,
+  infraType: { select: { id: true, name: true, icon: true, color: true } },
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
 }
 
-export async function getInfrastructure(db: PrismaClient, id: number) {
-  const infra = await db.infrastructure.findUnique({ where: { id }, include: INFRA_INCLUDE })
-  if (!infra) throw { statusCode: 404, code: 'NOT_FOUND', message: 'Infraestructura no encontrada' }
-  return infra
+export function listInfrastructures(db: PrismaClient) {
+  return db.infrastructure.findMany({
+    where: { deletedAt: null },
+    select: INFRA_SELECT,
+    orderBy: { name: 'asc' },
+  })
 }
 
-export async function createInfrastructure(db: PrismaClient, body: CreateInfrastructureBody) {
-  return db.infrastructure.create({ data: body, include: INFRA_INCLUDE })
+export function getInfrastructure(db: PrismaClient, id: number) {
+  return db.infrastructure.findFirst({
+    where: { id, deletedAt: null },
+    select: INFRA_SELECT,
+  })
 }
 
-export async function updateInfrastructure(db: PrismaClient, id: number, body: UpdateInfrastructureBody) {
-  await getInfrastructure(db, id)
-  return db.infrastructure.update({ where: { id }, data: body, include: INFRA_INCLUDE })
+export function createInfrastructure(db: PrismaClient, data: CreateInfrastructureInput) {
+  return db.infrastructure.create({ data, select: INFRA_SELECT })
 }
 
-export async function deleteInfrastructure(db: PrismaClient, id: number) {
-  await getInfrastructure(db, id)
-  await db.infrastructure.delete({ where: { id } })
+export function updateInfrastructure(db: PrismaClient, id: number, data: UpdateInfrastructureInput) {
+  return db.infrastructure.update({ where: { id }, data, select: INFRA_SELECT })
+}
+
+export function softDeleteInfrastructure(db: PrismaClient, id: number) {
+  return db.infrastructure.update({ where: { id }, data: { deletedAt: new Date() } })
 }

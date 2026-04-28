@@ -14,8 +14,7 @@ import {
 vi.mock('../../api/infrastructures')
 
 const infra = {
-  id: 1, name: 'HQ', description: null, location: null,
-  latitude: null, longitude: null,
+  id: 1, code: 'HQ-001', name: 'HQ', description: null,
   infraTypeId: null, infraType: null,
   createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z', deletedAt: null,
 }
@@ -52,10 +51,9 @@ describe('useCreateInfrastructure', () => {
     vi.mocked(infraApi.listInfrastructures).mockResolvedValue([])
     vi.mocked(infraApi.createInfrastructure).mockResolvedValue(infra)
     const { result } = renderHook(() => useCreateInfrastructure(), { wrapper: makeWrapper() })
-    result.current.mutate({ name: 'HQ' })
+    result.current.mutate({ code: 'HQ-001', name: 'HQ' })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const calls = (infraApi.createInfrastructure as any).mock.calls
-    expect(calls[0][0]).toEqual({ name: 'HQ' })
+    expect(infraApi.createInfrastructure).toHaveBeenCalledWith({ code: 'HQ-001', name: 'HQ' })
   })
 })
 
@@ -77,7 +75,6 @@ describe('useDeleteInfrastructure', () => {
     const { result } = renderHook(() => useDeleteInfrastructure(), { wrapper: makeWrapper() })
     result.current.mutate(1)
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    const calls = (infraApi.deleteInfrastructure as any).mock.calls
-    expect(calls[0][0]).toBe(1)
+    expect(infraApi.deleteInfrastructure).toHaveBeenCalledWith(1)
   })
 })

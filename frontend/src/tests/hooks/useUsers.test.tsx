@@ -11,7 +11,8 @@ vi.mock('../../api/users')
 
 const user = {
   id: 1, email: 'admin@example.com', fullName: 'Admin', roleId: 1,
-  isActive: true, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z', deletedAt: null,
+  isActive: true, mustChangePassword: false,
+  createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z', deletedAt: null,
 }
 
 function makeWrapper() {

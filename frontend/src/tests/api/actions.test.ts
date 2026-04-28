@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as client from '../../api/client'
 import {
-  listActions, getAction, createAction, updateAction, deleteAction,
-  listMaterials, createMaterial, updateMaterial, deleteMaterial,
+  listActions, getAction, createAction, updateAction, deleteAction, listMaterialActions,
 } from '../../api/actions'
 
 vi.mock('../../api/client', async (importOriginal) => {
@@ -13,21 +12,21 @@ vi.mock('../../api/client', async (importOriginal) => {
 const mockFetch = vi.mocked(client.apiFetch)
 
 const action = {
-  id: 1, infrastructureId: 1, performedBy: 1, actionTypeId: 1,
-  description: null, performedAt: '2026-01-01T00:00:00.000Z', createdAt: '2026-01-01T00:00:00.000Z',
-}
-const material = {
-  id: 1, actionId: 1, name: 'Cable', description: null, unit: 'm',
-  quantity: '10.0000', unitCost: '2.50', totalCost: '25.00', supplier: null, notes: null,
+  id: 1, title: 'Revisión', description: null,
+  performedAt: '2026-01-01T00:00:00.000Z', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+  typeId: 1, materialId: 1, performedBy: 1,
+  type: { id: 1, code: 'inspection', name: 'Inspección', icon: null, color: null },
+  material: { id: 1, code: 'MAT-001', name: 'Bombilla', typeId: 1 },
+  performer: { id: 1, fullName: 'Admin', email: 'admin@example.com' },
 }
 
 beforeEach(() => { vi.clearAllMocks() })
 
 describe('listActions', () => {
-  it('llama a GET /api/v1/infrastructures/:infraId/actions', async () => {
+  it('llama a GET /api/v1/actions', async () => {
     mockFetch.mockResolvedValue({ data: [action] })
-    const result = await listActions(1)
-    expect(mockFetch).toHaveBeenCalledWith('/api/v1/infrastructures/1/actions')
+    const result = await listActions()
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/actions')
     expect(result).toEqual([action])
   })
 })
@@ -41,12 +40,12 @@ describe('getAction', () => {
 })
 
 describe('createAction', () => {
-  it('llama a POST /api/v1/infrastructures/:infraId/actions', async () => {
+  it('llama a POST /api/v1/actions con el body', async () => {
     mockFetch.mockResolvedValue({ data: action })
-    await createAction(1, { actionTypeId: 1 })
-    expect(mockFetch).toHaveBeenCalledWith('/api/v1/infrastructures/1/actions', {
+    await createAction({ title: 'Revisión', typeId: 1, materialId: 1 })
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/actions', {
       method: 'POST',
-      body: JSON.stringify({ actionTypeId: 1 }),
+      body: JSON.stringify({ title: 'Revisión', typeId: 1, materialId: 1 }),
     })
   })
 })
@@ -54,10 +53,10 @@ describe('createAction', () => {
 describe('updateAction', () => {
   it('llama a PATCH /api/v1/actions/:id', async () => {
     mockFetch.mockResolvedValue({ data: action })
-    await updateAction(1, { description: 'Actualizado' })
+    await updateAction(1, { title: 'Revisión actualizada' })
     expect(mockFetch).toHaveBeenCalledWith('/api/v1/actions/1', {
       method: 'PATCH',
-      body: JSON.stringify({ description: 'Actualizado' }),
+      body: JSON.stringify({ title: 'Revisión actualizada' }),
     })
   })
 })
@@ -71,42 +70,11 @@ describe('deleteAction', () => {
   })
 })
 
-describe('listMaterials', () => {
-  it('llama a GET /api/v1/actions/:id/materials', async () => {
-    mockFetch.mockResolvedValue({ data: [material] })
-    const result = await listMaterials(1)
-    expect(mockFetch).toHaveBeenCalledWith('/api/v1/actions/1/materials')
-    expect(result).toEqual([material])
-  })
-})
-
-describe('createMaterial', () => {
-  it('llama a POST /api/v1/actions/:id/materials', async () => {
-    mockFetch.mockResolvedValue({ data: material })
-    await createMaterial(1, { name: 'Cable', unit: 'm', quantity: 10 })
-    expect(mockFetch).toHaveBeenCalledWith('/api/v1/actions/1/materials', {
-      method: 'POST',
-      body: JSON.stringify({ name: 'Cable', unit: 'm', quantity: 10 }),
-    })
-  })
-})
-
-describe('updateMaterial', () => {
-  it('llama a PATCH /api/v1/materials/:id', async () => {
-    mockFetch.mockResolvedValue({ data: material })
-    await updateMaterial(1, { quantity: 20 })
-    expect(mockFetch).toHaveBeenCalledWith('/api/v1/materials/1', {
-      method: 'PATCH',
-      body: JSON.stringify({ quantity: 20 }),
-    })
-  })
-})
-
-describe('deleteMaterial', () => {
-  it('llama a DELETE /api/v1/materials/:id', async () => {
-    mockFetch.mockResolvedValue({ data: { ok: true } })
-    const result = await deleteMaterial(1)
-    expect(mockFetch).toHaveBeenCalledWith('/api/v1/materials/1', { method: 'DELETE' })
-    expect(result).toBeUndefined()
+describe('listMaterialActions', () => {
+  it('llama a GET /api/v1/materials/:id/actions', async () => {
+    mockFetch.mockResolvedValue({ data: [action] })
+    const result = await listMaterialActions(1)
+    expect(mockFetch).toHaveBeenCalledWith('/api/v1/materials/1/actions')
+    expect(result).toEqual([action])
   })
 })

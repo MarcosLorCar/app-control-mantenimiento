@@ -16,7 +16,7 @@ vi.mock('../../api/client', async (importOriginal) => {
 const mockFetch = vi.mocked(client.apiFetch)
 
 const infra = {
-  id: 1, name: 'HQ', description: null, location: null,
+  id: 1, code: 'HQ-001', name: 'HQ', description: null,
   createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z', deletedAt: null,
 }
 
@@ -43,10 +43,10 @@ describe('getInfrastructure', () => {
 describe('createInfrastructure', () => {
   it('llama a POST con el body', async () => {
     mockFetch.mockResolvedValue({ data: infra })
-    await createInfrastructure({ name: 'HQ' })
+    await createInfrastructure({ code: 'HQ-001', name: 'HQ' })
     expect(mockFetch).toHaveBeenCalledWith('/api/v1/infrastructures', {
       method: 'POST',
-      body: JSON.stringify({ name: 'HQ' }),
+      body: JSON.stringify({ code: 'HQ-001', name: 'HQ' }),
     })
   })
 })

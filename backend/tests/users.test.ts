@@ -60,11 +60,11 @@ describe('POST /api/v1/users', () => {
   })
 
   it('devuelve 409 con email duplicado', async () => {
-    // admin@test.com ya existe del seed
+    // manager@test.com ya existe del seed
     const res = await app.inject({
       method: 'POST', url: '/api/v1/users',
       headers: { authorization: `Bearer ${adminToken}` },
-      payload: { email: 'admin@test.com', password: 'password123', fullName: 'Duplicado', roleId: 1 },
+      payload: { email: 'manager@test.com', password: 'password123', fullName: 'Duplicado', roleId: adminRoleId },
     })
     expect(res.statusCode).toBe(409)
   })
@@ -78,7 +78,7 @@ describe('PATCH /api/v1/users/:id', () => {
       headers: { authorization: `Bearer ${adminToken}` },
     })
     const users = JSON.parse(listRes.body).data
-    const adminUser = users.find((u: any) => u.email === 'admin@test.com')
+    const adminUser = users.find((u: any) => u.email === 'manager@test.com')
 
     const res = await app.inject({
       method: 'PATCH', url: `/api/v1/users/${adminUser.id}`,
