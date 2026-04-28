@@ -12,7 +12,6 @@ async function main() {
   await prisma.infrastructure.deleteMany()
   await prisma.materialCategory.deleteMany()
   await prisma.materialType.deleteMany()
-  await prisma.actionStatus.deleteMany()
   await prisma.actionType.deleteMany()
   await prisma.user.deleteMany()
   await prisma.role.deleteMany()
@@ -57,14 +56,6 @@ async function main() {
   })
   await prisma.actionType.create({
     data: { code: 'repair', name: 'Reparación', icon: 'wrench', color: '#F59E0B' },
-  })
-
-  // Estados de acción
-  await prisma.actionStatus.create({
-    data: { code: 'pending', name: 'Pendiente', isTerminal: false, color: '#F59E0B', sortOrder: 1 },
-  })
-  await prisma.actionStatus.create({
-    data: { code: 'done', name: 'Completada', isTerminal: true, color: '#10B981', sortOrder: 2 },
   })
 
   // Tipos de material
