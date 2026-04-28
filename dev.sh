@@ -5,7 +5,7 @@ set -e
 trap 'kill 0' EXIT
 
 echo "→ Iniciando base de datos..."
-if ! docker ps -q --filter "name=^/control-actions-db$" | grep -q .; then
+if ! docker inspect -f '{{.State.Running}}' control-actions-db 2>/dev/null | grep -q '^true$'; then
   docker compose up -d db
 fi
 
