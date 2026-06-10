@@ -136,9 +136,17 @@ export interface Action {
   createdAt: string
   updatedAt: string
   typeId: number
-  materialId: number
+  materialId: number | null
+  infrastructureId?: number | null
+  dependencyId?: number | null
+  structureId?: number | null
+  latitude?: number | null
+  longitude?: number | null
   performedBy: number
   type: { id: number; code: string; name: string; icon: string | null; color: string | null }
-  material: { id: number; code: string; name: string; typeId: number }
+  material: { id: number; code: string | null; name: string; typeId: number } | null
+  infrastructure?: { id: number; code: string | null; name: string } | null
+  dependency?: { id: number; code: string | null; name: string } | null
+  structure?: { id: number; code: string | null; name: string } | null
   performer: { id: number; fullName: string; email: string }
 }

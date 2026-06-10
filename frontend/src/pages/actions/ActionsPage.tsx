@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Plus, X, Pencil, Trash2 } from 'lucide-react'
+import { Search, Plus, X, Pencil, Trash2, MapPin } from 'lucide-react'
 import { getActionTypeIcon } from '../../utils/actionTypeIcons'
 import { useActions, useDeleteAction } from '../../hooks/useActions'
 import { RoleGuard } from '../../components/RoleGuard'
@@ -21,7 +21,10 @@ export function ActionsPage() {
   const filtered = actions.filter(a =>
     a.title.toLowerCase().includes(search.toLowerCase()) ||
     a.type.name.toLowerCase().includes(search.toLowerCase()) ||
-    a.material.name.toLowerCase().includes(search.toLowerCase()) ||
+    (a.material?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.infrastructure?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.dependency?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.structure?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.performer?.fullName ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
@@ -76,7 +79,7 @@ export function ActionsPage() {
                 <div className="w-14 px-4">ID</div>
                 <div className="w-32 px-3">Tipo</div>
                 <div className="flex-1 px-3">Título</div>
-                <div className="w-40 px-3">Material</div>
+                <div className="w-40 px-3">Objetivo</div>
                 <div className="w-24 px-3">Fecha</div>
               </div>
 
@@ -106,8 +109,29 @@ export function ActionsPage() {
                     </div>
                     <div className="flex-1 px-3 text-fg truncate">{action.title}</div>
                     <div className="w-40 px-3 text-fg-secondary truncate">
-                      {action.material.code && <span className="font-mono text-[11px] text-muted mr-1">{action.material.code}</span>}
-                      {action.material.name}
+                      {action.material ? (
+                        <>
+                          {action.material.code && <span className="font-mono text-[11px] text-muted mr-1">{action.material.code}</span>}
+                          {action.material.name}
+                        </>
+                      ) : action.infrastructure ? (
+                        <>
+                          {action.infrastructure.code && <span className="font-mono text-[11px] text-muted mr-1">{action.infrastructure.code}</span>}
+                          {action.infrastructure.name} <span className="text-[11px] text-muted font-semibold ml-1">(Infra)</span>
+                        </>
+                      ) : action.dependency ? (
+                        <>
+                          {action.dependency.code && <span className="font-mono text-[11px] text-muted mr-1">{action.dependency.code}</span>}
+                          {action.dependency.name} <span className="text-[11px] text-muted font-semibold ml-1">(Dep)</span>
+                        </>
+                      ) : action.structure ? (
+                        <>
+                          {action.structure.code && <span className="font-mono text-[11px] text-muted mr-1">{action.structure.code}</span>}
+                          {action.structure.name} <span className="text-[11px] text-muted font-semibold ml-1">(Estr)</span>
+                        </>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
                     </div>
                     <div className="w-24 px-3 text-muted">{formatDate(action.performedAt)}</div>
                   </div>
@@ -155,17 +179,69 @@ export function ActionsPage() {
               </div>
 
               <div>
-                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Material</p>
-                <p className="text-fg">
-                  <span className="font-mono text-[11px] text-muted mr-1">{selected.material.code}</span>
-                  {selected.material.name}
-                </p>
+                <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Objetivo</p>
+                <div className="text-fg">
+                  {selected.material ? (
+                    <>
+                      <span className="text-xs font-semibold text-muted block mb-0.5">Material</span>
+                      {selected.material.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.material.code}</span>}
+                      <span className="font-medium text-fg">{selected.material.name}</span>
+                    </>
+                  ) : selected.infrastructure ? (
+                    <>
+                      <span className="text-xs font-semibold text-muted block mb-0.5">Infraestructura</span>
+                      {selected.infrastructure.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.infrastructure.code}</span>}
+                      <span className="font-medium text-fg">{selected.infrastructure.name}</span>
+                    </>
+                  ) : selected.dependency ? (
+                    <>
+                      <span className="text-xs font-semibold text-muted block mb-0.5">Dependencia</span>
+                      {selected.dependency.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.dependency.code}</span>}
+                      <span className="font-medium text-fg">{selected.dependency.name}</span>
+                    </>
+                  ) : selected.structure ? (
+                    <>
+                      <span className="text-xs font-semibold text-muted block mb-0.5">Estructura</span>
+                      {selected.structure.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.structure.code}</span>}
+                      <span className="font-medium text-fg">{selected.structure.name}</span>
+                    </>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </div>
               </div>
 
               <div>
                 <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1">Descripción</p>
                 <p className="text-fg leading-relaxed">{selected.description || '—'}</p>
               </div>
+
+              {selected.latitude !== null && selected.longitude !== null && selected.latitude !== undefined && selected.longitude !== undefined && (
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[1px] text-muted uppercase mb-1 flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                    Ubicación GPS
+                  </p>
+                  <div className="p-2.5 bg-app-bg border border-app-border rounded-lg mt-1 flex flex-col gap-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted">Latitud:</span>
+                      <span className="font-mono text-fg font-medium">{selected.latitude.toFixed(6)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted">Longitud:</span>
+                      <span className="font-mono text-fg font-medium">{selected.longitude.toFixed(6)}</span>
+                    </div>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${selected.latitude},${selected.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline text-center mt-1.5 font-medium flex items-center justify-center gap-1"
+                    >
+                      Ver en Google Maps ↗
+                    </a>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

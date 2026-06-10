@@ -4,9 +4,4 @@ dist/
 .env.*
 !.env.example
 *.log
-.superpowers/
-.aidesigner/*
-!.aidesigner/.gitkeep
-!.aidesigner/DESIGN.md
-.agents/skills/
 .worktrees/

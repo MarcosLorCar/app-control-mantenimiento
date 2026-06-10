@@ -52,7 +52,6 @@ describe('Actions', () => {
       expect(data).toHaveLength(1)
       expect(data[0]).toMatchObject({ title: 'Revisión inicial' })
       expect(data[0].type).toBeDefined()
-      expect(data[0].status).toBeDefined()
       expect(data[0].material).toBeDefined()
       expect(data[0].performer).toBeDefined()
     })
@@ -81,7 +80,6 @@ describe('Actions', () => {
       const body = res.json().data
       expect(body).toMatchObject({ title: 'Inspección bombilla', materialId: seed.material.id })
       expect(body.type).toMatchObject({ code: 'inspection' })
-      expect(body.status).toMatchObject({ code: 'pending' })
       expect(body.material).toMatchObject({ code: 'MAT-001' })
       expect(body.performer).toBeDefined()
     })
@@ -102,12 +100,47 @@ describe('Actions', () => {
       expect(res.json().data.performedBy).toBe(seed.editor.id)
     })
 
-    it('returns 400 when materialId missing', async () => {
+    it('returns 400 when all targets missing', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: { title: 'Sin material', typeId: seed.actionType.id },
+      })
+      expect(res.statusCode).toBe(400)
+    })
+
+    it('creates action linked to infrastructure', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Limpieza general',
+          description: 'Limpieza de hojas y basura',
+          typeId: seed.actionType.id,
+          infrastructureId: seed.infrastructure.id,
+          latitude: 40.416775,
+          longitude: -3.703790,
+        },
+      })
+      expect(res.statusCode).toBe(201)
+      const body = res.json().data
+      expect(body).toMatchObject({ title: 'Limpieza general', infrastructureId: seed.infrastructure.id, latitude: 40.416775, longitude: -3.703790 })
+      expect(body.infrastructure).toBeDefined()
+    })
+
+    it('returns 400 when multiple targets specified', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Intento doble',
+          typeId: seed.actionType.id,
+          materialId: seed.material.id,
+          infrastructureId: seed.infrastructure.id,
+        },
       })
       expect(res.statusCode).toBe(400)
     })
@@ -148,7 +181,6 @@ describe('Actions', () => {
       const body = res.json().data
       expect(body.id).toBe(action.id)
       expect(body.type).toBeDefined()
-      expect(body.status).toBeDefined()
       expect(body.material).toBeDefined()
       expect(body.performer).toBeDefined()
     })

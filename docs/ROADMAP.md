@@ -2,12 +2,9 @@
 
 Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL · Docker + Nginx
 
-Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](superpowers/specs/2026-04-07-arquitectura-design.md)
-
 ---
 
 ## Plan 1 — Backend API
-> Plan detallado: [`docs/superpowers/plans/2026-04-07-backend-api.md`](superpowers/plans/2026-04-07-backend-api.md)
 
 | # | Task | Estado |
 |---|------|--------|
@@ -26,7 +23,6 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 ---
 
 ## Plan 2 — Frontend SPA
-> Plan detallado: [`docs/superpowers/plans/2026-04-07-frontend-spa.md`](superpowers/plans/2026-04-07-frontend-spa.md)
 
 | # | Task | Estado |
 |---|------|--------|
@@ -45,7 +41,6 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 ---
 
 ## Plan 3 — Alineación Frontend con Diseño
-> Plan detallado: [`docs/superpowers/plans/2026-04-09-frontend-diseño.md`](superpowers/plans/2026-04-09-frontend-diseño.md)
 
 | # | Task | Estado |
 |---|------|--------|
@@ -62,7 +57,6 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 ---
 
 ## Plan 4 — Deploy (Docker + Nginx + CI/CD)
-> Plan detallado: [`docs/superpowers/plans/2026-04-07-deploy.md`](superpowers/plans/2026-04-07-deploy.md)
 
 | # | Task | Estado |
 |---|------|--------|
@@ -72,11 +66,3 @@ Spec completo: [`docs/superpowers/specs/2026-04-07-arquitectura-design.md`](supe
 | 4 | Configuración inicial del VPS (Docker, SSH, Certbot) | ⬜ pendiente |
 | 5 | Pipeline CI/CD con GitHub Actions | ⬜ pendiente |
 | 6 | Backup automático de BD + verificación final | ⬜ pendiente |
-
----
-
-## Cómo usar este roadmap
-
-Di **"implementar Plan 1 Task 3"** (o el número que quieras) y ejecuto ese task exacto siguiendo el plan detallado. Cuando termines un task, actualizo su estado a ✅.
-
-Los planes 2 y 3 se escriben con detalle cuando llegues a ellos — solo pídelos.

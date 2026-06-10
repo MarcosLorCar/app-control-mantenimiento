@@ -14,7 +14,12 @@ export function getAction(id: number): Promise<Action> {
 export function createAction(body: {
   title: string
   typeId: number
-  materialId: number
+  materialId?: number | null
+  infrastructureId?: number | null
+  dependencyId?: number | null
+  structureId?: number | null
+  latitude?: number | null
+  longitude?: number | null
   description?: string
   performedAt?: string
 }): Promise<Action> {

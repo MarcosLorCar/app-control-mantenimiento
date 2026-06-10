@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <rect width="512" height="512" rx="128" fill="#0f172a"/>
+  <!-- Warehouse/Building icon in the center -->
+  <path d="M256 96L80 228v188c0 15.5 12.5 28 28 28h296c15.5 0 28-12.5 28-28V228L256 96zm120 300H136V236l120-90 120 90v160z" fill="#38bdf8"/>
+  <path d="M208 272h96v100h-96z" fill="#0ea5e9"/>
+</svg>

@@ -230,13 +230,28 @@ model Action {
   typeId Int
   type   ActionType @relation(fields: [typeId], references: [id])
 
-  materialId Int
-  material   Material @relation(fields: [materialId], references: [id])
+  materialId Int?
+  material   Material? @relation(fields: [materialId], references: [id])
+
+  infrastructureId Int?
+  infrastructure   Infrastructure? @relation(fields: [infrastructureId], references: [id])
+
+  dependencyId Int?
+  dependency   Dependency? @relation(fields: [dependencyId], references: [id])
+
+  structureId Int?
+  structure   Structure? @relation(fields: [structureId], references: [id])
+
+  latitude  Float?
+  longitude Float?
 
   performedBy Int
   performer   User    @relation(fields: [performedBy], references: [id])
 
   @@index([materialId])
+  @@index([infrastructureId])
+  @@index([dependencyId])
+  @@index([structureId])
   @@index([performedBy])
   @@index([performedAt])
   @@map("actions")
