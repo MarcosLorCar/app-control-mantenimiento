@@ -62,9 +62,14 @@ POST   /api/v1/users              [requireManage]
 PATCH  /api/v1/users/:id          [requireManage]
 DELETE /api/v1/users/:id          [requireManage]
 
-GET  /api/v1/catalog/roles        [requireManage]
-GET  /api/v1/catalog/action-types [verifyToken]
-POST /api/v1/catalog/action-types [requireManage]
+GET  /api/v1/roles               [requireManage]
+GET  /api/v1/action-types        [verifyToken]
+POST /api/v1/action-types        [requireManage]
+
+GET    /api/v1/infrastructure-types          [verifyToken]
+POST   /api/v1/infrastructure-types          [requireManage]
+PATCH  /api/v1/infrastructure-types/:id      [requireManage]
+DELETE /api/v1/infrastructure-types/:id      [requireManage]
 
 GET    /api/v1/infrastructures              [verifyToken]
 GET    /api/v1/infrastructures/:id          [verifyToken]
@@ -103,24 +108,42 @@ users
   id, email, password_hash, full_name, role_id → roles
   is_active, created_at, updated_at, deleted_at (soft delete disponible)
 
-action_types
-  id, name, description, consumes_materials
+  infrastructure_types
+    id, name, description, icon, color, deleted_at
 
-infrastructures
-  id, name, description, location
-  created_at, updated_at, deleted_at (soft delete disponible)
+  infrastructures
+    id, code?, infra_type_id?, name, description
+    created_at, updated_at, deleted_at (soft delete disponible)
 
-actions
-  id, infrastructure_id → infrastructures
-  performed_by → users
-  action_type_id → action_types
-  description, performed_at, created_at
+  dependencies
+    id, code?, name, infrastructure_id → infrastructures, parent_id? → dependencies
+    created_at, updated_at, deleted_at
 
-action_materials
-  id, action_id → actions
-  name, description, unit, quantity
-  unit_cost, total_cost (calculado: quantity × unit_cost)
-  supplier, notes
+  structures
+    id, code?, name, infrastructure_id? → infrastructures, dependency_id? → dependencies
+    created_at, updated_at, deleted_at
+
+  material_types
+    id, code, name, description, icon, created_at, updated_at, deleted_at
+
+  material_categories
+    id, code, name, data_type, unit?, required, sort_order, enum_values, validation?
+    material_type_id → material_types
+
+  materials
+    id, code?, name, description?, serial_number?, installed_at, attributes
+    type_id → material_types
+    infrastructure_id? → infrastructures | dependency_id? → dependencies | structure_id? → structures
+    created_at, updated_at, deleted_at
+
+  action_types
+    id, code, name, description?, icon?, color?, deleted_at
+
+  actions
+    id, title, description?, performed_at, created_at, updated_at
+    type_id → action_types
+    material_id → materials
+    performed_by → users
 ```
 
 ---
@@ -128,11 +151,11 @@ action_materials
 ## Decisiones tomadas durante la implementación
 
 ### 1. `infra_statuses` descartada del proyecto
-El spec original incluía una tabla `infra_statuses` y un `status_id` en `infrastructures`. Durante Task 7 el usuario confirmó que este concepto no tiene uso real en la aplicación. Se eliminó:
+El spec original incluía una tabla `infra_statuses` y un campo de estado en `infrastructures`. Durante Task 7 el usuario confirmó que este concepto no tiene uso real en la aplicación. Se eliminó:
 - De `schema.prisma` (ya eliminado antes en migración `20260407203633`)
 - Del DBML fuente `docs/schemabbdd.txt`
 - Del módulo Catálogos (no se implementaron endpoints de infra-statuses)
-- El schema de `CreateInfrastructureSchema` no incluye `statusId`
+- El schema de `CreateInfrastructureSchema` no incluye el campo de estado
 
 ### 2. Prefijo de rutas `/api/v1/` (vs `/api/` del spec)
 El spec original usaba `/api/` sin versión. Durante Task 4 (hardening pre-Task 5) se añadió el prefijo `/api/v1/` a todas las rutas. Esta convención se mantuvo consistente en todos los módulos aunque el plan doc original no la reflejaba.

@@ -13,7 +13,8 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     try {
       const data = await loginService(fastify.db, fastify, result.data)
-      reply.setCookie('refreshToken', data.refreshToken, {
+      const refreshToken = await reply.refreshJwtSign({ sub: data.userId } as unknown as JwtPayload, { expiresIn: '7d' })
+      reply.setCookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -31,13 +32,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   fastify.post('/refresh', async (request, reply) => {
-    const token = request.cookies?.refreshToken
-    if (!token) {
-      return reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Sin sesión activa' } })
-    }
-
     try {
-      const decoded = fastify.jwt.verify(token) as unknown as { sub: number }
+      await request.refreshJwtVerify()
+      const decoded = request.refreshUser as unknown as { sub: number }
       const user = await fastify.db.user.findUnique({
         where: { id: decoded.sub },
         include: { role: true },

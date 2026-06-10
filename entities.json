@@ -1,0 +1,18 @@
+{
+  "people": [
+    "License",
+    "User"
+  ],
+  "projects": [
+    "Fastify",
+    "Node",
+    "Audio",
+    "Database",
+    "Email",
+    "Keyboard",
+    "Backend",
+    "Video",
+    "Skip",
+    "Express"
+  ]
+}

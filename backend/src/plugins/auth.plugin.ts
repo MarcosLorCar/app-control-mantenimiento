@@ -8,6 +8,18 @@ declare module 'fastify' {
     requireWrite: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
     requireManage: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
   }
+
+  interface FastifyRequest {
+    refreshJwtVerify: (options?: Record<string, unknown>) => Promise<void>
+    refreshUser?: { sub: number }
+  }
+
+  interface FastifyReply {
+    refreshJwtSign: (
+      payload: unknown,
+      options?: { expiresIn?: string } & Record<string, unknown>
+    ) => Promise<string>
+  }
 }
 
 declare module '@fastify/jwt' {

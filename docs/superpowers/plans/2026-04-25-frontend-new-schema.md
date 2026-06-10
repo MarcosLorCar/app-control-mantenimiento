@@ -1,8 +1,10 @@
-# Frontend Alignment with New Backend Schema
+# Frontend Alignment with Current Backend Schema
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Migrar el frontend del schema antiguo (Infrastructure→Action→ActionMaterial) al nuevo (Infrastructure→Dependency→Structure→Material→Action + MaterialType/MaterialCategory/ActionStatus) para que la app compile y funcione end-to-end.
+**Goal:** Alinear el frontend con el schema actual del backend (Infrastructure→Dependency→Structure→Material→Action + MaterialType/MaterialCategory) para que la app compile y funcione end-to-end.
+
+> Nota (2026-05-05): Este documento se ha ajustado para reflejar el backend implementado en `backend/prisma/schema.prisma` y las rutas registradas en `backend/src/app.ts`. Se han eliminado referencias a conceptos no implementados (por ejemplo, estados de acción) y se han corregido afirmaciones sobre la eliminación de `InfrastructureType`.
 
 **Architecture:** La migración es por capas — primero tipos y cliente API (sin UI), luego hooks, luego páginas. Cada task produce un estado compilable. La lógica de auth, layout y usuarios no cambia.
 
@@ -14,11 +16,11 @@
 
 | Concepto antiguo | Concepto nuevo |
 |-----------------|---------------|
-| `Infrastructure` (con location, lat/lng, infraTypeId) | `Infrastructure` (con `code`, sin ubicación) |
-| `InfrastructureType` | Eliminado |
+| `Infrastructure` (con location, lat/lng, infraTypeId) | `Infrastructure` (sin ubicación; `code` opcional; `infraTypeId` opcional) |
+| `InfrastructureType` | Se mantiene (catálogo + relación opcional desde Infrastructure) |
 | `ActionMaterial` (inline por acción) | `Material` (catálogo pre-existente con `typeId` y `attributes`) |
 | Action scoped a infra (`POST /infrastructures/:id/actions`) | Action global sobre un material (`POST /actions` con `materialId`) |
-| Action sin status | `ActionStatus` (catálogo: pending, done, etc.) |
+| Action sin status | Sin estados de acción (no existe en Prisma/API actuales) |
 | `catalog/action-types` | `action-types` (sin prefijo `/catalog/`) |
 | N/A | `Dependency` (nodo jerarquico bajo Infrastructure) |
 | N/A | `Structure` (ubicación física bajo Dependency o Infrastructure) |
@@ -30,11 +32,11 @@
 
 | Archivo | Cambio |
 |---------|--------|
-| `frontend/src/api/types.ts` | Reemplazar completo con nuevos tipos |
-| `frontend/src/api/infrastructures.ts` | Actualizar (code, sin location/lat/lng) |
-| `frontend/src/api/actions.ts` | Reemplazar (nuevos endpoints, nuevos campos) |
-| `frontend/src/api/catalog.ts` | Reemplazar (nuevo prefijo, ActionStatus, sin InfraType) |
-| `frontend/src/api/materials.ts` | Crear nuevo (catálogo Material + Materials by location) |
+| `frontend/src/api/types.ts` | Mantener en sync con Prisma/serialización del backend |
+| `frontend/src/api/infrastructures.ts` | CRUD Infrastructure (`code?`, `infraTypeId?`) |
+| `frontend/src/api/actions.ts` | Acciones globales por material (`/actions`, `/materials/:id/actions`) |
+| `frontend/src/api/catalog.ts` | Catálogos implementados: roles, action-types, infrastructure-types, material-types, material-categories |
+| `frontend/src/api/materials.ts` | CRUD Material + listados por ubicación |
 | `frontend/src/hooks/useActions.ts` | Actualizar |
 | `frontend/src/hooks/useMaterials.ts` | Actualizar |
 | `frontend/src/hooks/useCatalog.ts` | Actualizar |
@@ -42,10 +44,10 @@
 | `frontend/src/pages/infrastructures/InfrastructureList.tsx` | Añadir campo `code` |
 | `frontend/src/pages/infrastructures/InfrastructureForm.tsx` | Reemplazar campos (add code, remove location/lat/lng) |
 | `frontend/src/pages/infrastructures/InfrastructureDetail.tsx` | Añadir sección materiales y acciones por material |
-| `frontend/src/pages/actions/ActionForm.tsx` | Reemplazar campos (title, statusId, materialId) |
-| `frontend/src/pages/actions/ActionsPage.tsx` | Añadir columna status |
+| `frontend/src/pages/actions/ActionForm.tsx` | Reemplazar campos (title, typeId, materialId) |
+| `frontend/src/pages/actions/ActionsPage.tsx` | Ajustar columnas segun schema actual (sin status) |
 | `frontend/src/pages/materials/MaterialsPage.tsx` | Reemplazar (nuevo modelo Material) |
-| `frontend/src/pages/admin/Catalog.tsx` | Añadir ActionStatus, MaterialType/Category; eliminar InfraType |
+| `frontend/src/pages/admin/Catalog.tsx` | Mantener InfraType; sin estados de acción |
 | `frontend/src/App.tsx` | Sin cambios de rutas (por ahora) |
 
 ---
@@ -177,16 +179,6 @@ export interface ActionType {
   deletedAt: string | null
 }
 
-export interface ActionStatus {
-  id: number
-  code: string
-  name: string
-  color: string | null
-  isTerminal: boolean
-  sortOrder: number
-  deletedAt: string | null
-}
-
 export interface Action {
   id: number
   title: string
@@ -195,11 +187,9 @@ export interface Action {
   createdAt: string
   updatedAt: string
   typeId: number
-  statusId: number
   materialId: number
   performedBy: number
   type: { id: number; code: string; name: string; icon: string | null; color: string | null }
-  status: { id: number; code: string; name: string; color: string | null; isTerminal: boolean; sortOrder: number }
   material: { id: number; code: string; name: string; typeId: number }
   performer: { id: number; fullName: string; email: string }
 }
@@ -306,7 +296,6 @@ export async function getAction(id: number): Promise<Action> {
 export async function createAction(body: {
   title: string
   typeId: number
-  statusId: number
   materialId: number
   description?: string
   performedAt?: string
@@ -320,7 +309,7 @@ export async function createAction(body: {
 
 export async function updateAction(
   id: number,
-  body: { title?: string; description?: string; statusId?: number; performedAt?: string }
+  body: { title?: string; description?: string; performedAt?: string }
 ): Promise<Action> {
   const res = await apiFetch<{ data: Action }>(`/api/v1/actions/${id}`, {
     method: 'PATCH',
@@ -360,7 +349,7 @@ git commit -m "feat(frontend): rewrite actions API client for new schema"
 
 ```typescript
 import { apiFetch } from './client'
-import type { Role, ActionType, ActionStatus, MaterialType, MaterialCategory } from './types'
+import type { Role, ActionType, MaterialType, MaterialCategory } from './types'
 
 // ==================== ROLES ====================
 
@@ -395,38 +384,6 @@ export async function updateActionType(
   body: { name?: string; description?: string; icon?: string | null; color?: string | null }
 ): Promise<ActionType> {
   const res = await apiFetch<{ data: ActionType }>(`/api/v1/action-types/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(body),
-  })
-  return res.data
-}
-
-// ==================== ACTION STATUSES ====================
-
-export async function listActionStatuses(): Promise<ActionStatus[]> {
-  const res = await apiFetch<{ data: ActionStatus[] }>('/api/v1/action-statuses')
-  return res.data
-}
-
-export async function createActionStatus(body: {
-  code: string
-  name: string
-  isTerminal?: boolean
-  color?: string
-  sortOrder: number
-}): Promise<ActionStatus> {
-  const res = await apiFetch<{ data: ActionStatus }>('/api/v1/action-statuses', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  })
-  return res.data
-}
-
-export async function updateActionStatus(
-  id: number,
-  body: { name?: string; color?: string | null; isTerminal?: boolean; sortOrder?: number }
-): Promise<ActionStatus> {
-  const res = await apiFetch<{ data: ActionStatus }>(`/api/v1/action-statuses/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
   })
@@ -709,14 +666,13 @@ export function useDeleteMaterial() {
 
 - [ ] **Step 3: Actualizar `hooks/useCatalog.ts`**
 
-Reemplazar completamente con hooks para ActionType, ActionStatus, y Roles (eliminar InfrastructureType):
+Reemplazar completamente con hooks para ActionType, Roles, InfrastructureType, MaterialType y MaterialCategory (sin estados de acción):
 
 ```typescript
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listRoles,
   listActionTypes, createActionType, updateActionType,
-  listActionStatuses, createActionStatus, updateActionStatus,
   listMaterialTypes, createMaterialType, updateMaterialType,
   listMaterialCategories, createMaterialCategory, updateMaterialCategory, deleteMaterialCategory,
 } from '../api/catalog'
@@ -743,27 +699,6 @@ export function useUpdateActionType() {
     mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateActionType>[1] }) =>
       updateActionType(id, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['action-types'] }),
-  })
-}
-
-export function useActionStatuses() {
-  return useQuery({ queryKey: ['action-statuses'], queryFn: listActionStatuses })
-}
-
-export function useCreateActionStatus() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: createActionStatus,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['action-statuses'] }),
-  })
-}
-
-export function useUpdateActionStatus() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateActionStatus>[1] }) =>
-      updateActionStatus(id, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['action-statuses'] }),
   })
 }
 
@@ -847,7 +782,7 @@ git commit -m "feat(frontend): update hooks for new schema (actions, materials, 
 - Modify: `frontend/src/pages/infrastructures/InfrastructureList.tsx`
 - Modify: `frontend/src/pages/infrastructures/InfrastructureForm.tsx`
 
-El campo `location`, `latitude`, `longitude`, `infraTypeId` ya no existen. Nuevo campo `code` (obligatorio).
+Los campos `location`, `latitude`, `longitude` ya no existen. Nuevo campo `code` (obligatorio). `infraTypeId` se mantiene (opcional).
 
 - [ ] **Step 1: Actualizar InfrastructureForm**
 
@@ -857,7 +792,9 @@ Localizar el formulario de creación/edición. Reemplazar los campos del formula
 - Campo `location` (input text)
 - Campo `latitude` (input number)
 - Campo `longitude` (input number)
-- Campo `infraTypeId` (select)
+
+**Mantener:**
+- Campo `infraTypeId` (select) como opcional
 - Hook `useInfrastructureTypes()` y su import
 
 **Añadir antes del campo `name`:**
@@ -950,7 +887,7 @@ git commit -m "feat(frontend): update infrastructure pages for new schema (code 
 - Modify: `frontend/src/pages/actions/ActionForm.tsx`
 - Modify: `frontend/src/pages/actions/ActionsPage.tsx`
 
-El cambio más grande: las acciones ya NO están bajo una infraestructura. Se crean de forma global con `title`, `typeId`, `statusId`, `materialId`.
+El cambio más grande: las acciones ya NO están bajo una infraestructura. Se crean de forma global con `title`, `typeId`, `materialId`.
 
 - [ ] **Step 1: Reemplazar ActionForm**
 
@@ -967,15 +904,13 @@ interface Props {
 }
 
 export default function ActionForm({ action, onClose }: Props) {
-  const { data: actionTypes = [] } = useActionTypes()
-  const { data: actionStatuses = [] } = useActionStatuses()
-  const { data: materials = [] } = useMaterials()
+const { data: actionTypes = [] } = useActionTypes()
+const { data: materials = [] } = useMaterials()
 
   const [form, setForm] = useState({
     title: action?.title ?? '',
     description: action?.description ?? '',
     typeId: action?.typeId ?? 0,
-    statusId: action?.statusId ?? 0,
     materialId: action?.materialId ?? 0,
     performedAt: action?.performedAt?.slice(0, 16) ?? new Date().toISOString().slice(0, 16),
   })
@@ -991,7 +926,6 @@ export default function ActionForm({ action, onClose }: Props) {
         body: {
           title: form.title,
           description: form.description || undefined,
-          statusId: form.statusId || undefined,
           performedAt: form.performedAt,
         },
       })
@@ -999,7 +933,6 @@ export default function ActionForm({ action, onClose }: Props) {
       await createAction.mutateAsync({
         title: form.title,
         typeId: form.typeId,
-        statusId: form.statusId,
         materialId: form.materialId,
         description: form.description || undefined,
         performedAt: form.performedAt,
@@ -1055,20 +988,7 @@ export default function ActionForm({ action, onClose }: Props) {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
-          <select
-            value={form.statusId}
-            onChange={e => setForm(f => ({ ...f, statusId: Number(e.target.value) }))}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            required
-          >
-            <option value={0}>Seleccionar estado...</option>
-            {actionStatuses.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </div>
+        {/* No hay estados de acción en el backend actual */}
       </div>
 
       <div>
@@ -1110,25 +1030,10 @@ export default function ActionForm({ action, onClose }: Props) {
 
 - [ ] **Step 2: Actualizar ActionsPage**
 
-Localizar la tabla de acciones. Añadir columna `status` y actualizar los campos mostrados:
+Localizar la tabla de acciones. El backend actual NO incluye `status`. Eliminar/ignorar cualquier columna `status` y mostrar `title`, `type`, `material`, `performedAt`.
 
 ```tsx
-// Importar useActionStatuses si se usa para badge de color
-// En las columnas de la tabla, añadir columna Status:
-<th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-
-// En cada fila:
-<td className="px-4 py-3">
-  <span
-    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-    style={{
-      backgroundColor: action.status.color ? `${action.status.color}20` : '#f3f4f6',
-      color: action.status.color ?? '#374151',
-    }}
-  >
-    {action.status.name}
-  </span>
-</td>
+// NO hay columna Status
 ```
 
 También actualizar las referencias al campo `description` a `title` donde sea la columna principal.
@@ -1137,7 +1042,7 @@ También actualizar las referencias al campo `description` a `title` donde sea l
 
 ```bash
 git add frontend/src/pages/actions/
-git commit -m "feat(frontend): rewrite ActionForm for new schema (title, statusId, materialId)"
+git commit -m "feat(frontend): rewrite ActionForm for new schema (title, typeId, materialId)"
 ```
 
 ---
@@ -1254,7 +1159,7 @@ git commit -m "feat(frontend): rewrite MaterialsPage for new catalog-based mater
 Cambios:
 1. Eliminar sección "Tipos de Infraestructura" (InfrastructureType ya no existe)
 2. Actualizar ActionType (campo `code` ahora obligatorio, eliminar `consumesMaterials`)
-3. Añadir sección "Estados de Acción" (ActionStatus)
+3. No hay sección "Estados de Acción" (no existe en Prisma/API actuales)
 4. Añadir sección "Tipos de Material" (MaterialType)
 
 - [ ] **Step 1: Actualizar imports del catálogo**
@@ -1285,7 +1190,7 @@ Añadir campo `code` (obligatorio):
 </div>
 ```
 
-- [ ] **Step 3: Añadir sección ActionStatus**
+- [ ] **Step 3: Verificar que NO existe sección de estados de acción**
 
 Añadir una nueva sección en el catálogo para gestionar estados de acción:
 
@@ -1357,7 +1262,7 @@ Expected: sin errores de tipo ni de build.
 
 ```bash
 git add frontend/src/pages/admin/Catalog.tsx
-git commit -m "feat(frontend): update Catalog page (remove InfraType, add ActionStatus + MaterialType)"
+git commit -m "feat(frontend): update Catalog page (keep InfraType, add MaterialType)"
 ```
 
 ---
@@ -1376,7 +1281,7 @@ git commit -m "feat(frontend): update Catalog page (remove InfraType, add Action
 1. Login con `admin@example.com / admin1234` → redirige a dashboard
 2. Ir a Infraestructuras → ver lista con campo `code`
 3. Crear infraestructura → form pide `code` y `name`
-4. Ir a Catálogo admin → ver sección ActionType (con `code`), ActionStatus, MaterialType
+4. Ir a Catálogo admin → ver sección ActionType (con `code`), InfrastructureType, MaterialType
 5. Ir a Acciones → ver tabla con columna `Estado`
 6. Crear acción → form pide `title`, material, tipo, estado
 7. Ir a Materiales → ver tabla con `code`, `name`, `tipo`

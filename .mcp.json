@@ -3,6 +3,13 @@
     "aidesigner": {
       "type": "http",
       "url": "https://api.aidesigner.ai/api/v1/mcp"
+    },
+    "alexandrie": {
+      "type": "http",
+      "url": "https://alexandrie.ohmyopencode.com/api/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer ${ALEXANDRIE_TOKEN}"
+      }
     }
   }
 }

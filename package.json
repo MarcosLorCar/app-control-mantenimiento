@@ -15,5 +15,12 @@
   },
   "devDependencies": {
     "concurrently": "9.2.1"
+  },
+  "dependencies": {
+    "depd": "^2.0.0",
+    "escape-html": "^1.0.3",
+    "mime": "^4.1.0",
+    "setprototypeof": "^1.2.0",
+    "toidentifier": "^1.0.1"
   }
 }

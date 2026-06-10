@@ -26,6 +26,14 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await app.register(fastifyCookie)
   await app.register(fastifyJwt, {
     secret: opts.jwtSecret,
+  })
+  await app.register(fastifyJwt, {
+    secret: opts.jwtRefreshSecret,
+    namespace: 'refresh',
+    decoratorName: 'refreshUser',
+    jwtSign: 'refreshJwtSign',
+    jwtVerify: 'refreshJwtVerify',
+    jwtDecode: 'refreshJwtDecode',
     cookie: { cookieName: 'refreshToken', signed: false },
   })
   await app.register(fastifyMultipart, { limits: { fileSize: 500 * 1024 } })
