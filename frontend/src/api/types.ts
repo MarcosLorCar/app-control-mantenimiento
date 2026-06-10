@@ -32,44 +32,30 @@ export interface InfrastructureType {
   deletedAt: string | null
 }
 
-export interface Infrastructure {
+export interface Location {
   id: number
   code: string | null
   name: string
   description: string | null
+  type: string | null
+  path: string
+  parentId: number | null
   infraTypeId: number | null
   infraType: { id: number; name: string; icon: string | null; color: string | null } | null
   createdAt: string
   updatedAt: string
   deletedAt: string | null
+  _count?: {
+    children: number
+    materials: number
+    actions: number
+  }
 }
 
-export interface Dependency {
-  id: number
-  code: string
-  name: string
-  description: string | null
-  infrastructureId: number
-  parentId: number | null
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
-}
-
-export interface DependencyWithChildren extends Dependency {
-  children: Dependency[]
-  structures: Structure[]
-}
-
-export interface Structure {
-  id: number
-  code: string
-  name: string
-  description: string | null
-  infrastructureId: number | null
-  dependencyId: number | null
-  createdAt: string
-  updatedAt: string
+export interface LocationDetail extends Location {
+  children: Location[]
+  materials: Material[]
+  actions: Action[]
 }
 
 // ==================== MATERIAL CATALOG ====================
@@ -108,9 +94,8 @@ export interface Material {
   attributes: Record<string, unknown>
   typeId: number
   type: { id: number; code: string; name: string; icon: string | null }
-  infrastructureId: number | null
-  dependencyId: number | null
-  structureId: number | null
+  locationId: number | null
+  location: { id: number; code: string | null; name: string; path: string } | null
   createdAt: string
   updatedAt: string
   deletedAt: string | null
@@ -137,16 +122,12 @@ export interface Action {
   updatedAt: string
   typeId: number
   materialId: number | null
-  infrastructureId?: number | null
-  dependencyId?: number | null
-  structureId?: number | null
+  locationId: number | null
   latitude?: number | null
   longitude?: number | null
   performedBy: number
   type: { id: number; code: string; name: string; icon: string | null; color: string | null }
   material: { id: number; code: string | null; name: string; typeId: number } | null
-  infrastructure?: { id: number; code: string | null; name: string } | null
-  dependency?: { id: number; code: string | null; name: string } | null
-  structure?: { id: number; code: string | null; name: string } | null
+  location: { id: number; code: string | null; name: string; path: string } | null
   performer: { id: number; fullName: string; email: string }
 }

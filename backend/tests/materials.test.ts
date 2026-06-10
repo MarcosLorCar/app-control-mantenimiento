@@ -49,7 +49,7 @@ describe('Materials', () => {
   })
 
   describe('POST /api/v1/materials', () => {
-    it('creates material under structure (requireWrite)', async () => {
+    it('creates material under location (requireWrite)', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/materials',
@@ -58,54 +58,18 @@ describe('Materials', () => {
           code: 'MAT-002',
           name: 'Bombilla Osram E27',
           typeId: seed.materialType.id,
-          structureId: seed.structure.id,
+          locationId: seed.structure.id,
           attributes: { power_w: 12 },
         },
       })
       expect(res.statusCode).toBe(201)
       expect(res.json().data).toMatchObject({
         code: 'MAT-002',
-        structureId: seed.structure.id,
-        infrastructureId: null,
-        dependencyId: null,
+        locationId: seed.structure.id,
       })
     })
 
-    it('creates material directly under infrastructure', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/materials',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: {
-          code: 'MAT-003',
-          name: 'Panel principal',
-          typeId: seed.materialType.id,
-          infrastructureId: seed.infra.id,
-          attributes: { power_w: 100 },
-        },
-      })
-      expect(res.statusCode).toBe(201)
-      expect(res.json().data).toMatchObject({ infrastructureId: seed.infra.id })
-    })
-
-    it('creates material under dependency', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/materials',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: {
-          code: 'MAT-004',
-          name: 'Cableado',
-          typeId: seed.materialType.id,
-          dependencyId: seed.dep.id,
-          attributes: { power_w: 5 },
-        },
-      })
-      expect(res.statusCode).toBe(201)
-      expect(res.json().data).toMatchObject({ dependencyId: seed.dep.id })
-    })
-
-    it('returns 400 when no parent location', async () => {
+    it('returns 400 when missing required locationId', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/materials',
@@ -120,23 +84,6 @@ describe('Materials', () => {
       expect(res.statusCode).toBe(400)
     })
 
-    it('returns 400 when two parent locations', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/materials',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: {
-          code: 'MAT-X',
-          name: 'Dos padres',
-          typeId: seed.materialType.id,
-          structureId: seed.structure.id,
-          dependencyId: seed.dep.id,
-          attributes: { power_w: 9 },
-        },
-      })
-      expect(res.statusCode).toBe(400)
-    })
-
     it('returns 422 when required attribute missing', async () => {
       const res = await app.inject({
         method: 'POST',
@@ -146,7 +93,7 @@ describe('Materials', () => {
           code: 'MAT-005',
           name: 'Sin potencia',
           typeId: seed.materialType.id,
-          structureId: seed.structure.id,
+          locationId: seed.structure.id,
           attributes: {},
         },
       })
@@ -162,7 +109,7 @@ describe('Materials', () => {
           code: 'MAT-001',
           name: 'Duplicado',
           typeId: seed.materialType.id,
-          structureId: seed.structure.id,
+          locationId: seed.structure.id,
           attributes: { power_w: 9 },
         },
       })
@@ -174,7 +121,7 @@ describe('Materials', () => {
         method: 'POST',
         url: '/api/v1/materials',
         headers: { authorization: `Bearer ${viewerToken}` },
-        payload: { code: 'MAT-X', name: 'X', typeId: seed.materialType.id, structureId: seed.structure.id, attributes: { power_w: 1 } },
+        payload: { code: 'MAT-X', name: 'X', typeId: seed.materialType.id, locationId: seed.structure.id, attributes: { power_w: 1 } },
       })
       expect(res.statusCode).toBe(403)
     })
@@ -203,59 +150,16 @@ describe('Materials', () => {
     })
   })
 
-  describe('GET /api/v1/structures/:id/materials', () => {
-    it('returns materials in a structure', async () => {
+  describe('GET /api/v1/locations/:id/materials', () => {
+    it('returns materials in a location', async () => {
       const res = await app.inject({
         method: 'GET',
-        url: `/api/v1/structures/${seed.structure.id}/materials`,
+        url: `/api/v1/locations/${seed.structure.id}/materials`,
         headers: { authorization: `Bearer ${viewerToken}` },
       })
       expect(res.statusCode).toBe(200)
       expect(res.json().data).toHaveLength(1)
       expect(res.json().data[0].code).toBe('MAT-001')
-    })
-  })
-
-  describe('GET /api/v1/infrastructures/:id/materials', () => {
-    it('returns materials at infrastructure level', async () => {
-      await testDb.material.create({
-        data: {
-          code: 'MAT-INFRA',
-          name: 'Material infra',
-          typeId: seed.materialType.id,
-          infrastructureId: seed.infra.id,
-          attributes: { power_w: 10 },
-        },
-      })
-      const res = await app.inject({
-        method: 'GET',
-        url: `/api/v1/infrastructures/${seed.infra.id}/materials`,
-        headers: { authorization: `Bearer ${viewerToken}` },
-      })
-      expect(res.statusCode).toBe(200)
-      expect(res.json().data).toHaveLength(1)
-    })
-  })
-
-  describe('GET /api/v1/dependencies/:id/materials', () => {
-    it('returns materials in a dependency', async () => {
-      await testDb.material.create({
-        data: {
-          code: 'MAT-DEP',
-          name: 'Material dependencia',
-          typeId: seed.materialType.id,
-          dependencyId: seed.dep.id,
-          attributes: { power_w: 7 },
-        },
-      })
-      const res = await app.inject({
-        method: 'GET',
-        url: `/api/v1/dependencies/${seed.dep.id}/materials`,
-        headers: { authorization: `Bearer ${viewerToken}` },
-      })
-      expect(res.statusCode).toBe(200)
-      expect(res.json().data).toHaveLength(1)
-      expect(res.json().data[0].code).toBe('MAT-DEP')
     })
   })
 

@@ -59,4 +59,10 @@ export async function actionsRoutes(app: FastifyInstance) {
     const materialId = Number((req.params as any).materialId)
     return reply.send({ data: await listActions(app.db, { materialId }) })
   })
+
+  // Actions by location
+  app.get('/locations/:locId/actions', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const locationId = Number((req.params as any).locId)
+    return reply.send({ data: await listActions(app.db, { locationId }) })
+  })
 }

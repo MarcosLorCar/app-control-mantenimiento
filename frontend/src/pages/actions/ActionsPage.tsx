@@ -22,9 +22,7 @@ export function ActionsPage() {
     a.title.toLowerCase().includes(search.toLowerCase()) ||
     a.type.name.toLowerCase().includes(search.toLowerCase()) ||
     (a.material?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (a.infrastructure?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (a.dependency?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
-    (a.structure?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.location?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (a.performer?.fullName ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
@@ -114,20 +112,10 @@ export function ActionsPage() {
                           {action.material.code && <span className="font-mono text-[11px] text-muted mr-1">{action.material.code}</span>}
                           {action.material.name}
                         </>
-                      ) : action.infrastructure ? (
+                      ) : action.location ? (
                         <>
-                          {action.infrastructure.code && <span className="font-mono text-[11px] text-muted mr-1">{action.infrastructure.code}</span>}
-                          {action.infrastructure.name} <span className="text-[11px] text-muted font-semibold ml-1">(Infra)</span>
-                        </>
-                      ) : action.dependency ? (
-                        <>
-                          {action.dependency.code && <span className="font-mono text-[11px] text-muted mr-1">{action.dependency.code}</span>}
-                          {action.dependency.name} <span className="text-[11px] text-muted font-semibold ml-1">(Dep)</span>
-                        </>
-                      ) : action.structure ? (
-                        <>
-                          {action.structure.code && <span className="font-mono text-[11px] text-muted mr-1">{action.structure.code}</span>}
-                          {action.structure.name} <span className="text-[11px] text-muted font-semibold ml-1">(Estr)</span>
+                          {action.location.code && <span className="font-mono text-[11px] text-muted mr-1">{action.location.code}</span>}
+                          {action.location.name} <span className="text-[11px] text-muted font-semibold ml-1">(Ubic)</span>
                         </>
                       ) : (
                         <span className="text-muted">—</span>
@@ -187,23 +175,11 @@ export function ActionsPage() {
                       {selected.material.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.material.code}</span>}
                       <span className="font-medium text-fg">{selected.material.name}</span>
                     </>
-                  ) : selected.infrastructure ? (
+                  ) : selected.location ? (
                     <>
-                      <span className="text-xs font-semibold text-muted block mb-0.5">Infraestructura</span>
-                      {selected.infrastructure.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.infrastructure.code}</span>}
-                      <span className="font-medium text-fg">{selected.infrastructure.name}</span>
-                    </>
-                  ) : selected.dependency ? (
-                    <>
-                      <span className="text-xs font-semibold text-muted block mb-0.5">Dependencia</span>
-                      {selected.dependency.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.dependency.code}</span>}
-                      <span className="font-medium text-fg">{selected.dependency.name}</span>
-                    </>
-                  ) : selected.structure ? (
-                    <>
-                      <span className="text-xs font-semibold text-muted block mb-0.5">Estructura</span>
-                      {selected.structure.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.structure.code}</span>}
-                      <span className="font-medium text-fg">{selected.structure.name}</span>
+                      <span className="text-xs font-semibold text-muted block mb-0.5">Ubicación</span>
+                      {selected.location.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.location.code}</span>}
+                      <span className="font-medium text-fg">{selected.location.name}</span>
                     </>
                   ) : (
                     <span className="text-muted">—</span>

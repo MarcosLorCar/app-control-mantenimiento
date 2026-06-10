@@ -15,9 +15,7 @@ export function createAction(body: {
   title: string
   typeId: number
   materialId?: number | null
-  infrastructureId?: number | null
-  dependencyId?: number | null
-  structureId?: number | null
+  locationId?: number | null
   latitude?: number | null
   longitude?: number | null
   description?: string
@@ -45,4 +43,8 @@ export function deleteAction(id: number): Promise<void> {
 
 export function listMaterialActions(materialId: number): Promise<Action[]> {
   return apiFetch<ApiData<Action[]>>(`${API_BASE}/materials/${materialId}/actions`).then(r => r.data)
+}
+
+export function listLocationActions(locationId: number): Promise<Action[]> {
+  return apiFetch<ApiData<Action[]>>(`${API_BASE}/locations/${locationId}/actions`).then(r => r.data)
 }

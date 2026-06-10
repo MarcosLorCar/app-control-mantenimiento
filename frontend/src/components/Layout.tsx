@@ -9,7 +9,7 @@ import { useAuth } from '../hooks/useAuth'
 const GENERAL_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/actions', icon: ClipboardList, label: 'Acciones', end: false },
-  { to: '/infrastructures', icon: Warehouse, label: 'Infraestructuras', end: false },
+  { to: '/locations', icon: Warehouse, label: 'Ubicaciones', end: false },
   { to: '/materials', icon: Package, label: 'Materiales', end: false },
 ]
 
@@ -21,7 +21,7 @@ const ADMIN_ITEMS = [
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Panel de Control', subtitle: 'Resumen general del sistema' },
   '/actions': { title: 'Gestión de Acciones', subtitle: 'Registro y seguimiento de acciones' },
-  '/infrastructures': { title: 'Infraestructuras', subtitle: 'Gestión y estado de infraestructuras' },
+  '/locations': { title: 'Navegador de Ubicaciones', subtitle: 'Gestión y navegación del sistema de ubicaciones' },
   '/materials': { title: 'Materiales Consumidos', subtitle: 'Registro de materiales usados por acción' },
   '/admin': { title: 'Usuarios', subtitle: 'Gestión de usuarios del sistema' },
   '/admin/catalog': { title: 'Configuración', subtitle: 'Tipos de acciones y roles' },

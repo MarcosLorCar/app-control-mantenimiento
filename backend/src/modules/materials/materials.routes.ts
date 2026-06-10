@@ -60,18 +60,8 @@ export async function materialsRoutes(app: FastifyInstance) {
   })
 
   // Materials filtered by location
-  app.get('/infrastructures/:infraId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const infrastructureId = Number((req.params as any).infraId)
-    return reply.send({ data: await listMaterials(app.db, { infrastructureId }) })
-  })
-
-  app.get('/dependencies/:depId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const dependencyId = Number((req.params as any).depId)
-    return reply.send({ data: await listMaterials(app.db, { dependencyId }) })
-  })
-
-  app.get('/structures/:structId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const structureId = Number((req.params as any).structId)
-    return reply.send({ data: await listMaterials(app.db, { structureId }) })
+  app.get('/locations/:locId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const locationId = Number((req.params as any).locId)
+    return reply.send({ data: await listMaterials(app.db, { locationId }) })
   })
 }

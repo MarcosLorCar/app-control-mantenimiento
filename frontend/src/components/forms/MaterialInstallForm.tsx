@@ -3,18 +3,14 @@ import { Modal } from '../ui/Modal'
 import { useCreateMaterial, materialKeys } from '../../hooks/useMaterials'
 import { useMaterialTypes } from '../../hooks/useCatalog'
 import { useQueryClient } from '@tanstack/react-query'
-
-type Context =
-  | { type: 'infrastructure'; id: number }
-  | { type: 'dependency'; id: number }
-  | { type: 'structure'; id: number }
+import { locationKeys } from '../../hooks/useLocations'
 
 interface Props {
-  context: Context
+  locationId: number
   onClose: () => void
 }
 
-export function MaterialInstallForm({ context, onClose }: Props) {
+export function MaterialInstallForm({ locationId, onClose }: Props) {
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [typeId, setTypeId] = useState(0)
@@ -35,10 +31,6 @@ export function MaterialInstallForm({ context, onClose }: Props) {
       setError('Código, nombre y tipo son obligatorios.')
       return
     }
-    const contextField =
-      context.type === 'infrastructure' ? { infrastructureId: context.id }
-      : context.type === 'dependency' ? { dependencyId: context.id }
-      : { structureId: context.id }
 
     createMaterial.mutate(
       {
@@ -47,13 +39,12 @@ export function MaterialInstallForm({ context, onClose }: Props) {
         typeId,
         serialNumber: serialNumber.trim() || undefined,
         installedAt: installedAt ? new Date(installedAt).toISOString() : undefined,
-        ...contextField,
+        locationId,
       },
       {
         onSuccess: () => {
-          if (context.type === 'infrastructure') qc.invalidateQueries({ queryKey: materialKeys.byInfra(context.id) })
-          if (context.type === 'dependency') qc.invalidateQueries({ queryKey: materialKeys.byDependency(context.id) })
-          if (context.type === 'structure') qc.invalidateQueries({ queryKey: materialKeys.byStructure(context.id) })
+          qc.invalidateQueries({ queryKey: materialKeys.byLocation(locationId) })
+          qc.invalidateQueries({ queryKey: locationKeys.detail(locationId) })
           onClose()
         },
         onError: (e: any) => setError(e?.error?.message ?? 'Error al instalar material'),

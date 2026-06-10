@@ -12,16 +12,15 @@ const MATERIAL_SELECT = {
   attributes: true,
   typeId: true,
   type: { select: { id: true, code: true, name: true, icon: true } },
-  infrastructureId: true,
-  dependencyId: true,
-  structureId: true,
+  locationId: true,
+  location: { select: { id: true, code: true, name: true, path: true } },
   createdAt: true,
   updatedAt: true,
 }
 
 export function listMaterials(
   db: PrismaClient,
-  filters?: { infrastructureId?: number; dependencyId?: number; structureId?: number },
+  filters?: { locationId?: number },
 ) {
   return db.material.findMany({
     where: { deletedAt: null, ...filters },
@@ -57,13 +56,11 @@ export async function createMaterial(db: PrismaClient, data: CreateMaterialInput
     throw err
   }
 
-  const { infrastructureId, dependencyId, structureId, installedAt, ...rest } = data
+  const { locationId, installedAt, ...rest } = data
   return db.material.create({
     data: {
       ...(rest as any),
-      infrastructureId: infrastructureId ?? null,
-      dependencyId: dependencyId ?? null,
-      structureId: structureId ?? null,
+      locationId,
       installedAt: installedAt ? new Date(installedAt) : undefined,
     },
     select: MATERIAL_SELECT,

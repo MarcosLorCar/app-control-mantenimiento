@@ -50,16 +50,24 @@ model InfrastructureType {
   color       String?
   deletedAt   DateTime?
 
-  infrastructures Infrastructure[]
+  locations Location[]
 
   @@map("infrastructure_types")
 }
 
-model Infrastructure {
+model Location {
   id          Int       @id @default(autoincrement())
   code        String?
   name        String
   description String?
+  
+  // Semantic classification (e.g., 'PARK', 'FIELD', 'ROOM', 'COLUMN')
+  type        String?   
+  
+  // Materialized Path for fast path resolution & descendant lookups
+  // Format: "/rootId/childId/grandchildId/" (e.g., "/1/4/12/")
+  path        String    @default("/")
+
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -67,59 +75,19 @@ model Infrastructure {
   infraTypeId Int?
   infraType   InfrastructureType? @relation(fields: [infraTypeId], references: [id])
 
-  dependencies Dependency[]
-  structures   Structure[]
-  materials    Material[]
+  // Recursive self-relation
+  parentId    Int?
+  parent      Location?  @relation("LocationTree", fields: [parentId], references: [id])
+  children    Location[] @relation("LocationTree")
 
-  @@index([infraTypeId])
-  @@map("infrastructures")
-}
+  // Target links
+  materials   Material[]
+  actions     Action[]
 
-model Dependency {
-  id               Int       @id @default(autoincrement())
-  code             String?
-  name             String
-  description      String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
-
-  infrastructureId Int
-  infrastructure   Infrastructure @relation(fields: [infrastructureId], references: [id])
-
-  parentId Int?
-  parent   Dependency?  @relation("DependencyTree", fields: [parentId], references: [id])
-  children Dependency[] @relation("DependencyTree")
-
-  structures Structure[]
-  materials  Material[]
-
-  @@unique([infrastructureId, parentId, code], map: "dependencies_infra_parent_code_key")
-  @@index([infrastructureId])
   @@index([parentId])
-  @@map("dependencies")
-}
-
-model Structure {
-  id               Int       @id @default(autoincrement())
-  code             String?
-  name             String
-  description      String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
-
-  infrastructureId Int?
-  infrastructure   Infrastructure? @relation(fields: [infrastructureId], references: [id])
-
-  dependencyId Int?
-  dependency   Dependency? @relation(fields: [dependencyId], references: [id])
-
-  materials Material[]
-
-  @@index([infrastructureId])
-  @@index([dependencyId])
-  @@map("structures")
+  @@index([path])
+  @@index([infraTypeId])
+  @@map("locations")
 }
 
 // ==================== MATERIAL CATALOG ====================
@@ -185,21 +153,13 @@ model Material {
   typeId Int
   type   MaterialType @relation(fields: [typeId], references: [id])
 
-  infrastructureId Int?
-  infrastructure   Infrastructure? @relation(fields: [infrastructureId], references: [id])
-
-  dependencyId Int?
-  dependency   Dependency? @relation(fields: [dependencyId], references: [id])
-
-  structureId Int?
-  structure   Structure? @relation(fields: [structureId], references: [id])
+  locationId Int?
+  location   Location? @relation(fields: [locationId], references: [id])
 
   actions Action[]
 
   @@index([typeId])
-  @@index([infrastructureId])
-  @@index([dependencyId])
-  @@index([structureId])
+  @@index([locationId])
   @@map("materials")
 }
 
@@ -233,14 +193,8 @@ model Action {
   materialId Int?
   material   Material? @relation(fields: [materialId], references: [id])
 
-  infrastructureId Int?
-  infrastructure   Infrastructure? @relation(fields: [infrastructureId], references: [id])
-
-  dependencyId Int?
-  dependency   Dependency? @relation(fields: [dependencyId], references: [id])
-
-  structureId Int?
-  structure   Structure? @relation(fields: [structureId], references: [id])
+  locationId Int?
+  location   Location? @relation(fields: [locationId], references: [id])
 
   latitude  Float?
   longitude Float?
@@ -249,9 +203,7 @@ model Action {
   performer   User    @relation(fields: [performedBy], references: [id])
 
   @@index([materialId])
-  @@index([infrastructureId])
-  @@index([dependencyId])
-  @@index([structureId])
+  @@index([locationId])
   @@index([performedBy])
   @@index([performedAt])
   @@map("actions")

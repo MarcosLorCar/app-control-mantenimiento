@@ -6,21 +6,17 @@ export const CreateActionSchema = z.object({
   performedAt: z.string().datetime().optional(),
   typeId: z.number().int().positive(),
   materialId: z.number().int().positive().optional(),
-  infrastructureId: z.number().int().positive().optional(),
-  dependencyId: z.number().int().positive().optional(),
-  structureId: z.number().int().positive().optional(),
+  locationId: z.number().int().positive().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
 }).refine(data => {
   const count = [
     data.materialId,
-    data.infrastructureId,
-    data.dependencyId,
-    data.structureId
+    data.locationId
   ].filter(id => id !== undefined && id !== null).length
   return count === 1;
 }, {
-  message: "Debe especificarse exactamente un objetivo (material, infraestructura, dependencia o estructura) para la acción",
+  message: "Debe especificarse exactamente un objetivo (material o ubicación) para la acción",
   path: ["materialId"]
 })
 

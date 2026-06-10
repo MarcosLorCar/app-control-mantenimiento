@@ -5,15 +5,13 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
-import { InfrastructureList } from './pages/infrastructures/InfrastructureList'
-import { InfrastructureDetail } from './pages/infrastructures/InfrastructureDetail'
+import { LocationList } from './pages/locations/LocationList'
+import { LocationDetail } from './pages/locations/LocationDetail'
 import { Users } from './pages/admin/Users'
 import { Catalog } from './pages/admin/Catalog'
 import { ChangePassword } from './pages/ChangePassword'
 import { ActionsPage } from './pages/actions/ActionsPage'
 import { MaterialsPage } from './pages/materials/MaterialsPage'
-import { DependencyDetail } from './pages/dependencies/DependencyDetail'
-import { StructureDetail } from './pages/structures/StructureDetail'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -30,12 +28,10 @@ export default function App() {
               <Route path="/change-password" element={<ChangePassword />} />
               <Route element={<Layout />}>
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/infrastructures" element={<InfrastructureList />} />
-                <Route path="/infrastructures/:id" element={<InfrastructureDetail />} />
+                <Route path="/locations" element={<LocationList />} />
+                <Route path="/locations/:id" element={<LocationDetail />} />
                 <Route path="/actions" element={<ActionsPage />} />
                 <Route path="/materials" element={<MaterialsPage />} />
-                <Route path="/dependencies/:id" element={<DependencyDetail />} />
-                <Route path="/structures/:id" element={<StructureDetail />} />
                 <Route path="/admin" element={<Users />} />
                 <Route path="/admin/catalog" element={<Catalog />} />
               </Route>

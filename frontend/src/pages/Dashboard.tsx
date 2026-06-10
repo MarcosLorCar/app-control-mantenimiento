@@ -2,7 +2,7 @@ import { useAuth } from '../hooks/useAuth'
 import { LayoutDashboard, Warehouse, ClipboardList, Package } from 'lucide-react'
 
 const metrics = [
-  { label: 'Infraestructuras', value: '—', icon: Warehouse, color: 'bg-blue-50 text-blue-600' },
+  { label: 'Ubicaciones', value: '—', icon: Warehouse, color: 'bg-blue-50 text-blue-600' },
   { label: 'Acciones este mes', value: '—', icon: ClipboardList, color: 'bg-emerald-50 text-emerald-600' },
   { label: 'Materiales usados', value: '—', icon: Package, color: 'bg-violet-50 text-violet-600' },
 ]

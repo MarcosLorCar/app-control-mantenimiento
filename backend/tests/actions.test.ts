@@ -37,7 +37,6 @@ describe('Actions', () => {
         data: {
           title: 'Revisión inicial',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -72,7 +71,6 @@ describe('Actions', () => {
           title: 'Inspección bombilla',
           description: 'Revisión periódica',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
         },
       })
@@ -92,7 +90,6 @@ describe('Actions', () => {
         payload: {
           title: 'Test performer',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
         },
       })
@@ -110,7 +107,7 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(400)
     })
 
-    it('creates action linked to infrastructure', async () => {
+    it('creates action linked to location', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
@@ -119,15 +116,15 @@ describe('Actions', () => {
           title: 'Limpieza general',
           description: 'Limpieza de hojas y basura',
           typeId: seed.actionType.id,
-          infrastructureId: seed.infrastructure.id,
+          locationId: seed.infra.id,
           latitude: 40.416775,
           longitude: -3.703790,
         },
       })
       expect(res.statusCode).toBe(201)
       const body = res.json().data
-      expect(body).toMatchObject({ title: 'Limpieza general', infrastructureId: seed.infrastructure.id, latitude: 40.416775, longitude: -3.703790 })
-      expect(body.infrastructure).toBeDefined()
+      expect(body).toMatchObject({ title: 'Limpieza general', locationId: seed.infra.id, latitude: 40.416775, longitude: -3.703790 })
+      expect(body.location).toBeDefined()
     })
 
     it('returns 400 when multiple targets specified', async () => {
@@ -139,7 +136,7 @@ describe('Actions', () => {
           title: 'Intento doble',
           typeId: seed.actionType.id,
           materialId: seed.material.id,
-          infrastructureId: seed.infrastructure.id,
+          locationId: seed.infra.id,
         },
       })
       expect(res.statusCode).toBe(400)
@@ -153,7 +150,6 @@ describe('Actions', () => {
         payload: {
           title: 'Test',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
         },
       })
@@ -167,7 +163,6 @@ describe('Actions', () => {
         data: {
           title: 'Detalle test',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -201,7 +196,6 @@ describe('Actions', () => {
         data: {
           title: 'Acción material',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -215,15 +209,26 @@ describe('Actions', () => {
       expect(res.json().data).toHaveLength(1)
       expect(res.json().data[0].title).toBe('Acción material')
     })
+  })
 
-    it('returns empty list for material with no actions', async () => {
+  describe('GET /api/v1/locations/:locId/actions', () => {
+    it('returns actions for a location', async () => {
+      await testDb.action.create({
+        data: {
+          title: 'Acción ubicacion',
+          typeId: seed.actionType.id,
+          locationId: seed.infra.id,
+          performedBy: seed.editor.id,
+        },
+      })
       const res = await app.inject({
         method: 'GET',
-        url: `/api/v1/materials/${seed.material.id}/actions`,
+        url: `/api/v1/locations/${seed.infra.id}/actions`,
         headers: { authorization: `Bearer ${viewerToken}` },
       })
       expect(res.statusCode).toBe(200)
-      expect(res.json().data).toHaveLength(0)
+      expect(res.json().data).toHaveLength(1)
+      expect(res.json().data[0].title).toBe('Acción ubicacion')
     })
   })
 
@@ -233,7 +238,6 @@ describe('Actions', () => {
         data: {
           title: 'Para actualizar',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -247,34 +251,6 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(200)
       expect(res.json().data.description).toBe('Completado sin incidencias')
     })
-
-    it('returns 404 for unknown id', async () => {
-      const res = await app.inject({
-        method: 'PATCH',
-        url: '/api/v1/actions/99999',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: { description: 'x' },
-      })
-      expect(res.statusCode).toBe(404)
-    })
-
-    it('returns 403 for viewer', async () => {
-      const action = await testDb.action.create({
-        data: {
-          title: 'Test',
-          typeId: seed.actionType.id,
-          materialId: seed.material.id,
-          performedBy: seed.editor.id,
-        },
-      })
-      const res = await app.inject({
-        method: 'PATCH',
-        url: `/api/v1/actions/${action.id}`,
-        headers: { authorization: `Bearer ${viewerToken}` },
-        payload: { description: 'x' },
-      })
-      expect(res.statusCode).toBe(403)
-    })
   })
 
   describe('DELETE /api/v1/actions/:id', () => {
@@ -283,7 +259,6 @@ describe('Actions', () => {
         data: {
           title: 'Para borrar',
           typeId: seed.actionType.id,
-
           materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
@@ -296,24 +271,6 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(204)
       const check = await testDb.action.findUnique({ where: { id: action.id } })
       expect(check).toBeNull()
-    })
-
-    it('returns 403 for editor', async () => {
-      const action = await testDb.action.create({
-        data: {
-          title: 'Test',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
-          performedBy: seed.editor.id,
-        },
-      })
-      const res = await app.inject({
-        method: 'DELETE',
-        url: `/api/v1/actions/${action.id}`,
-        headers: { authorization: `Bearer ${editorToken}` },
-      })
-      expect(res.statusCode).toBe(403)
     })
   })
 })

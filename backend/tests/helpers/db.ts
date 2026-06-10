@@ -11,9 +11,7 @@ export const testDb = new PrismaClient()
 export async function clearDb(db: PrismaClient = testDb) {
   await db.action.deleteMany()
   await db.material.deleteMany()
-  await db.structure.deleteMany()
-  await db.dependency.deleteMany()
-  await db.infrastructure.deleteMany()
+  await db.location.deleteMany()
   await db.materialCategory.deleteMany()
   await db.materialType.deleteMany()
   await db.actionType.deleteMany()
@@ -84,16 +82,28 @@ export async function seedTestData(db: PrismaClient = testDb) {
     },
   })
 
-  const infra = await db.infrastructure.create({
-    data: { code: 'HOSP-001', name: 'Hospital Central' },
+  const infra = await db.location.create({
+    data: { code: 'HOSP-001', name: 'Hospital Central', type: 'INFRASTRUCTURE' },
+  })
+  await db.location.update({
+    where: { id: infra.id },
+    data: { path: `/${infra.id}/` },
   })
 
-  const dep = await db.dependency.create({
-    data: { code: 'WING-A', name: 'Ala A', infrastructureId: infra.id },
+  const dep = await db.location.create({
+    data: { code: 'WING-A', name: 'Ala A', parentId: infra.id, type: 'DEPENDENCY' },
+  })
+  await db.location.update({
+    where: { id: dep.id },
+    data: { path: `/${infra.id}/${dep.id}/` },
   })
 
-  const structure = await db.structure.create({
-    data: { code: 'ROOM-101', name: 'Habitación 101', dependencyId: dep.id },
+  const structure = await db.location.create({
+    data: { code: 'ROOM-101', name: 'Habitación 101', parentId: dep.id, type: 'STRUCTURE' },
+  })
+  await db.location.update({
+    where: { id: structure.id },
+    data: { path: `/${infra.id}/${dep.id}/${structure.id}/` },
   })
 
   const material = await db.material.create({
@@ -101,7 +111,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
       code: 'MAT-001',
       name: 'Bombilla Philips E27',
       typeId: materialType.id,
-      structureId: structure.id,
+      locationId: structure.id,
       attributes: { power_w: 9 },
     },
   })

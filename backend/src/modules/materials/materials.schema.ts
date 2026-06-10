@@ -43,13 +43,8 @@ export const CreateMaterialSchema = z.object({
   installedAt: z.string().datetime().optional(),
   typeId: z.number().int().positive(),
   attributes: z.record(z.unknown()).default({}),
-  infrastructureId: z.number().int().positive().optional(),
-  dependencyId: z.number().int().positive().optional(),
-  structureId: z.number().int().positive().optional(),
-}).refine(
-  (d) => [d.infrastructureId, d.dependencyId, d.structureId].filter((v) => v != null).length === 1,
-  { message: 'El material debe tener exactamente una ubicación (infrastructureId, dependencyId o structureId)' },
-)
+  locationId: z.number().int().positive(),
+})
 
 export const UpdateMaterialSchema = z.object({
   name: z.string().min(1).max(255).optional(),

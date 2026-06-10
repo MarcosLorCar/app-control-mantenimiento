@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
@@ -7,9 +8,7 @@ async function main() {
   // Borrar en orden seguro (FK constraints)
   await prisma.action.deleteMany()
   await prisma.material.deleteMany()
-  await prisma.structure.deleteMany()
-  await prisma.dependency.deleteMany()
-  await prisma.infrastructure.deleteMany()
+  await prisma.location.deleteMany()
   await prisma.materialCategory.deleteMany()
   await prisma.materialType.deleteMany()
   await prisma.actionType.deleteMany()

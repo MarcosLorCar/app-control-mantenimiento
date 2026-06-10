@@ -3,19 +3,18 @@ import { Modal } from '../../components/ui/Modal'
 import { useCreateAction, useUpdateAction } from '../../hooks/useActions'
 import { useActionTypes, useCreateActionType } from '../../hooks/useCatalog'
 import { useMaterials } from '../../hooks/useMaterials'
-import { useInfrastructures } from '../../hooks/useInfrastructures'
-import { useTopLevelDependencies } from '../../hooks/useDependencies'
-import { useStructuresByInfra } from '../../hooks/useStructures'
+import { useLocations } from '../../hooks/useLocations'
 import { LocationMap } from '../../components/ui/LocationMap'
 import type { Action, Material } from '../../api/types'
 
 interface Props {
   action?: Action
   materials?: Material[]
+  locationId?: number
   onClose: () => void
 }
 
-export function ActionForm({ action, materials: propMaterials, onClose }: Props) {
+export function ActionForm({ action, materials: propMaterials, locationId, onClose }: Props) {
   const isEdit = !!action
   const [title, setTitle] = useState(action?.title ?? '')
   const [typeId, setTypeId] = useState(action?.typeId ?? 0)
@@ -30,11 +29,15 @@ export function ActionForm({ action, materials: propMaterials, onClose }: Props)
   const [longitude, setLongitude] = useState<number | null>(action?.longitude ?? null)
 
   // Targets state (only for create)
-  const [targetType, setTargetType] = useState<'material' | 'infrastructure' | 'dependency' | 'structure'>('material')
-  const [materialId, setMaterialId] = useState(0)
-  const [infrastructureId, setInfrastructureId] = useState(0)
-  const [dependencyId, setDependencyId] = useState(0)
-  const [structureId, setStructureId] = useState(0)
+  const [targetType, setTargetType] = useState<'material' | 'location'>(
+    locationId ? 'location' : 'material'
+  )
+  const [materialId, setMaterialId] = useState(
+    propMaterials && propMaterials.length === 1 ? propMaterials[0].id : (action?.materialId ?? 0)
+  )
+  const [selectedLocationId, setSelectedLocationId] = useState(
+    locationId ?? (action?.locationId ?? 0)
+  )
 
   // Inline "nuevo tipo de acción"
   const [newTypeName, setNewTypeName] = useState('')
@@ -42,11 +45,8 @@ export function ActionForm({ action, materials: propMaterials, onClose }: Props)
 
   const { data: actionTypes = [] } = useActionTypes()
   const { data: allMaterials = [] } = useMaterials()
+  const { data: locations = [] } = useLocations(undefined) // Fetch all for target selection
   const materials = propMaterials ?? allMaterials
-
-  const { data: infrastructures = [] } = useInfrastructures()
-  const { data: dependencies = [] } = useTopLevelDependencies(infrastructureId)
-  const { data: structures = [] } = useStructuresByInfra(infrastructureId)
 
   const createMut = useCreateAction()
   const updateMut = useUpdateAction()
@@ -116,24 +116,12 @@ export function ActionForm({ action, materials: propMaterials, onClose }: Props)
           return
         }
         body.materialId = materialId
-      } else if (targetType === 'infrastructure') {
-        if (!infrastructureId) {
-          setError('Selecciona una infraestructura.')
+      } else {
+        if (!selectedLocationId) {
+          setError('Selecciona una ubicación.')
           return
         }
-        body.infrastructureId = infrastructureId
-      } else if (targetType === 'dependency') {
-        if (!dependencyId) {
-          setError('Selecciona una dependencia.')
-          return
-        }
-        body.dependencyId = dependencyId
-      } else if (targetType === 'structure') {
-        if (!structureId) {
-          setError('Selecciona una estructura.')
-          return
-        }
-        body.structureId = structureId
+        body.locationId = selectedLocationId
       }
 
       createMut.mutate(body, {
@@ -144,6 +132,8 @@ export function ActionForm({ action, materials: propMaterials, onClose }: Props)
   }
 
   const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
+
+  const showTargetSelector = !isEdit && !locationId && !(propMaterials && propMaterials.length === 1)
 
   return (
     <Modal title={isEdit ? 'Editar acción' : 'Registrar acción'} onClose={onClose}>
@@ -164,27 +154,29 @@ export function ActionForm({ action, materials: propMaterials, onClose }: Props)
 
         {!isEdit && (
           <div className="space-y-3 p-3 bg-app-bg rounded-lg border border-app-border">
-            <div>
-              <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                Objetivo de la acción
-              </label>
-              <div className="flex gap-2 text-xs">
-                {(['material', 'infrastructure', 'dependency', 'structure'] as const).map(t => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTargetType(t)}
-                    className={`flex-1 py-1.5 rounded-lg border font-medium transition-colors ${
-                      targetType === t
-                        ? 'bg-primary text-primary-fg border-primary'
-                        : 'bg-card text-fg-secondary border-app-border hover:bg-app-bg'
-                    }`}
-                  >
-                    {t === 'material' ? 'Material' : t === 'infrastructure' ? 'Infraestructura' : t === 'dependency' ? 'Dependencia' : 'Estructura'}
-                  </button>
-                ))}
+            {showTargetSelector && (
+              <div>
+                <label className="block text-xs font-semibold text-fg-secondary mb-1">
+                  Objetivo de la acción
+                </label>
+                <div className="flex gap-2 text-xs">
+                  {(['material', 'location'] as const).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTargetType(t)}
+                      className={`flex-1 py-1.5 rounded-lg border font-medium transition-colors ${
+                        targetType === t
+                          ? 'bg-primary text-primary-fg border-primary'
+                          : 'bg-card text-fg-secondary border-app-border hover:bg-app-bg'
+                      }`}
+                    >
+                      {t === 'material' ? 'Material' : 'Ubicación'}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {targetType === 'material' && (
               <div>
@@ -196,6 +188,7 @@ export function ActionForm({ action, materials: propMaterials, onClose }: Props)
                   onChange={e => setMaterialId(Number(e.target.value))}
                   className={inputCls}
                   required
+                  disabled={propMaterials && propMaterials.length === 1}
                 >
                   <option value={0}>Seleccionar material...</option>
                   {materials.map(m => (
@@ -207,67 +200,21 @@ export function ActionForm({ action, materials: propMaterials, onClose }: Props)
               </div>
             )}
 
-            {targetType !== 'material' && (
+            {targetType === 'location' && !locationId && (
               <div>
                 <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                  Infraestructura <span className="text-error">*</span>
+                  Ubicación <span className="text-error">*</span>
                 </label>
                 <select
-                  value={infrastructureId}
-                  onChange={e => {
-                    setInfrastructureId(Number(e.target.value))
-                    setDependencyId(0)
-                    setStructureId(0)
-                  }}
+                  value={selectedLocationId}
+                  onChange={e => setSelectedLocationId(Number(e.target.value))}
                   className={inputCls}
                   required
                 >
-                  <option value={0}>Seleccionar infraestructura...</option>
-                  {infrastructures.map(i => (
-                    <option key={i.id} value={i.id}>
-                      {i.code ? `${i.code} — ` : ''}{i.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {targetType === 'dependency' && infrastructureId > 0 && (
-              <div>
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                  Dependencia <span className="text-error">*</span>
-                </label>
-                <select
-                  value={dependencyId}
-                  onChange={e => setDependencyId(Number(e.target.value))}
-                  className={inputCls}
-                  required
-                >
-                  <option value={0}>Seleccionar dependencia...</option>
-                  {dependencies.map(d => (
-                    <option key={d.id} value={d.id}>
-                      {d.code ? `${d.code} — ` : ''}{d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {targetType === 'structure' && infrastructureId > 0 && (
-              <div>
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                  Estructura <span className="text-error">*</span>
-                </label>
-                <select
-                  value={structureId}
-                  onChange={e => setStructureId(Number(e.target.value))}
-                  className={inputCls}
-                  required
-                >
-                  <option value={0}>Seleccionar estructura...</option>
-                  {structures.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.code ? `${s.code} — ` : ''}{s.name}
+                  <option value={0}>Seleccionar ubicación...</option>
+                  {locations.map(l => (
+                    <option key={l.id} value={l.id}>
+                      {l.code ? `${l.code} — ` : ''}{l.name} {l.type ? `(${l.type})` : ''}
                     </option>
                   ))}
                 </select>

@@ -4,9 +4,7 @@ import type { CreateActionInput, UpdateActionInput } from './actions.schema'
 const ACTION_INCLUDE = {
   type: { select: { id: true, code: true, name: true, icon: true, color: true } },
   material: { select: { id: true, code: true, name: true, typeId: true } },
-  infrastructure: { select: { id: true, code: true, name: true } },
-  dependency: { select: { id: true, code: true, name: true } },
-  structure: { select: { id: true, code: true, name: true } },
+  location: { select: { id: true, code: true, name: true, path: true } },
   performer: { select: { id: true, fullName: true, email: true } },
 }
 
@@ -14,9 +12,7 @@ export function listActions(
   db: PrismaClient,
   filters?: {
     materialId?: number
-    infrastructureId?: number
-    dependencyId?: number
-    structureId?: number
+    locationId?: number
   }
 ) {
   return db.action.findMany({

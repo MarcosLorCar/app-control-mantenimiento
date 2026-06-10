@@ -9,8 +9,7 @@ import authPlugin from './plugins/auth.plugin'
 import authRoutes from './modules/auth/auth.routes'
 import usersRoutes from './modules/users/users.routes'
 import catalogRoutes from './modules/catalog/catalog.routes'
-import { infrastructuresRoutes } from './modules/infrastructures/infrastructures.routes'
-import { dependenciesRoutes } from './modules/infrastructures/dependencies.routes'
+import { locationsRoutes } from './modules/locations/locations.routes'
 import { actionsRoutes } from './modules/actions/actions.routes'
 import { materialCatalogRoutes } from './modules/materials/catalog.routes'
 import { materialsRoutes } from './modules/materials/materials.routes'
@@ -58,8 +57,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
   await app.register(usersRoutes, { prefix: '/api/v1/users' })
   await app.register(catalogRoutes, { prefix: '/api/v1' })
-  await app.register(infrastructuresRoutes, { prefix: '/api/v1/infrastructures' })
-  await app.register(dependenciesRoutes, { prefix: '/api/v1' })
+  await app.register(locationsRoutes, { prefix: '/api/v1/locations' })
   await app.register(actionsRoutes, { prefix: '/api/v1' })
   await app.register(materialCatalogRoutes, { prefix: '/api/v1' })
   await app.register(materialsRoutes, { prefix: '/api/v1' })
