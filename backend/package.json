@@ -28,7 +28,7 @@
     "zod": "^3.23.8"
   },
   "prisma": {
-    "seed": "tsc --noEmit && tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@control-actions/shared": "*",
