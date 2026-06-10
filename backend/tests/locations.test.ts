@@ -35,7 +35,7 @@ describe('Locations API', () => {
       expect(body.data).toBeInstanceOf(Array)
       // seed.infra is root (parentId: null)
       expect(body.data).toHaveLength(1)
-      expect(body.data[0]).toMatchObject({ id: seed.infra.id, code: 'HOSP-001' })
+      expect(body.data[0]).toMatchObject({ id: seed.infra.id, name: 'Hospital Central' })
       expect(body.data[0]._count).toBeDefined()
     })
 
@@ -50,7 +50,7 @@ describe('Locations API', () => {
       expect(body.data).toBeInstanceOf(Array)
       // seed.dep parent is seed.infra
       expect(body.data).toHaveLength(1)
-      expect(body.data[0]).toMatchObject({ id: seed.dep.id, code: 'WING-A' })
+      expect(body.data[0]).toMatchObject({ id: seed.dep.id, name: 'Ala A' })
     })
   })
 
@@ -60,11 +60,11 @@ describe('Locations API', () => {
         method: 'POST',
         url: '/api/v1/locations',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { code: 'CAMPUS-1', name: 'Campus Principal', type: 'INFRASTRUCTURE' },
+        payload: { name: 'Campus Principal', type: 'INFRASTRUCTURE' },
       })
       expect(res.statusCode).toBe(201)
       const data = res.json().data
-      expect(data).toMatchObject({ code: 'CAMPUS-1', name: 'Campus Principal', parentId: null })
+      expect(data).toMatchObject({ name: 'Campus Principal', parentId: null })
       expect(data.path).toBe(`/${data.id}/`)
     })
 
@@ -73,23 +73,15 @@ describe('Locations API', () => {
         method: 'POST',
         url: '/api/v1/locations',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { code: 'FLOOR-2', name: 'Planta 2', parentId: seed.dep.id, type: 'DEPENDENCY' },
+        payload: { name: 'Planta 2', parentId: seed.dep.id, type: 'DEPENDENCY' },
       })
       expect(res.statusCode).toBe(201)
       const data = res.json().data
-      expect(data).toMatchObject({ code: 'FLOOR-2', name: 'Planta 2', parentId: seed.dep.id })
+      expect(data).toMatchObject({ name: 'Planta 2', parentId: seed.dep.id })
       expect(data.path).toBe(`/${seed.infra.id}/${seed.dep.id}/${data.id}/`)
     })
 
-    it('rejects duplicate code', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/locations',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: { code: 'HOSP-001', name: 'Duplicado' },
-      })
-      expect(res.statusCode).toBe(409)
-    })
+
   })
 
   describe('GET /api/v1/locations/:id', () => {

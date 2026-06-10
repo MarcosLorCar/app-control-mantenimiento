@@ -57,7 +57,6 @@ model InfrastructureType {
 
 model Location {
   id          Int       @id @default(autoincrement())
-  code        String?
   name        String
   description String?
   
@@ -71,6 +70,9 @@ model Location {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
+
+  latitude    Float?
+  longitude   Float?
 
   infraTypeId Int?
   infraType   InfrastructureType? @relation(fields: [infraTypeId], references: [id])
@@ -140,7 +142,6 @@ model MaterialCategory {
 
 model Material {
   id           Int       @id @default(autoincrement())
-  code         String?
   name         String
   description  String?
   serialNumber String?

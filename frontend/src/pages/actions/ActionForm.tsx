@@ -3,8 +3,9 @@ import { Modal } from '../../components/ui/Modal'
 import { useCreateAction, useUpdateAction } from '../../hooks/useActions'
 import { useActionTypes, useCreateActionType } from '../../hooks/useCatalog'
 import { useMaterials } from '../../hooks/useMaterials'
-import { useLocations } from '../../hooks/useLocations'
+import { useLocations, locationKeys } from '../../hooks/useLocations'
 import { LocationMap } from '../../components/ui/LocationMap'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Action, Material } from '../../api/types'
 
 interface Props {
@@ -38,6 +39,11 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
   const [selectedLocationId, setSelectedLocationId] = useState(
     locationId ?? (action?.locationId ?? 0)
   )
+  const [isNewLocation, setIsNewLocation] = useState(false)
+  const [newLocationName, setNewLocationName] = useState('')
+  const [newLocationType, setNewLocationType] = useState('POST')
+  const [newLocationParentId, setNewLocationParentId] = useState(locationId ?? 0)
+  const qc = useQueryClient()
 
   // Inline "nuevo tipo de acción"
   const [newTypeName, setNewTypeName] = useState('')
@@ -117,15 +123,32 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
         }
         body.materialId = materialId
       } else {
-        if (!selectedLocationId) {
-          setError('Selecciona una ubicación.')
-          return
+        if (isNewLocation) {
+          if (!newLocationName.trim()) {
+            setError('Especifica el nombre de la nueva ubicación.')
+            return
+          }
+          body.newLocation = {
+            name: newLocationName.trim(),
+            type: newLocationType || null,
+            parentId: newLocationParentId || null,
+            latitude: latitude || null,
+            longitude: longitude || null,
+          }
+        } else {
+          if (!selectedLocationId) {
+            setError('Selecciona una ubicación.')
+            return
+          }
+          body.locationId = selectedLocationId
         }
-        body.locationId = selectedLocationId
       }
 
       createMut.mutate(body, {
-        onSuccess: onClose,
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: locationKeys.all })
+          onClose()
+        },
         onError: (err: any) => setError(err?.error?.message ?? 'Error al registrar'),
       })
     }
@@ -193,7 +216,7 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
                   <option value={0}>Seleccionar material...</option>
                   {materials.map(m => (
                     <option key={m.id} value={m.id}>
-                      {m.code ? `${m.code} — ` : ''}{m.name} ({m.type.name})
+                      {m.name} ({m.type.name})
                     </option>
                   ))}
                 </select>
@@ -201,23 +224,88 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
             )}
 
             {targetType === 'location' && !locationId && (
-              <div>
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                  Ubicación <span className="text-error">*</span>
-                </label>
-                <select
-                  value={selectedLocationId}
-                  onChange={e => setSelectedLocationId(Number(e.target.value))}
-                  className={inputCls}
-                  required
-                >
-                  <option value={0}>Seleccionar ubicación...</option>
-                  {locations.map(l => (
-                    <option key={l.id} value={l.id}>
-                      {l.code ? `${l.code} — ` : ''}{l.name} {l.type ? `(${l.type})` : ''}
-                    </option>
-                  ))}
-                </select>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-fg-secondary">
+                    Ubicación <span className="text-error">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewLocation(!isNewLocation)}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    {isNewLocation ? 'Seleccionar existente' : '+ Registrar nueva aquí'}
+                  </button>
+                </div>
+
+                {!isNewLocation ? (
+                  <select
+                    value={selectedLocationId}
+                    onChange={e => setSelectedLocationId(Number(e.target.value))}
+                    className={inputCls}
+                    required
+                  >
+                    <option value={0}>Seleccionar ubicación...</option>
+                    {locations.map(l => (
+                      <option key={l.id} value={l.id}>
+                        {l.name} {l.type ? `(${l.type})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="space-y-3 border-l-2 border-primary/20 pl-3 py-1">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                        Nombre de la Nueva Ubicación <span className="text-error">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newLocationName}
+                        onChange={e => setNewLocationName(e.target.value)}
+                        placeholder="Ej: Farola F13"
+                        className={inputCls}
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                          Ubicación Padre (Carpeta)
+                        </label>
+                        <select
+                          value={newLocationParentId}
+                          onChange={e => setNewLocationParentId(Number(e.target.value))}
+                          className={inputCls}
+                        >
+                          <option value={0}>Ninguna (Raíz)</option>
+                          {locations.map(l => (
+                            <option key={l.id} value={l.id}>
+                              {l.name} {l.type ? `(${l.type})` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                          Tipo de Ubicación
+                        </label>
+                        <select
+                          value={newLocationType}
+                          onChange={e => setNewLocationType(e.target.value)}
+                          className={inputCls}
+                        >
+                          <option value="PARK">Parque</option>
+                          <option value="FIELD">Pista / Campo</option>
+                          <option value="POST">Poste / Farola</option>
+                          <option value="BUILDING">Edificio</option>
+                          <option value="FLOOR">Planta</option>
+                          <option value="ROOM">Sala / Habitación</option>
+                          <option value="OTHER">Otro</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -83,7 +83,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
   })
 
   const infra = await db.location.create({
-    data: { code: 'HOSP-001', name: 'Hospital Central', type: 'INFRASTRUCTURE' },
+    data: { name: 'Hospital Central', type: 'INFRASTRUCTURE' },
   })
   await db.location.update({
     where: { id: infra.id },
@@ -91,7 +91,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
   })
 
   const dep = await db.location.create({
-    data: { code: 'WING-A', name: 'Ala A', parentId: infra.id, type: 'DEPENDENCY' },
+    data: { name: 'Ala A', parentId: infra.id, type: 'DEPENDENCY' },
   })
   await db.location.update({
     where: { id: dep.id },
@@ -99,7 +99,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
   })
 
   const structure = await db.location.create({
-    data: { code: 'ROOM-101', name: 'Habitación 101', parentId: dep.id, type: 'STRUCTURE' },
+    data: { name: 'Habitación 101', parentId: dep.id, type: 'STRUCTURE' },
   })
   await db.location.update({
     where: { id: structure.id },
@@ -108,7 +108,6 @@ export async function seedTestData(db: PrismaClient = testDb) {
 
   const material = await db.material.create({
     data: {
-      code: 'MAT-001',
       name: 'Bombilla Philips E27',
       typeId: materialType.id,
       locationId: structure.id,

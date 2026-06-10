@@ -4,7 +4,6 @@ import { validateAttributes } from './catalog.service'
 
 const MATERIAL_SELECT = {
   id: true,
-  code: true,
   name: true,
   description: true,
   serialNumber: true,
@@ -13,7 +12,7 @@ const MATERIAL_SELECT = {
   typeId: true,
   type: { select: { id: true, code: true, name: true, icon: true } },
   locationId: true,
-  location: { select: { id: true, code: true, name: true, path: true } },
+  location: { select: { id: true, name: true, path: true } },
   createdAt: true,
   updatedAt: true,
 }
@@ -46,15 +45,6 @@ export async function createMaterial(db: PrismaClient, data: CreateMaterialInput
     throw err
   }
 
-  const existing = await db.material.findFirst({
-    where: { code: data.code, deletedAt: null },
-  })
-  if (existing) {
-    const err = Object.assign(new Error('Código de material ya existe'), {
-      code: 'DUPLICATE_CODE',
-    })
-    throw err
-  }
 
   const { locationId, installedAt, ...rest } = data
   return db.material.create({

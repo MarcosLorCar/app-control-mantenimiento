@@ -18,7 +18,6 @@ export function MaterialsPage() {
   const filtered = materials.filter(m => {
     const matchesSearch =
       m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.code.toLowerCase().includes(search.toLowerCase()) ||
       m.type.name.toLowerCase().includes(search.toLowerCase()) ||
       (m.serialNumber ?? '').toLowerCase().includes(search.toLowerCase())
     const matchesType = !typeFilter || String(m.type.id) === typeFilter
@@ -36,7 +35,7 @@ export function MaterialsPage() {
           <Search className="w-4 h-4 text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por código, nombre o tipo..."
+            placeholder="Buscar por nombre o tipo..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
@@ -70,8 +69,7 @@ export function MaterialsPage() {
               className="flex items-center h-10 bg-app-bg text-[11px] font-semibold text-muted uppercase tracking-wider shrink-0"
               style={{ borderBottom: '1px solid var(--border)' }}
             >
-              <div className="w-32 px-4">Código</div>
-              <div className="flex-1 px-3">Nombre</div>
+              <div className="flex-1 px-4">Nombre</div>
               <div className="w-40 px-3">Tipo</div>
               <div className="w-36 px-3">Nº Serie</div>
               <div className="w-28 px-3">Instalado</div>
@@ -88,8 +86,7 @@ export function MaterialsPage() {
                   className="flex items-center h-[50px] text-[13px] hover:bg-app-bg transition-colors"
                   style={{ borderBottom: '1px solid var(--border)' }}
                 >
-                  <div className="w-32 px-4 font-mono text-xs text-muted">{m.code}</div>
-                  <div className="flex-1 px-3 flex items-center gap-2 min-w-0">
+                  <div className="flex-1 px-4 flex items-center gap-2 min-w-0">
                     <Package className="w-3.5 h-3.5 text-muted shrink-0" />
                     <span className="font-medium text-fg truncate">{m.name}</span>
                   </div>

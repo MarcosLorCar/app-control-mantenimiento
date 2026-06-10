@@ -9,15 +9,19 @@ export const CreateActionSchema = z.object({
   locationId: z.number().int().positive().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  newLocation: z.object({
+    name: z.string().min(1).max(255),
+    type: z.string().nullable().optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
+    parentId: z.number().int().positive().nullable().optional(),
+    infraTypeId: z.number().int().positive().nullable().optional(),
+  }).optional(),
 }).refine(data => {
-  const count = [
-    data.materialId,
-    data.locationId
-  ].filter(id => id !== undefined && id !== null).length
-  return count === 1;
+  return data.locationId !== undefined || data.newLocation !== undefined || data.materialId !== undefined;
 }, {
-  message: "Debe especificarse exactamente un objetivo (material o ubicación) para la acción",
-  path: ["materialId"]
+  message: "Debe especificarse una ubicación (existente o nueva) o un material para la acción",
+  path: ["locationId"]
 })
 
 export const UpdateActionSchema = z.object({

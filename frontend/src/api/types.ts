@@ -34,10 +34,11 @@ export interface InfrastructureType {
 
 export interface Location {
   id: number
-  code: string | null
   name: string
   description: string | null
   type: string | null
+  latitude: number | null
+  longitude: number | null
   path: string
   parentId: number | null
   infraTypeId: number | null
@@ -86,7 +87,6 @@ export interface MaterialType {
 
 export interface Material {
   id: number
-  code: string
   name: string
   description: string | null
   serialNumber: string | null
@@ -95,7 +95,7 @@ export interface Material {
   typeId: number
   type: { id: number; code: string; name: string; icon: string | null }
   locationId: number | null
-  location: { id: number; code: string | null; name: string; path: string } | null
+  location: { id: number; name: string; path: string } | null
   createdAt: string
   updatedAt: string
   deletedAt: string | null
@@ -127,7 +127,7 @@ export interface Action {
   longitude?: number | null
   performedBy: number
   type: { id: number; code: string; name: string; icon: string | null; color: string | null }
-  material: { id: number; code: string | null; name: string; typeId: number } | null
-  location: { id: number; code: string | null; name: string; path: string } | null
+  material: { id: number; name: string; typeId: number } | null
+  location: { id: number; name: string; path: string; parentId: number | null; latitude: number | null; longitude: number | null } | null
   performer: { id: number; fullName: string; email: string }
 }

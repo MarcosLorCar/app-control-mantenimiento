@@ -17,7 +17,6 @@ export function LocationList() {
   const filtered = locations.filter(loc => {
     const matchText =
       loc.name.toLowerCase().includes(search.toLowerCase()) ||
-      (loc.code ?? '').toLowerCase().includes(search.toLowerCase()) ||
       (loc.description ?? '').toLowerCase().includes(search.toLowerCase())
     const matchType = filterTypeId === '' || loc.infraTypeId === filterTypeId
     return matchText && matchType
@@ -43,7 +42,7 @@ export function LocationList() {
           <Search className="w-4.5 h-4.5 text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por código, nombre o descripción..."
+            placeholder="Buscar por nombre o descripción..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
@@ -110,11 +109,6 @@ export function LocationList() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-fg truncate text-[15px] group-hover:text-primary transition-colors">{loc.name}</p>
-                  {loc.code && (
-                    <span className="text-[10px] font-mono text-muted bg-app-bg px-1.5 py-0.5 rounded border border-app-border shrink-0">
-                      {loc.code}
-                    </span>
-                  )}
                 </div>
                 {loc.infraType && (
                   <p className="text-[11px] font-medium tracking-wide uppercase mt-0.5" style={{ color: iconColor }}>

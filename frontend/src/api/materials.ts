@@ -12,7 +12,6 @@ export function getMaterial(id: number): Promise<Material> {
 }
 
 export function createMaterial(body: {
-  code: string
   name: string
   typeId: number
   attributes?: Record<string, unknown>

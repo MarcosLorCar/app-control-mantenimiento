@@ -70,11 +70,6 @@ export function LocationDetail() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-fg leading-tight">{loc.name}</h1>
-                {loc.code && (
-                  <span className="text-[11px] font-mono text-muted bg-app-bg px-2 py-0.5 rounded border border-app-border">
-                    {loc.code}
-                  </span>
-                )}
               </div>
               {loc.type && (
                 <p className="text-[11px] font-mono uppercase text-primary tracking-wider mt-0.5">{loc.type}</p>
@@ -181,7 +176,6 @@ export function LocationDetail() {
                 <table className="w-full border-collapse text-left text-xs">
                   <thead>
                     <tr className="border-b border-app-border text-muted font-bold">
-                      <th className="pb-2.5 font-semibold">Código</th>
                       <th className="pb-2.5 font-semibold">Nombre</th>
                       <th className="pb-2.5 font-semibold">Tipo</th>
                       <th className="pb-2.5 font-semibold">Instalación</th>
@@ -191,7 +185,6 @@ export function LocationDetail() {
                   <tbody className="divide-y divide-app-border/40">
                     {loc.materials.map(mat => (
                       <tr key={mat.id} className="hover:bg-app-bg/30 transition-colors">
-                        <td className="py-3 font-mono text-muted text-[11px]">{mat.code}</td>
                         <td className="py-3 font-semibold text-fg">{mat.name}</td>
                         <td className="py-3 text-fg-secondary">{mat.type?.name}</td>
                         <td className="py-3 text-muted">{mat.installedAt ? formatDate(mat.installedAt) : '—'}</td>

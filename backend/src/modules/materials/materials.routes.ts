@@ -19,9 +19,6 @@ export async function materialsRoutes(app: FastifyInstance) {
       if (err.code === 'INVALID_ATTRIBUTES') {
         return reply.status(422).send({ error: { code: 'INVALID_ATTRIBUTES', message: err.message, details: err.errors } })
       }
-      if (err.code === 'DUPLICATE_CODE') {
-        return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: err.message } })
-      }
       throw err
     }
   })

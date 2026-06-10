@@ -11,7 +11,6 @@ interface Props {
 }
 
 export function MaterialInstallForm({ locationId, onClose }: Props) {
-  const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [typeId, setTypeId] = useState(0)
   const [serialNumber, setSerialNumber] = useState('')
@@ -27,14 +26,13 @@ export function MaterialInstallForm({ locationId, onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    if (!code.trim() || !name.trim() || !typeId) {
-      setError('Código, nombre y tipo son obligatorios.')
+    if (!name.trim() || !typeId) {
+      setError('Nombre y tipo son obligatorios.')
       return
     }
 
     createMaterial.mutate(
       {
-        code: code.trim(),
         name: name.trim(),
         typeId,
         serialNumber: serialNumber.trim() || undefined,
@@ -55,15 +53,9 @@ export function MaterialInstallForm({ locationId, onClose }: Props) {
   return (
     <Modal title="Instalar material" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-fg-secondary mb-1">Código <span className="text-error">*</span></label>
-            <input type="text" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: MAT-001" className={inputCls} required />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre <span className="text-error">*</span></label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Bombilla LED 12W" className={inputCls} required />
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre <span className="text-error">*</span></label>
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Bombilla LED 12W" className={inputCls} required />
         </div>
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">Tipo de material <span className="text-error">*</span></label>

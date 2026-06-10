@@ -87,6 +87,65 @@ async function main() {
     },
   })
 
+  // Ubicaciones de ejemplo (Placeholder locations)
+  const retiropark = await prisma.location.create({
+    data: {
+      name: 'Parque del Retiro',
+      description: 'Parque público histórico de Madrid',
+      type: 'PARK',
+      latitude: 40.4153,
+      longitude: -3.6845,
+    },
+  })
+  await prisma.location.update({
+    where: { id: retiropark.id },
+    data: { path: `/${retiropark.id}/` },
+  })
+
+  const footballField = await prisma.location.create({
+    data: {
+      name: 'Pista de Fútbol',
+      description: 'Pista deportiva del parque',
+      type: 'FIELD',
+      parentId: retiropark.id,
+      latitude: 40.4160,
+      longitude: -3.6850,
+    },
+  })
+  await prisma.location.update({
+    where: { id: footballField.id },
+    data: { path: `/${retiropark.id}/${footballField.id}/` },
+  })
+
+  const farola = await prisma.location.create({
+    data: {
+      name: 'Farola F12',
+      description: 'Poste de alumbrado público',
+      type: 'POST',
+      parentId: footballField.id,
+      latitude: 40.4162,
+      longitude: -3.6851,
+    },
+  })
+  await prisma.location.update({
+    where: { id: farola.id },
+    data: { path: `/${retiropark.id}/${footballField.id}/${farola.id}/` },
+  })
+
+  const officeBldg = await prisma.location.create({
+    data: {
+      name: 'Oficinas Centrales',
+      description: 'Edificio de oficinas del personal de mantenimiento',
+      type: 'BUILDING',
+      latitude: 40.4180,
+      longitude: -3.6810,
+    },
+  })
+  await prisma.location.update({
+    where: { id: officeBldg.id },
+    data: { path: `/${officeBldg.id}/` },
+  })
+
   console.log('Seed completado.')
 }
 

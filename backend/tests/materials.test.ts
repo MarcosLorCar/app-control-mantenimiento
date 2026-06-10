@@ -29,7 +29,7 @@ describe('Materials', () => {
       })
       expect(res.statusCode).toBe(200)
       expect(res.json().data).toBeInstanceOf(Array)
-      expect(res.json().data[0]).toMatchObject({ code: 'MAT-001', name: 'Bombilla Philips E27' })
+      expect(res.json().data[0]).toMatchObject({ name: 'Bombilla Philips E27' })
     })
 
     it('returns 401 without auth', async () => {
@@ -55,7 +55,6 @@ describe('Materials', () => {
         url: '/api/v1/materials',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
-          code: 'MAT-002',
           name: 'Bombilla Osram E27',
           typeId: seed.materialType.id,
           locationId: seed.structure.id,
@@ -64,7 +63,7 @@ describe('Materials', () => {
       })
       expect(res.statusCode).toBe(201)
       expect(res.json().data).toMatchObject({
-        code: 'MAT-002',
+        name: 'Bombilla Osram E27',
         locationId: seed.structure.id,
       })
     })
@@ -75,7 +74,6 @@ describe('Materials', () => {
         url: '/api/v1/materials',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
-          code: 'MAT-X',
           name: 'Sin padre',
           typeId: seed.materialType.id,
           attributes: {},
@@ -90,7 +88,6 @@ describe('Materials', () => {
         url: '/api/v1/materials',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
-          code: 'MAT-005',
           name: 'Sin potencia',
           typeId: seed.materialType.id,
           locationId: seed.structure.id,
@@ -100,28 +97,14 @@ describe('Materials', () => {
       expect(res.statusCode).toBe(422)
     })
 
-    it('returns 409 on duplicate code', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/materials',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: {
-          code: 'MAT-001',
-          name: 'Duplicado',
-          typeId: seed.materialType.id,
-          locationId: seed.structure.id,
-          attributes: { power_w: 9 },
-        },
-      })
-      expect(res.statusCode).toBe(409)
-    })
+
 
     it('returns 403 for viewer', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/materials',
         headers: { authorization: `Bearer ${viewerToken}` },
-        payload: { code: 'MAT-X', name: 'X', typeId: seed.materialType.id, locationId: seed.structure.id, attributes: { power_w: 1 } },
+        payload: { name: 'X', typeId: seed.materialType.id, locationId: seed.structure.id, attributes: { power_w: 1 } },
       })
       expect(res.statusCode).toBe(403)
     })
@@ -136,7 +119,7 @@ describe('Materials', () => {
       })
       expect(res.statusCode).toBe(200)
       const body = res.json().data
-      expect(body).toMatchObject({ id: seed.material.id, code: 'MAT-001' })
+      expect(body).toMatchObject({ id: seed.material.id, name: 'Bombilla Philips E27' })
       expect(body.type).toMatchObject({ code: 'led_bulb' })
     })
 
@@ -159,7 +142,7 @@ describe('Materials', () => {
       })
       expect(res.statusCode).toBe(200)
       expect(res.json().data).toHaveLength(1)
-      expect(res.json().data[0].code).toBe('MAT-001')
+      expect(res.json().data[0].name).toBe('Bombilla Philips E27')
     })
   })
 

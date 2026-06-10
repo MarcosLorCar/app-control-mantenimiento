@@ -36,7 +36,6 @@ export const UpdateMaterialCategorySchema = z.object({
 })
 
 export const CreateMaterialSchema = z.object({
-  code: z.string().min(1).max(100),
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   serialNumber: z.string().optional(),

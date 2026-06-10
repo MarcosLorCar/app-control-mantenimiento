@@ -12,7 +12,6 @@ interface Props {
 
 export function LocationForm({ parentId, existing, onClose }: Props) {
   const isEdit = !!existing
-  const [code, setCode] = useState(existing?.code ?? '')
   const [name, setName] = useState(existing?.name ?? '')
   const [description, setDescription] = useState(existing?.description ?? '')
   const [type, setType] = useState(existing?.type ?? 'FOLDER')
@@ -30,7 +29,6 @@ export function LocationForm({ parentId, existing, onClose }: Props) {
     e.preventDefault()
     setError('')
     const body = {
-      code: code.trim() || null,
       name: name.trim(),
       description: description.trim() || null,
       type: type || null,
@@ -65,28 +63,16 @@ export function LocationForm({ parentId, existing, onClose }: Props) {
   return (
     <Modal title={isEdit ? 'Editar ubicación' : 'Nueva ubicación'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-fg-secondary mb-1">Código</label>
-            <input
-              type="text"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              placeholder="Ej: LOC-001"
-              className={inputCls}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre <span className="text-error">*</span></label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Nombre de la ubicación"
-              className={inputCls}
-              required
-            />
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre <span className="text-error">*</span></label>
+          <input
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Nombre de la ubicación"
+            className={inputCls}
+            required
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

@@ -31,15 +31,6 @@ export async function locationsRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
 
-    if (parsed.data.code) {
-      const existing = await app.db.location.findFirst({
-        where: { code: parsed.data.code, deletedAt: null },
-      })
-      if (existing) {
-        return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código ya existe' } })
-      }
-    }
-
     const data = await createLocation(app.db, parsed.data)
     return reply.status(201).send({ data })
   })
@@ -65,15 +56,6 @@ export async function locationsRoutes(app: FastifyInstance) {
     const parsed = UpdateLocationSchema.safeParse(req.body)
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
-    }
-
-    if (parsed.data.code && parsed.data.code !== existing.code) {
-      const duplicate = await app.db.location.findFirst({
-        where: { code: parsed.data.code, deletedAt: null, id: { not: id } },
-      })
-      if (duplicate) {
-        return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código ya existe' } })
-      }
     }
 
     try {

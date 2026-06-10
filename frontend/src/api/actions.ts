@@ -20,6 +20,13 @@ export function createAction(body: {
   longitude?: number | null
   description?: string
   performedAt?: string
+  newLocation?: {
+    name: string
+    type?: string | null
+    parentId?: number | null
+    latitude?: number | null
+    longitude?: number | null
+  } | null
 }): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions`, {
     method: 'POST',

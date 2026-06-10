@@ -78,7 +78,7 @@ describe('Actions', () => {
       const body = res.json().data
       expect(body).toMatchObject({ title: 'Inspección bombilla', materialId: seed.material.id })
       expect(body.type).toMatchObject({ code: 'inspection' })
-      expect(body.material).toMatchObject({ code: 'MAT-001' })
+      expect(body.material).toMatchObject({ name: 'Bombilla Philips E27' })
       expect(body.performer).toBeDefined()
     })
 
@@ -127,20 +127,36 @@ describe('Actions', () => {
       expect(body.location).toBeDefined()
     })
 
-    it('returns 400 when multiple targets specified', async () => {
+    it('creates action and registers a new location on-the-fly', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
-          title: 'Intento doble',
+          title: 'Instalación farola nueva',
+          description: 'Nueva farola instalada en pista',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
-          locationId: seed.infra.id,
+          newLocation: {
+            name: 'Farola F13 Nueva',
+            type: 'POST',
+            parentId: seed.dep.id,
+            latitude: 40.4165,
+            longitude: -3.6852,
+          },
         },
       })
-      expect(res.statusCode).toBe(400)
+      expect(res.statusCode).toBe(201)
+      const body = res.json().data
+      expect(body).toMatchObject({ title: 'Instalación farola nueva' })
+      expect(body.locationId).toBeDefined()
+      expect(body.location).toMatchObject({
+        name: 'Farola F13 Nueva',
+        parentId: seed.dep.id,
+        latitude: 40.4165,
+        longitude: -3.6852,
+      })
     })
+
 
     it('returns 403 for viewer', async () => {
       const res = await app.inject({

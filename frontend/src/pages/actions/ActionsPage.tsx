@@ -108,13 +108,9 @@ export function ActionsPage() {
                     <div className="flex-1 px-3 text-fg truncate">{action.title}</div>
                     <div className="w-40 px-3 text-fg-secondary truncate">
                       {action.material ? (
-                        <>
-                          {action.material.code && <span className="font-mono text-[11px] text-muted mr-1">{action.material.code}</span>}
-                          {action.material.name}
-                        </>
+                        <>{action.material.name}</>
                       ) : action.location ? (
                         <>
-                          {action.location.code && <span className="font-mono text-[11px] text-muted mr-1">{action.location.code}</span>}
                           {action.location.name} <span className="text-[11px] text-muted font-semibold ml-1">(Ubic)</span>
                         </>
                       ) : (
@@ -172,13 +168,11 @@ export function ActionsPage() {
                   {selected.material ? (
                     <>
                       <span className="text-xs font-semibold text-muted block mb-0.5">Material</span>
-                      {selected.material.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.material.code}</span>}
                       <span className="font-medium text-fg">{selected.material.name}</span>
                     </>
                   ) : selected.location ? (
                     <>
                       <span className="text-xs font-semibold text-muted block mb-0.5">Ubicación</span>
-                      {selected.location.code && <span className="font-mono text-[11px] text-muted mr-1">{selected.location.code}</span>}
                       <span className="font-medium text-fg">{selected.location.name}</span>
                     </>
                   ) : (
