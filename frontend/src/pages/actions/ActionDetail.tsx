@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Zap, Package, MapPin, Link as LinkIcon, Unlink as UnlinkIcon, Pencil, Trash2, Calendar, User, Folder } from 'lucide-react'
-import { useAction, useDeleteAction, useAssociateMaterial, useDisassociateMaterial } from '../../hooks/useActions'
-import { useMaterials } from '../../hooks/useMaterials'
-import { MaterialInstallForm } from '../../components/forms/MaterialInstallForm'
+import { Zap, Package, MapPin, Pencil, Trash2, Calendar, User, Folder, Plus, Minus } from 'lucide-react'
+import { useAction, useDeleteAction } from '../../hooks/useActions'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { RoleGuard } from '../../components/RoleGuard'
 import { ActionForm } from './ActionForm'
-import { getActionTypeIcon } from '../../utils/actionTypeIcons'
+import type { Material } from '../../api/types'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -21,50 +19,26 @@ export function ActionDetail() {
 
   const { data: action, isLoading, error } = useAction(actionId)
   const deleteMut = useDeleteAction()
-  const associateMut = useAssociateMaterial()
-  const disassociateMut = useDisassociateMaterial()
-  const { data: allMaterials = [] } = useMaterials()
 
   const [showEdit, setShowEdit] = useState(false)
-  const [showAddExisting, setShowAddExisting] = useState(false)
-  const [selectedMaterialIdToLink, setSelectedMaterialIdToLink] = useState(0)
-  const [showInstallModal, setShowInstallModal] = useState(false)
-  const [editingMaterial, setEditingMaterial] = useState<any | null>(null)
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
 
   if (isLoading) return <p className="text-muted text-sm py-20 text-center">Cargando detalles del trabajo...</p>
   if (error || !action) return <p className="text-error text-sm py-20 text-center">Trabajo no encontrado.</p>
 
-  const availableMaterialsToLink = allMaterials.filter(
-    m => !action.materials.some(am => am.id === m.id)
-  )
-
   function handleDelete() {
-    if (!confirm('¿Eliminar esta acción de trabajo?')) return
+    if (!confirm('¿Eliminar este registro de trabajo?')) return
+    const targetLocationId = action?.locationId
     deleteMut.mutate(actionId, {
-      onSuccess: () => navigate('/actions'),
+      onSuccess: () => {
+        if (targetLocationId) {
+          navigate(`/locations/${targetLocationId}`)
+        } else {
+          navigate('/actions')
+        }
+      },
     })
   }
-
-  function handleAssociateMaterial() {
-    if (selectedMaterialIdToLink === 0) return
-    associateMut.mutate(
-      { actionId, materialId: selectedMaterialIdToLink },
-      {
-        onSuccess: () => {
-          setShowAddExisting(false)
-          setSelectedMaterialIdToLink(0)
-        },
-      }
-    )
-  }
-
-  function handleDisassociateMaterial(materialId: number) {
-    if (!confirm('¿Desvincular este material del trabajo?')) return
-    disassociateMut.mutate({ actionId, materialId })
-  }
-
-  const TypeIcon = getActionTypeIcon(action.type.icon)
-  const typeColor = action.type.color ?? '#6B7280'
 
   return (
     <div className="space-y-6">
@@ -72,25 +46,18 @@ export function ActionDetail() {
       <div className="flex flex-col md:flex-row md:items-start gap-4 justify-between">
         <div>
           <nav className="text-xs text-muted flex items-center gap-1.5 mb-3 flex-wrap">
-            <Link to="/actions" className="hover:text-fg font-medium">Acciones</Link>
+            <Link to="/actions" className="hover:text-fg font-medium">Trabajos</Link>
             <span className="text-muted/60">/</span>
-            <span className="text-fg font-semibold truncate max-w-40">Trabajo #{action.id}</span>
+            <span className="text-fg font-semibold truncate max-w-40">Detalle #{action.id}</span>
           </nav>
           <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: typeColor + '15' }}
-            >
-              {TypeIcon ? (
-                <TypeIcon className="w-5 h-5" style={{ color: typeColor }} />
-              ) : (
-                <Zap className="w-5 h-5 text-muted" />
-              )}
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
+              <Zap className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-fg leading-tight">{action.title}</h1>
-              <p className="text-[11px] font-mono uppercase tracking-wider mt-0.5" style={{ color: typeColor }}>
-                {action.type.name}
+              <p className="text-[11px] font-mono text-muted uppercase mt-0.5">
+                Registro de Mantenimiento
               </p>
             </div>
           </div>
@@ -102,7 +69,7 @@ export function ActionDetail() {
               onClick={() => setShowEdit(true)}
               className="flex items-center gap-1.5 border border-app-border px-3.5 py-2 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
             >
-              <Pencil className="w-3.5 h-3.5" /> Editar
+              <Pencil className="w-3.5 h-3.5" /> Editar Info
             </button>
           </RoleGuard>
           <RoleGuard require="manage">
@@ -118,119 +85,76 @@ export function ActionDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (2/3 width): Materiales Utilizados */}
+        {/* Left Column (2/3 width): Materials Diff (Git-like) */}
         <div className="lg:col-span-2 space-y-6">
           <section className="bg-card rounded-xl border border-app-border p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" /> Materiales Utilizados
+                <Package className="w-4 h-4 text-primary" /> Cambios en Materiales (Git Diff)
               </h2>
-              <RoleGuard require="write">
-                <div className="flex gap-2">
-                  {!showAddExisting ? (
-                    <button
-                      onClick={() => setShowAddExisting(true)}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-primary border border-primary/20 bg-primary/5 px-2.5 py-1.5 rounded-lg hover:bg-primary/10 transition-colors"
-                    >
-                      <LinkIcon className="w-3.5 h-3.5" />
-                      + Vincular Existente
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2 border border-app-border rounded-lg p-1 px-2 bg-app-bg text-xs">
-                      <select
-                        value={selectedMaterialIdToLink}
-                        onChange={e => setSelectedMaterialIdToLink(Number(e.target.value))}
-                        className="bg-transparent text-xs text-fg focus:outline-none border-none pr-6 cursor-pointer"
-                      >
-                        <option value={0}>Seleccionar...</option>
-                        {availableMaterialsToLink.map(m => (
-                          <option key={m.id} value={m.id}>
-                            {m.name} ({m.type.name})
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={handleAssociateMaterial}
-                        disabled={selectedMaterialIdToLink === 0}
-                        className="text-primary font-bold hover:underline"
-                      >
-                        Ok
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowAddExisting(false)
-                          setSelectedMaterialIdToLink(0)
-                        }}
-                        className="text-muted hover:text-fg font-medium"
-                      >
-                        X
-                      </button>
-                    </div>
-                  )}
-
-                  {action.locationId && (
-                    <button
-                      onClick={() => setShowInstallModal(true)}
-                      className="flex items-center gap-1 text-[11px] font-semibold bg-primary text-primary-fg px-2.5 py-1.5 rounded-lg hover:bg-[var(--primary-hover)] transition-all shadow-sm"
-                    >
-                      <PlusIcon className="w-3.5 h-3.5" />
-                      + Registrar e Instalar
-                    </button>
-                  )}
-                </div>
-              </RoleGuard>
             </div>
 
             {action.materials.length === 0 ? (
               <div className="p-8 text-center text-muted text-xs italic bg-app-bg/40 rounded-lg border border-dashed border-app-border">
-                No hay materiales vinculados a este trabajo todavía.
+                No hubo cambios en los materiales en este trabajo.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-app-border text-muted font-bold">
-                      <th className="pb-2.5 font-semibold">Material</th>
-                      <th className="pb-2.5 font-semibold">Tipo</th>
-                      <th className="pb-2.5" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-app-border/40">
-                    {action.materials.map(m => (
-                      <tr key={m.id} className="hover:bg-app-bg/30 transition-colors">
-                        <td className="py-3 text-fg">
-                          <span className="font-semibold block">{m.name}</span>
-                          <MaterialAttributePills material={m} />
-                        </td>
-                        <td className="py-3 text-fg-secondary">{m.type.name}</td>
-                        <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-3">
-                            <RoleGuard require="write">
-                              <button
-                                onClick={() => setEditingMaterial({
-                                  ...m,
-                                  locationId: action.locationId
-                                })}
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-fg-secondary hover:underline"
-                              >
-                                <Pencil className="w-3 h-3" /> specs
-                              </button>
-                            </RoleGuard>
-                            <RoleGuard require="write">
-                              <button
-                                onClick={() => handleDisassociateMaterial(m.id)}
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-error hover:underline"
-                                title="Desvincular material"
-                              >
-                                <UnlinkIcon className="w-3 h-3" /> Desvincular
-                              </button>
-                            </RoleGuard>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {action.materials.map(am => {
+                  const isInstall = am.operation === 'INSTALL'
+                  const m = am.material
+                  
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
+                        isInstall
+                          ? 'bg-emerald-500/[0.06] border-emerald-500/20 hover:border-emerald-500/40 text-fg'
+                          : 'bg-rose-500/[0.04] border-rose-500/10 hover:border-rose-500/30 text-fg-secondary'
+                      }`}
+                    >
+                      {/* Operation Symbol Badge */}
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${
+                          isInstall
+                            ? 'bg-emerald-500/15 text-emerald-500'
+                            : 'bg-rose-500/15 text-rose-500'
+                        }`}
+                      >
+                        {isInstall ? <Plus className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h3 className="font-bold text-sm text-fg truncate">
+                            {m.name}
+                          </h3>
+                          <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded bg-card border border-app-border text-muted">
+                            {m.type.name}
+                          </span>
+                        </div>
+
+
+
+                        <p className="text-xs text-fg-secondary mt-2 leading-relaxed">
+                          {m.description || 'Sin descripción técnica.'}
+                        </p>
+
+                        <MaterialAttributePills material={m} />
+                      </div>
+
+                      {/* Clickable details action */}
+                      <button
+                        onClick={() => setEditingMaterial(m)}
+                        className={`text-[11px] font-semibold hover:underline shrink-0 self-center ${
+                          isInstall ? 'text-emerald-500' : 'text-rose-400'
+                        }`}
+                      >
+                        Detalles
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </section>
@@ -315,14 +239,6 @@ export function ActionDetail() {
         />
       )}
 
-      {showInstallModal && action.locationId && (
-        <MaterialInstallForm
-          locationId={action.locationId}
-          actionId={actionId}
-          onClose={() => setShowInstallModal(false)}
-        />
-      )}
-
       {editingMaterial && (
         <MaterialEditAttributesModal
           material={editingMaterial}
@@ -330,14 +246,5 @@ export function ActionDetail() {
         />
       )}
     </div>
-  )
-}
-
-function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <line x1="12" y1="5" x2="12" y2="19"></line>
-      <line x1="5" y1="12" x2="19" y2="12"></line>
-    </svg>
   )
 }
