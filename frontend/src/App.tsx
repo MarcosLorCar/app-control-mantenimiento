@@ -4,8 +4,8 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
-import { Dashboard } from './pages/Dashboard'
-import { LocationList } from './pages/locations/LocationList'
+import { CategoriesList } from './pages/locations/CategoriesList'
+import { CategoryLocationList } from './pages/locations/CategoryLocationList'
 import { LocationDetail } from './pages/locations/LocationDetail'
 import { Users } from './pages/admin/Users'
 import { Catalog } from './pages/admin/Catalog'
@@ -28,8 +28,8 @@ export default function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/change-password" element={<ChangePassword />} />
               <Route element={<Layout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/locations" element={<LocationList />} />
+                <Route path="/" element={<CategoriesList />} />
+                <Route path="/categories/:id" element={<CategoryLocationList />} />
                 <Route path="/locations/:id" element={<LocationDetail />} />
                 <Route path="/actions" element={<ActionsPage />} />
                 <Route path="/actions/:id" element={<ActionDetail />} />

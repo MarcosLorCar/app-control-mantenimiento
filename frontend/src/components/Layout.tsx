@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, ClipboardList, Warehouse, Package,
+  ClipboardList, Warehouse, Package,
   Users, Settings, LogOut, Bell, Menu,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
 const GENERAL_ITEMS = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/actions', icon: ClipboardList, label: 'Acciones', end: false },
-  { to: '/locations', icon: Warehouse, label: 'Ubicaciones', end: false },
-  { to: '/materials', icon: Package, label: 'Materiales', end: false },
+  { to: '/', icon: Warehouse, label: 'Ubicaciones' },
+  { to: '/actions', icon: ClipboardList, label: 'Acciones' },
+  { to: '/materials', icon: Package, label: 'Materiales' },
 ]
 
 const ADMIN_ITEMS = [
@@ -19,12 +18,13 @@ const ADMIN_ITEMS = [
 ]
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
-  '/': { title: 'Panel de Control', subtitle: 'Resumen general del sistema' },
+  '/': { title: 'Ubicaciones por Categoría', subtitle: 'Selecciona una categoría de infraestructura' },
+  '/categories': { title: 'Navegador de Ubicaciones', subtitle: 'Ubicaciones registradas en la categoría' },
+  '/locations': { title: 'Ficha de Ubicación', subtitle: 'Detalle de equipos, materiales y acciones' },
   '/actions': { title: 'Gestión de Acciones', subtitle: 'Registro y seguimiento de acciones' },
-  '/locations': { title: 'Navegador de Ubicaciones', subtitle: 'Gestión y navegación del sistema de ubicaciones' },
-  '/materials': { title: 'Materiales Consumidos', subtitle: 'Registro de materiales usados por acción' },
+  '/materials': { title: 'Inventario de Materiales', subtitle: 'Listado completo de materiales en el sistema' },
   '/admin': { title: 'Usuarios', subtitle: 'Gestión de usuarios del sistema' },
-  '/admin/catalog': { title: 'Configuración', subtitle: 'Tipos de acciones y roles' },
+  '/admin/catalog': { title: 'Configuración del Catálogo', subtitle: 'Gestión de categorías y propiedades del sistema' },
 }
 
 export function Layout() {
@@ -48,7 +48,7 @@ export function Layout() {
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? '?'
 
   return (
-    <div className="flex h-screen bg-app-bg">
+    <div className="flex h-screen bg-app-bg text-fg">
       {/* Overlay móvil */}
       {sidebarOpen && (
         <div
@@ -75,23 +75,29 @@ export function Layout() {
         {/* Nav general */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           <p className="px-3 pb-2 text-[10px] font-semibold tracking-[2px] text-sidebar-fg uppercase">Menú</p>
-          {GENERAL_ITEMS.map(({ to, icon: Icon, label, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
-                  isActive
-                    ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
-                    : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
-                }`
-              }
-            >
-              <Icon className="w-[18px] h-[18px] shrink-0" />
-              {label}
-            </NavLink>
-          ))}
+          {GENERAL_ITEMS.map(({ to, icon: Icon, label }) => {
+            const isUbicaciones = to === '/'
+            const active = isUbicaciones
+              ? (location.pathname === '/' || location.pathname.startsWith('/categories/') || location.pathname.startsWith('/locations/'))
+              : (location.pathname === to || location.pathname.startsWith(to + '/'))
+
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                className={
+                  `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
+                    active
+                      ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
+                      : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
+                  }`
+                }
+              >
+                <Icon className="w-[18px] h-[18px] shrink-0" />
+                {label}
+              </NavLink>
+            )
+          })}
         </nav>
 
         {/* Sección admin — pegada al fondo */}
