@@ -9,7 +9,6 @@ const TYPE_SELECT = {
 const CAT_SELECT = {
   id: true, code: true, name: true, description: true, dataType: true,
   unit: true, required: true, sortOrder: true, enumValues: true, validation: true,
-  materialTypeId: true,
 }
 
 export function listMaterialTypes(db: PrismaClient) {
@@ -30,14 +29,36 @@ export function updateMaterialType(db: PrismaClient, id: number, data: { name?: 
 
 export function listCategories(db: PrismaClient, materialTypeId: number) {
   return db.materialCategory.findMany({
-    where: { materialTypeId },
+    where: { materialTypes: { some: { id: materialTypeId } } },
     select: CAT_SELECT,
     orderBy: { sortOrder: 'asc' },
   })
 }
 
-export function createCategory(db: PrismaClient, materialTypeId: number, data: CreateMaterialCategoryInput) {
-  return db.materialCategory.create({ data: { ...(data as any), materialTypeId }, select: CAT_SELECT })
+export async function createCategory(db: PrismaClient, materialTypeId: number, data: CreateMaterialCategoryInput) {
+  const existing = await db.materialCategory.findUnique({
+    where: { code: data.code }
+  })
+  
+  if (existing) {
+    await db.materialCategory.update({
+      where: { id: existing.id },
+      data: { materialTypes: { connect: { id: materialTypeId } } }
+    })
+    return db.materialCategory.findUnique({
+      where: { id: existing.id },
+      select: CAT_SELECT
+    })
+  }
+
+  const { ...rest } = data
+  return db.materialCategory.create({
+    data: {
+      ...(rest as any),
+      materialTypes: { connect: { id: materialTypeId } }
+    },
+    select: CAT_SELECT
+  })
 }
 
 export function updateCategory(db: PrismaClient, id: number, data: UpdateMaterialCategoryInput) {

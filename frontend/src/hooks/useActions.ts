@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listActions, getAction, createAction, updateAction, deleteAction,
   listMaterialActions, listLocationActions,
+  associateMaterialToAction, disassociateMaterialFromAction,
 } from '../api/actions'
 import { locationKeys } from './useLocations'
 
@@ -42,8 +43,10 @@ export function useCreateAction() {
     mutationFn: (body: Parameters<typeof createAction>[0]) => createAction(body),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: actionKeys.all })
-      if (data.materialId) {
-        qc.invalidateQueries({ queryKey: actionKeys.byMaterial(data.materialId) })
+      if (data.materials) {
+        data.materials.forEach(m => {
+          qc.invalidateQueries({ queryKey: actionKeys.byMaterial(m.id) })
+        })
       }
       if (data.locationId) {
         qc.invalidateQueries({ queryKey: actionKeys.byLocation(data.locationId) })
@@ -61,8 +64,10 @@ export function useUpdateAction() {
     onSuccess: (data, variables) => {
       qc.invalidateQueries({ queryKey: actionKeys.all })
       qc.invalidateQueries({ queryKey: actionKeys.detail(variables.id) })
-      if (data.materialId) {
-        qc.invalidateQueries({ queryKey: actionKeys.byMaterial(data.materialId) })
+      if (data.materials) {
+        data.materials.forEach(m => {
+          qc.invalidateQueries({ queryKey: actionKeys.byMaterial(m.id) })
+        })
       }
       if (data.locationId) {
         qc.invalidateQueries({ queryKey: actionKeys.byLocation(data.locationId) })
@@ -79,6 +84,40 @@ export function useDeleteAction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: actionKeys.all })
       qc.invalidateQueries({ queryKey: locationKeys.all })
+    },
+  })
+}
+
+export function useAssociateMaterial() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ actionId, materialId }: { actionId: number; materialId: number }) =>
+      associateMaterialToAction(actionId, materialId),
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: actionKeys.all })
+      qc.invalidateQueries({ queryKey: actionKeys.detail(variables.actionId) })
+      qc.invalidateQueries({ queryKey: actionKeys.byMaterial(variables.materialId) })
+      if (data.locationId) {
+        qc.invalidateQueries({ queryKey: actionKeys.byLocation(data.locationId) })
+        qc.invalidateQueries({ queryKey: locationKeys.detail(data.locationId) })
+      }
+    },
+  })
+}
+
+export function useDisassociateMaterial() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ actionId, materialId }: { actionId: number; materialId: number }) =>
+      disassociateMaterialFromAction(actionId, materialId),
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: actionKeys.all })
+      qc.invalidateQueries({ queryKey: actionKeys.detail(variables.actionId) })
+      qc.invalidateQueries({ queryKey: actionKeys.byMaterial(variables.materialId) })
+      if (data.locationId) {
+        qc.invalidateQueries({ queryKey: actionKeys.byLocation(data.locationId) })
+        qc.invalidateQueries({ queryKey: locationKeys.detail(data.locationId) })
+      }
     },
   })
 }

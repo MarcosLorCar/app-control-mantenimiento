@@ -5,7 +5,6 @@ export const CreateActionSchema = z.object({
   description: z.string().optional(),
   performedAt: z.string().datetime().optional(),
   typeId: z.number().int().positive(),
-  materialId: z.number().int().positive().optional(),
   locationId: z.number().int().positive().optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
@@ -18,9 +17,9 @@ export const CreateActionSchema = z.object({
     infraTypeId: z.number().int().positive().nullable().optional(),
   }).optional(),
 }).refine(data => {
-  return data.locationId !== undefined || data.newLocation !== undefined || data.materialId !== undefined;
+  return data.locationId !== undefined || data.newLocation !== undefined;
 }, {
-  message: "Debe especificarse una ubicación (existente o nueva) o un material para la acción",
+  message: "Debe especificarse una ubicación (existente o nueva) para la acción",
   path: ["locationId"]
 })
 

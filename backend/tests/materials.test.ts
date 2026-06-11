@@ -68,6 +68,39 @@ describe('Materials', () => {
       })
     })
 
+    it('creates material and links to action if actionId is provided', async () => {
+      const action = await testDb.action.create({
+        data: {
+          title: 'Mantenimiento preventivo',
+          typeId: seed.actionType.id,
+          performedBy: seed.editor.id,
+        },
+      })
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/materials',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          name: 'Bombilla Osram E27 Linked',
+          typeId: seed.materialType.id,
+          locationId: seed.structure.id,
+          attributes: { power_w: 12 },
+          actionId: action.id,
+        },
+      })
+      expect(res.statusCode).toBe(201)
+      expect(res.json().data).toMatchObject({
+        name: 'Bombilla Osram E27 Linked',
+        locationId: seed.structure.id,
+      })
+      const actionWithMaterials = await testDb.action.findUnique({
+        where: { id: action.id },
+        include: { materials: true },
+      })
+      expect(actionWithMaterials?.materials).toHaveLength(1)
+      expect(actionWithMaterials?.materials[0].name).toBe('Bombilla Osram E27 Linked')
+    })
+
     it('returns 400 when missing required locationId', async () => {
       const res = await app.inject({
         method: 'POST',

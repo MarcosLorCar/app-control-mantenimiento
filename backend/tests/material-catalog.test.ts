@@ -51,11 +51,11 @@ describe('Material Catalog', () => {
       expect(res.json().data).toMatchObject({ code: 'valve', name: 'Válvula' })
     })
 
-    it('returns 403 for editor', async () => {
+    it('returns 403 for viewer', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/material-types',
-        headers: { authorization: `Bearer ${editorToken}` },
+        headers: { authorization: `Bearer ${viewerToken}` },
         payload: { code: 'valve', name: 'Válvula' },
       })
       expect(res.statusCode).toBe(403)
@@ -162,7 +162,7 @@ describe('Material Catalog', () => {
   describe('PATCH /api/v1/categories/:id', () => {
     it('updates category name (requireManage)', async () => {
       const cat = await testDb.materialCategory.findFirst({
-        where: { materialTypeId: seed.materialType.id },
+        where: { materialTypes: { some: { id: seed.materialType.id } } },
       })
       const res = await app.inject({
         method: 'PATCH',
@@ -178,7 +178,7 @@ describe('Material Catalog', () => {
   describe('DELETE /api/v1/categories/:id', () => {
     it('deletes category (requireManage)', async () => {
       const cat = await testDb.materialCategory.findFirst({
-        where: { materialTypeId: seed.materialType.id },
+        where: { materialTypes: { some: { id: seed.materialType.id } } },
       })
       const res = await app.inject({
         method: 'DELETE',
@@ -192,7 +192,7 @@ describe('Material Catalog', () => {
 
     it('returns 403 for editor', async () => {
       const cat = await testDb.materialCategory.findFirst({
-        where: { materialTypeId: seed.materialType.id },
+        where: { materialTypes: { some: { id: seed.materialType.id } } },
       })
       const res = await app.inject({
         method: 'DELETE',

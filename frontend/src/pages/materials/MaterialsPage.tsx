@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Search, Package } from 'lucide-react'
 import { useMaterials } from '../../hooks/useMaterials'
+import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -83,12 +84,15 @@ export function MaterialsPage() {
               filtered.map(m => (
                 <div
                   key={m.id}
-                  className="flex items-center h-[50px] text-[13px] hover:bg-app-bg transition-colors"
+                  className="flex items-center min-h-[50px] py-2 text-[13px] hover:bg-app-bg transition-colors"
                   style={{ borderBottom: '1px solid var(--border)' }}
                 >
-                  <div className="flex-1 px-4 flex items-center gap-2 min-w-0">
-                    <Package className="w-3.5 h-3.5 text-muted shrink-0" />
-                    <span className="font-medium text-fg truncate">{m.name}</span>
+                  <div className="flex-1 px-4 flex items-start gap-2 min-w-0">
+                    <Package className="w-3.5 h-3.5 text-muted shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <span className="font-medium text-fg block truncate">{m.name}</span>
+                      <MaterialAttributePills material={m} />
+                    </div>
                   </div>
                   <div className="w-40 px-3 text-fg-secondary truncate">{m.type.name}</div>
                   <div className="w-36 px-3 text-muted truncate">{m.serialNumber ?? '—'}</div>

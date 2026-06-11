@@ -61,7 +61,7 @@ export function getLocationDetail(db: PrismaClient, id: number) {
         include: {
           type: { select: { id: true, code: true, name: true, icon: true, color: true } },
           performer: { select: { id: true, fullName: true, email: true } },
-          material: { select: { id: true, name: true } },
+          materials: { select: { id: true, name: true } },
         },
         orderBy: { performedAt: 'desc' },
       },

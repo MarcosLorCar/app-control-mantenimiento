@@ -11,6 +11,7 @@ import { Users } from './pages/admin/Users'
 import { Catalog } from './pages/admin/Catalog'
 import { ChangePassword } from './pages/ChangePassword'
 import { ActionsPage } from './pages/actions/ActionsPage'
+import { ActionDetail } from './pages/actions/ActionDetail'
 import { MaterialsPage } from './pages/materials/MaterialsPage'
 
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ export default function App() {
                 <Route path="/locations" element={<LocationList />} />
                 <Route path="/locations/:id" element={<LocationDetail />} />
                 <Route path="/actions" element={<ActionsPage />} />
+                <Route path="/actions/:id" element={<ActionDetail />} />
                 <Route path="/materials" element={<MaterialsPage />} />
                 <Route path="/admin" element={<Users />} />
                 <Route path="/admin/catalog" element={<Catalog />} />

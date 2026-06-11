@@ -93,7 +93,7 @@ export interface Material {
   installedAt: string | null
   attributes: Record<string, unknown>
   typeId: number
-  type: { id: number; code: string; name: string; icon: string | null }
+  type: { id: number; code: string; name: string; icon: string | null; categories?: { code: string; name: string; unit: string | null }[] }
   locationId: number | null
   location: { id: number; name: string; path: string } | null
   createdAt: string
@@ -121,13 +121,24 @@ export interface Action {
   createdAt: string
   updatedAt: string
   typeId: number
-  materialId: number | null
   locationId: number | null
   latitude?: number | null
   longitude?: number | null
   performedBy: number
   type: { id: number; code: string; name: string; icon: string | null; color: string | null }
-  material: { id: number; name: string; typeId: number } | null
+  materials: {
+    id: number
+    name: string
+    typeId: number
+    attributes: Record<string, unknown>
+    type: {
+      id: number
+      code: string
+      name: string
+      icon: string | null
+      categories?: { code: string; name: string; unit: string | null }[]
+    }
+  }[]
   location: { id: number; name: string; path: string; parentId: number | null; latitude: number | null; longitude: number | null } | null
   performer: { id: number; fullName: string; email: string }
 }

@@ -19,6 +19,7 @@ export function createMaterial(body: {
   serialNumber?: string
   installedAt?: string
   locationId: number
+  actionId?: number
 }): Promise<Material> {
   return apiFetch<ApiData<Material>>(`${API_BASE}/materials`, {
     method: 'POST',

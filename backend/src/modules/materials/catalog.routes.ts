@@ -13,7 +13,7 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
     return reply.send({ data: await listMaterialTypes(app.db) })
   })
 
-  app.post('/material-types', { preHandler: [app.requireManage] }, async (req, reply) => {
+  app.post('/material-types', { preHandler: [app.requireWrite] }, async (req, reply) => {
     const parsed = CreateMaterialTypeSchema.safeParse(req.body)
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
@@ -57,8 +57,11 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
-    const existing = await app.db.materialCategory.findUnique({
-      where: { materialTypeId_code: { materialTypeId, code: parsed.data.code } },
+    const existing = await app.db.materialCategory.findFirst({
+      where: {
+        code: parsed.data.code,
+        materialTypes: { some: { id: materialTypeId } }
+      }
     })
     if (existing) {
       return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de categoría ya existe en este tipo' } })

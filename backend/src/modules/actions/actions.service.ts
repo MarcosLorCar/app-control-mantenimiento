@@ -3,7 +3,23 @@ import type { CreateActionInput, UpdateActionInput } from './actions.schema'
 
 const ACTION_INCLUDE = {
   type: { select: { id: true, code: true, name: true, icon: true, color: true } },
-  material: { select: { id: true, name: true, typeId: true } },
+  materials: {
+    select: {
+      id: true,
+      name: true,
+      typeId: true,
+      attributes: true,
+      type: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          icon: true,
+          categories: { select: { code: true, name: true, unit: true } }
+        }
+      }
+    }
+  },
   location: { select: { id: true, name: true, path: true, parentId: true, latitude: true, longitude: true } },
   performer: { select: { id: true, fullName: true, email: true } },
 }
@@ -15,8 +31,15 @@ export function listActions(
     locationId?: number
   }
 ) {
+  const where: any = {}
+  if (filters?.locationId) {
+    where.locationId = filters.locationId
+  }
+  if (filters?.materialId) {
+    where.materials = { some: { id: filters.materialId } }
+  }
   return db.action.findMany({
-    where: filters,
+    where,
     include: ACTION_INCLUDE,
     orderBy: { performedAt: 'desc' },
   })

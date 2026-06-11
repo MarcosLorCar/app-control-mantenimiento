@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   useInfrastructureTypes, useCreateInfrastructureType,
   useActionTypes, useRoles, useCreateActionType, useUpdateActionType,
-  useMaterialTypes, useCreateMaterialType,
+  useMaterialTypes, useCreateMaterialType, useMaterialCategories, useCreateMaterialCategory,
 } from '../../hooks/useCatalog'
 import { useAuth } from '../../hooks/useAuth'
 import { ICON_MAP, ICON_OPTIONS } from '../../utils/actionTypeIcons'
@@ -108,6 +108,196 @@ function ActionTypeRow({ at, canManage }: {
             </button>
           </div>
         </div>
+      )}
+    </li>
+  )
+}
+
+function MaterialTypeRow({ mt, canManage }: {
+  mt: { id: number; code: string; name: string }
+  canManage: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const { data: categories = [] } = useMaterialCategories(mt.id)
+  const addCategoryMut = useCreateMaterialCategory(mt.id)
+
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [dataType, setDataType] = useState<'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM'>('STRING')
+  const [unit, setUnit] = useState('')
+  const [required, setRequired] = useState(false)
+  const [enumValuesRaw, setEnumValuesRaw] = useState('')
+  const [error, setError] = useState('')
+
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    if (!code.trim() || !name.trim()) return
+    setError('')
+
+    const enumValues = dataType === 'ENUM'
+      ? enumValuesRaw.split(',').map(s => s.trim()).filter(Boolean)
+      : []
+
+    addCategoryMut.mutate(
+      {
+        code: code.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_'),
+        name: name.trim(),
+        dataType,
+        unit: unit.trim() || undefined,
+        required,
+        enumValues,
+      },
+      {
+        onSuccess: () => {
+          setCode('')
+          setName('')
+          setDataType('STRING')
+          setUnit('')
+          setRequired(false)
+          setEnumValuesRaw('')
+          setEditing(false)
+        },
+        onError: (err: any) => setError(err?.error?.message ?? 'Error al añadir atributo'),
+      }
+    )
+  }
+
+  return (
+    <li className="py-2.5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-semibold text-fg">{mt.name}</span>
+            <span className="text-[10px] font-mono text-muted">({mt.code})</span>
+          </div>
+          
+          {categories.length > 0 ? (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {categories.map(cat => (
+                <span
+                  key={cat.id}
+                  className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded bg-app-bg text-fg-secondary border border-app-border"
+                  title={`${cat.dataType} ${cat.required ? '(Requerido)' : ''}`}
+                >
+                  {cat.name}{cat.unit ? ` (${cat.unit})` : ''}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted italic mt-0.5">Sin atributos de catálogo.</p>
+          )}
+        </div>
+        
+        {canManage && (
+          <button
+            onClick={() => setEditing(e => !e)}
+            className="text-[11px] font-medium text-primary hover:underline shrink-0"
+          >
+            {editing ? 'Cerrar' : '+ Atributo'}
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <form onSubmit={handleSave} className="mt-2.5 p-3 bg-app-bg/60 rounded-lg border border-app-border space-y-3 text-xs">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[10px] font-semibold text-fg-secondary mb-1">Nombre</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Ej: Voltaje"
+                className="w-full border border-app-border rounded px-2 py-1 bg-card text-fg focus:outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-fg-secondary mb-1">Código</label>
+              <input
+                type="text"
+                value={code}
+                onChange={e => setCode(e.target.value)}
+                placeholder="Ej: voltage_v"
+                className="w-full border border-app-border rounded px-2 py-1 bg-card text-fg focus:outline-none"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[10px] font-semibold text-fg-secondary mb-1">Tipo de dato</label>
+              <select
+                value={dataType}
+                onChange={e => setDataType(e.target.value as any)}
+                className="w-full border border-app-border rounded px-2 py-1 bg-card text-fg focus:outline-none"
+              >
+                <option value="STRING">Texto</option>
+                <option value="NUMBER">Número</option>
+                <option value="BOOLEAN">Booleano (Sí/No)</option>
+                <option value="DATE">Fecha</option>
+                <option value="ENUM">Lista de opciones (Enum)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold text-fg-secondary mb-1">Unidad (Opcional)</label>
+              <input
+                type="text"
+                value={unit}
+                onChange={e => setUnit(e.target.value)}
+                placeholder="Ej: V, W, kg"
+                className="w-full border border-app-border rounded px-2 py-1 bg-card text-fg focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {dataType === 'ENUM' && (
+            <div>
+              <label className="block text-[10px] font-semibold text-fg-secondary mb-1">Valores permitidos (Separados por comas)</label>
+              <input
+                type="text"
+                value={enumValuesRaw}
+                onChange={e => setEnumValuesRaw(e.target.value)}
+                placeholder="Ej: Cálida, Neutra, Fría"
+                className="w-full border border-app-border rounded px-2 py-1 bg-card text-fg focus:outline-none"
+                required
+              />
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id={`req-${mt.id}`}
+              checked={required}
+              onChange={e => setRequired(e.target.checked)}
+              className="rounded border-app-border text-primary focus:ring-primary/40"
+            />
+            <label htmlFor={`req-${mt.id}`} className="text-[10px] font-semibold text-fg-secondary">
+              Es obligatorio al registrar
+            </label>
+          </div>
+
+          {error && <p className="text-error text-[10px]">{error}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="px-2.5 py-1 border border-app-border rounded text-[11px] text-fg-secondary"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={addCategoryMut.isPending}
+              className="px-2.5 py-1 bg-primary text-primary-fg rounded text-[11px] font-medium"
+            >
+              {addCategoryMut.isPending ? 'Añadir' : 'Añadir'}
+            </button>
+          </div>
+        </form>
       )}
     </li>
   )
@@ -281,10 +471,7 @@ export function Catalog() {
               <li className="py-2 text-sm text-muted">Sin tipos definidos</li>
             )}
             {materialTypes.map(mt => (
-              <li key={mt.id} className="py-2.5 flex items-center gap-2">
-                <span className="text-sm text-fg truncate">{mt.name}</span>
-                <span className="text-[11px] font-mono text-muted">{mt.code}</span>
-              </li>
+              <MaterialTypeRow key={mt.id} mt={mt} canManage={canManage} />
             ))}
           </ul>
           {canManage && (

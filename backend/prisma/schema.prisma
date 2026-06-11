@@ -120,7 +120,7 @@ model MaterialType {
 
 model MaterialCategory {
   id          Int      @id @default(autoincrement())
-  code        String
+  code        String   @unique
   name        String
   description String?
   dataType    DataType
@@ -130,11 +130,8 @@ model MaterialCategory {
   enumValues  String[]
   validation  Json?
 
-  materialTypeId Int
-  materialType   MaterialType @relation(fields: [materialTypeId], references: [id], onDelete: Cascade)
+  materialTypes MaterialType[]
 
-  @@unique([materialTypeId, code])
-  @@index([materialTypeId])
   @@map("material_categories")
 }
 
@@ -191,8 +188,7 @@ model Action {
   typeId Int
   type   ActionType @relation(fields: [typeId], references: [id])
 
-  materialId Int?
-  material   Material? @relation(fields: [materialId], references: [id])
+  materials Material[]
 
   locationId Int?
   location   Location? @relation(fields: [locationId], references: [id])
@@ -203,7 +199,6 @@ model Action {
   performedBy Int
   performer   User    @relation(fields: [performedBy], references: [id])
 
-  @@index([materialId])
   @@index([locationId])
   @@index([performedBy])
   @@index([performedAt])

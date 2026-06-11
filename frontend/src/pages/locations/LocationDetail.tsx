@@ -7,10 +7,14 @@ import { LocationForm } from '../../components/forms/LocationForm'
 import { MaterialInstallForm } from '../../components/forms/MaterialInstallForm'
 import { ActionForm } from '../actions/ActionForm'
 import type { Location, Material } from '../../api/types'
+import { MaterialAttributePills } from '../../components/MaterialAttributePills'
+import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
+
+
 
 export function LocationDetail() {
   const { id } = useParams<{ id: string }>()
@@ -24,8 +28,8 @@ export function LocationDetail() {
   const [showEdit, setShowEdit] = useState(false)
   const [showAddChild, setShowAddChild] = useState(false)
   const [showAddMaterial, setShowAddMaterial] = useState(false)
-  const [actionMaterial, setActionMaterial] = useState<Material | null>(null)
   const [showAddActionOnLocation, setShowAddActionOnLocation] = useState(false)
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
 
   async function handleDelete() {
     if (!confirm('¿Eliminar esta ubicación? Sus sub-ubicaciones subirán un nivel en la jerarquía. Esta acción no se puede deshacer.')) return
@@ -185,18 +189,31 @@ export function LocationDetail() {
                   <tbody className="divide-y divide-app-border/40">
                     {loc.materials.map(mat => (
                       <tr key={mat.id} className="hover:bg-app-bg/30 transition-colors">
-                        <td className="py-3 font-semibold text-fg">{mat.name}</td>
+                        <td className="py-3 text-fg">
+                          <span className="font-semibold block">{mat.name}</span>
+                          <MaterialAttributePills material={mat} />
+                        </td>
                         <td className="py-3 text-fg-secondary">{mat.type?.name}</td>
                         <td className="py-3 text-muted">{mat.installedAt ? formatDate(mat.installedAt) : '—'}</td>
                         <td className="py-3 text-right">
-                          <RoleGuard require="write">
-                            <button
-                              onClick={() => setActionMaterial(mat)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline hover:text-primary-hover"
-                            >
-                              <Zap className="w-3 h-3" /> Acción
-                            </button>
-                          </RoleGuard>
+                          <div className="flex items-center justify-end gap-3">
+                            <RoleGuard require="write">
+                              <button
+                                onClick={() => setEditingMaterial(mat)}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-fg-secondary hover:underline"
+                              >
+                                <Pencil className="w-3 h-3" /> Editar specs
+                              </button>
+                            </RoleGuard>
+                            <RoleGuard require="write">
+                              <button
+                                onClick={() => setShowAddActionOnLocation(true)}
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline hover:text-primary-hover"
+                              >
+                                <Zap className="w-3 h-3" /> Acción
+                              </button>
+                            </RoleGuard>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -244,10 +261,12 @@ export function LocationDetail() {
                     </span>
                   </div>
                   {act.description && <p className="text-fg-secondary text-[11px] line-clamp-2">{act.description}</p>}
-                  {act.material && (
-                    <p className="text-[10px] text-muted flex items-center gap-1">
+                  {act.materials && act.materials.length > 0 && (
+                    <p className="text-[10px] text-muted flex items-center gap-1.5 flex-wrap">
                       <Package className="w-3 h-3 text-muted shrink-0" />
-                      Material: <span className="font-mono text-fg-secondary">{act.material.name}</span>
+                      Materiales: {act.materials.map(m => (
+                        <span key={m.id} className="font-mono text-fg-secondary bg-app-bg px-1 rounded">{m.name}</span>
+                      ))}
                     </p>
                   )}
                   <div className="flex items-center justify-between text-[10px] text-muted pt-1 border-t border-app-border/40">
@@ -280,16 +299,16 @@ export function LocationDetail() {
           onClose={() => setShowAddMaterial(false)}
         />
       )}
-      {actionMaterial && (
-        <ActionForm
-          materials={[actionMaterial]}
-          onClose={() => setActionMaterial(null)}
-        />
-      )}
       {showAddActionOnLocation && (
         <ActionForm
           locationId={locationId}
           onClose={() => setShowAddActionOnLocation(false)}
+        />
+      )}
+      {editingMaterial && (
+        <MaterialEditAttributesModal
+          material={editingMaterial}
+          onClose={() => setEditingMaterial(null)}
         />
       )}
     </div>

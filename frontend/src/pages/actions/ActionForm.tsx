@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Modal } from '../../components/ui/Modal'
 import { useCreateAction, useUpdateAction } from '../../hooks/useActions'
 import { useActionTypes, useCreateActionType } from '../../hooks/useCatalog'
-import { useMaterials } from '../../hooks/useMaterials'
 import { useLocations, locationKeys } from '../../hooks/useLocations'
 import { LocationMap } from '../../components/ui/LocationMap'
 import { useQueryClient } from '@tanstack/react-query'
@@ -10,12 +9,11 @@ import type { Action, Material } from '../../api/types'
 
 interface Props {
   action?: Action
-  materials?: Material[]
   locationId?: number
   onClose: () => void
 }
 
-export function ActionForm({ action, materials: propMaterials, locationId, onClose }: Props) {
+export function ActionForm({ action, locationId, onClose }: Props) {
   const isEdit = !!action
   const [title, setTitle] = useState(action?.title ?? '')
   const [typeId, setTypeId] = useState(action?.typeId ?? 0)
@@ -30,12 +28,6 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
   const [longitude, setLongitude] = useState<number | null>(action?.longitude ?? null)
 
   // Targets state (only for create)
-  const [targetType, setTargetType] = useState<'material' | 'location'>(
-    locationId ? 'location' : 'material'
-  )
-  const [materialId, setMaterialId] = useState(
-    propMaterials && propMaterials.length === 1 ? propMaterials[0].id : (action?.materialId ?? 0)
-  )
   const [selectedLocationId, setSelectedLocationId] = useState(
     locationId ?? (action?.locationId ?? 0)
   )
@@ -50,9 +42,7 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
   const [showNewType, setShowNewType] = useState(false)
 
   const { data: actionTypes = [] } = useActionTypes()
-  const { data: allMaterials = [] } = useMaterials()
   const { data: locations = [] } = useLocations(undefined) // Fetch all for target selection
-  const materials = propMaterials ?? allMaterials
 
   const createMut = useCreateAction()
   const updateMut = useUpdateAction()
@@ -116,32 +106,26 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
         longitude: longitude ?? undefined,
       }
 
-      if (targetType === 'material') {
-        if (!materialId) {
-          setError('Selecciona un material.')
+      if (locationId) {
+        body.locationId = locationId
+      } else if (isNewLocation) {
+        if (!newLocationName.trim()) {
+          setError('Especifica el nombre de la nueva ubicación.')
           return
         }
-        body.materialId = materialId
-      } else {
-        if (isNewLocation) {
-          if (!newLocationName.trim()) {
-            setError('Especifica el nombre de la nueva ubicación.')
-            return
-          }
-          body.newLocation = {
-            name: newLocationName.trim(),
-            type: newLocationType || null,
-            parentId: newLocationParentId || null,
-            latitude: latitude || null,
-            longitude: longitude || null,
-          }
-        } else {
-          if (!selectedLocationId) {
-            setError('Selecciona una ubicación.')
-            return
-          }
-          body.locationId = selectedLocationId
+        body.newLocation = {
+          name: newLocationName.trim(),
+          type: newLocationType || null,
+          parentId: newLocationParentId || null,
+          latitude: latitude || null,
+          longitude: longitude || null,
         }
+      } else {
+        if (!selectedLocationId) {
+          setError('Selecciona una ubicación.')
+          return
+        }
+        body.locationId = selectedLocationId
       }
 
       createMut.mutate(body, {
@@ -155,8 +139,6 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
   }
 
   const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
-
-  const showTargetSelector = !isEdit && !locationId && !(propMaterials && propMaterials.length === 1)
 
   return (
     <Modal title={isEdit ? 'Editar acción' : 'Registrar acción'} onClose={onClose}>
@@ -176,54 +158,8 @@ export function ActionForm({ action, materials: propMaterials, locationId, onClo
         </div>
 
         {!isEdit && (
-          <div className="space-y-3 p-3 bg-app-bg rounded-lg border border-app-border">
-            {showTargetSelector && (
-              <div>
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                  Objetivo de la acción
-                </label>
-                <div className="flex gap-2 text-xs">
-                  {(['material', 'location'] as const).map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTargetType(t)}
-                      className={`flex-1 py-1.5 rounded-lg border font-medium transition-colors ${
-                        targetType === t
-                          ? 'bg-primary text-primary-fg border-primary'
-                          : 'bg-card text-fg-secondary border-app-border hover:bg-app-bg'
-                      }`}
-                    >
-                      {t === 'material' ? 'Material' : 'Ubicación'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {targetType === 'material' && (
-              <div>
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                  Material <span className="text-error">*</span>
-                </label>
-                <select
-                  value={materialId}
-                  onChange={e => setMaterialId(Number(e.target.value))}
-                  className={inputCls}
-                  required
-                  disabled={propMaterials && propMaterials.length === 1}
-                >
-                  <option value={0}>Seleccionar material...</option>
-                  {materials.map(m => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.type.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {targetType === 'location' && !locationId && (
+          <div className="space-y-4 p-3 bg-app-bg rounded-lg border border-app-border">
+            {!locationId && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-semibold text-fg-secondary">

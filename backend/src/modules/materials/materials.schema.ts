@@ -43,6 +43,7 @@ export const CreateMaterialSchema = z.object({
   typeId: z.number().int().positive(),
   attributes: z.record(z.unknown()).default({}),
   locationId: z.number().int().positive(),
+  actionId: z.number().int().positive().optional(),
 })
 
 export const UpdateMaterialSchema = z.object({

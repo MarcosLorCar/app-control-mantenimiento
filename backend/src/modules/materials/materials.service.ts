@@ -10,7 +10,15 @@ const MATERIAL_SELECT = {
   installedAt: true,
   attributes: true,
   typeId: true,
-  type: { select: { id: true, code: true, name: true, icon: true } },
+  type: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      icon: true,
+      categories: { select: { code: true, name: true, unit: true } }
+    }
+  },
   locationId: true,
   location: { select: { id: true, name: true, path: true } },
   createdAt: true,
@@ -46,12 +54,13 @@ export async function createMaterial(db: PrismaClient, data: CreateMaterialInput
   }
 
 
-  const { locationId, installedAt, ...rest } = data
+  const { locationId, installedAt, actionId, ...rest } = data
   return db.material.create({
     data: {
       ...(rest as any),
       locationId,
       installedAt: installedAt ? new Date(installedAt) : undefined,
+      actions: actionId ? { connect: { id: actionId } } : undefined,
     },
     select: MATERIAL_SELECT,
   })

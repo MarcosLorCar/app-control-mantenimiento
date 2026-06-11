@@ -37,7 +37,7 @@ describe('Actions', () => {
         data: {
           title: 'Revisión inicial',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
         },
       })
@@ -51,7 +51,7 @@ describe('Actions', () => {
       expect(data).toHaveLength(1)
       expect(data[0]).toMatchObject({ title: 'Revisión inicial' })
       expect(data[0].type).toBeDefined()
-      expect(data[0].material).toBeDefined()
+      expect(data[0].materials).toBeDefined()
       expect(data[0].performer).toBeDefined()
     })
 
@@ -62,24 +62,44 @@ describe('Actions', () => {
   })
 
   describe('POST /api/v1/actions', () => {
-    it('creates action linked to material (requireWrite)', async () => {
-      const res = await app.inject({
+    it('creates action, then links and unlinks material', async () => {
+      // 1. Create action
+      const createRes = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
-          title: 'Inspección bombilla',
+          title: 'Mantenimiento General',
           description: 'Revisión periódica',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          locationId: seed.infra.id,
         },
       })
-      expect(res.statusCode).toBe(201)
-      const body = res.json().data
-      expect(body).toMatchObject({ title: 'Inspección bombilla', materialId: seed.material.id })
-      expect(body.type).toMatchObject({ code: 'inspection' })
-      expect(body.material).toMatchObject({ name: 'Bombilla Philips E27' })
-      expect(body.performer).toBeDefined()
+      expect(createRes.statusCode).toBe(201)
+      const action = createRes.json().data
+      expect(action.materials).toHaveLength(0)
+
+      // 2. Link material
+      const linkRes = await app.inject({
+        method: 'POST',
+        url: `/api/v1/actions/${action.id}/materials`,
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: { materialId: seed.material.id },
+      })
+      expect(linkRes.statusCode).toBe(200)
+      const linkedAction = linkRes.json().data
+      expect(linkedAction.materials).toHaveLength(1)
+      expect(linkedAction.materials[0].id).toBe(seed.material.id)
+
+      // 3. Unlink material
+      const unlinkRes = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/actions/${action.id}/materials/${seed.material.id}`,
+        headers: { authorization: `Bearer ${editorToken}` },
+      })
+      expect(unlinkRes.statusCode).toBe(200)
+      const unlinkedAction = unlinkRes.json().data
+      expect(unlinkedAction.materials).toHaveLength(0)
     })
 
     it('sets performedBy from JWT (current user)', async () => {
@@ -90,14 +110,14 @@ describe('Actions', () => {
         payload: {
           title: 'Test performer',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          locationId: seed.infra.id,
         },
       })
       expect(res.statusCode).toBe(201)
       expect(res.json().data.performedBy).toBe(seed.editor.id)
     })
 
-    it('returns 400 when all targets missing', async () => {
+    it('returns 400 when location missing', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
@@ -166,7 +186,7 @@ describe('Actions', () => {
         payload: {
           title: 'Test',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          locationId: seed.infra.id,
         },
       })
       expect(res.statusCode).toBe(403)
@@ -179,7 +199,7 @@ describe('Actions', () => {
         data: {
           title: 'Detalle test',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
         },
       })
@@ -192,7 +212,7 @@ describe('Actions', () => {
       const body = res.json().data
       expect(body.id).toBe(action.id)
       expect(body.type).toBeDefined()
-      expect(body.material).toBeDefined()
+      expect(body.materials).toBeDefined()
       expect(body.performer).toBeDefined()
     })
 
@@ -212,7 +232,7 @@ describe('Actions', () => {
         data: {
           title: 'Acción material',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
         },
       })
@@ -254,7 +274,7 @@ describe('Actions', () => {
         data: {
           title: 'Para actualizar',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
         },
       })
@@ -275,7 +295,7 @@ describe('Actions', () => {
         data: {
           title: 'Para borrar',
           typeId: seed.actionType.id,
-          materialId: seed.material.id,
+          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
         },
       })

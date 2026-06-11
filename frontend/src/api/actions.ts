@@ -14,7 +14,6 @@ export function getAction(id: number): Promise<Action> {
 export function createAction(body: {
   title: string
   typeId: number
-  materialId?: number | null
   locationId?: number | null
   latitude?: number | null
   longitude?: number | null
@@ -54,4 +53,17 @@ export function listMaterialActions(materialId: number): Promise<Action[]> {
 
 export function listLocationActions(locationId: number): Promise<Action[]> {
   return apiFetch<ApiData<Action[]>>(`${API_BASE}/locations/${locationId}/actions`).then(r => r.data)
+}
+
+export function associateMaterialToAction(actionId: number, materialId: number): Promise<Action> {
+  return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${actionId}/materials`, {
+    method: 'POST',
+    body: JSON.stringify({ materialId }),
+  }).then(r => r.data)
+}
+
+export function disassociateMaterialFromAction(actionId: number, materialId: number): Promise<Action> {
+  return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${actionId}/materials/${materialId}`, {
+    method: 'DELETE',
+  }).then(r => r.data)
 }

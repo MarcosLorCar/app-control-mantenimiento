@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { CreateActionSchema, UpdateActionSchema } from './actions.schema'
 import { listActions, getAction, createAction, updateAction, deleteAction } from './actions.service'
+import { getMaterial } from '../materials/materials.service'
 
 export async function actionsRoutes(app: FastifyInstance) {
   // List all actions
@@ -52,6 +53,55 @@ export async function actionsRoutes(app: FastifyInstance) {
     }
     await deleteAction(app.db, id)
     return reply.status(204).send()
+  })
+
+  // Link material to action
+  app.post('/actions/:id/materials', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const { materialId } = req.body as { materialId: number }
+    if (!materialId) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: 'materialId es requerido' } })
+    }
+    const action = await getAction(app.db, id)
+    if (!action) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Acción no encontrada' } })
+    }
+    const material = await getMaterial(app.db, materialId)
+    if (!material) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Material no encontrado' } })
+    }
+    const updated = await app.db.action.update({
+      where: { id },
+      data: { materials: { connect: { id: materialId } } },
+      include: {
+        type: { select: { id: true, code: true, name: true, icon: true, color: true } },
+        materials: { select: { id: true, name: true, typeId: true } },
+        location: { select: { id: true, name: true, path: true, parentId: true, latitude: true, longitude: true } },
+        performer: { select: { id: true, fullName: true, email: true } },
+      },
+    })
+    return reply.send({ data: updated })
+  })
+
+  // Unlink material from action
+  app.delete('/actions/:id/materials/:materialId', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const materialId = Number((req.params as any).materialId)
+    const action = await getAction(app.db, id)
+    if (!action) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Acción no encontrada' } })
+    }
+    const updated = await app.db.action.update({
+      where: { id },
+      data: { materials: { disconnect: { id: materialId } } },
+      include: {
+        type: { select: { id: true, code: true, name: true, icon: true, color: true } },
+        materials: { select: { id: true, name: true, typeId: true } },
+        location: { select: { id: true, name: true, path: true, parentId: true, latitude: true, longitude: true } },
+        performer: { select: { id: true, fullName: true, email: true } },
+      },
+    })
+    return reply.send({ data: updated })
   })
 
   // Actions by material

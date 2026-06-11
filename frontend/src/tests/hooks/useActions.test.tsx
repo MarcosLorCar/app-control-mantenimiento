@@ -13,9 +13,15 @@ vi.mock('../../api/actions')
 const action = {
   id: 1, title: 'Revisión', description: null,
   performedAt: '2026-01-01T00:00:00.000Z', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
-  typeId: 1, materialId: 1, locationId: null, location: null, performedBy: 1,
+  typeId: 1, locationId: 1, location: { id: 1, name: 'Location 1', path: '/1/', parentId: null, latitude: null, longitude: null }, performedBy: 1,
   type: { id: 1, code: 'inspection', name: 'Inspección', icon: null, color: null },
-  material: { id: 1, code: 'MAT-001', name: 'Bombilla', typeId: 1 },
+  materials: [{
+    id: 1,
+    name: 'Bombilla',
+    typeId: 1,
+    attributes: {},
+    type: { id: 1, code: 'bulb', name: 'Bombilla', icon: null, categories: [] }
+  }],
   performer: { id: 1, fullName: 'Admin', email: 'admin@example.com' },
 }
 
@@ -51,9 +57,9 @@ describe('useCreateAction', () => {
     vi.mocked(actionsApi.listActions).mockResolvedValue([])
     vi.mocked(actionsApi.createAction).mockResolvedValue(action)
     const { result } = renderHook(() => useCreateAction(), { wrapper: makeWrapper() })
-    result.current.mutate({ title: 'Revisión', typeId: 1, materialId: 1 })
+    result.current.mutate({ title: 'Revisión', typeId: 1, locationId: 1 })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(actionsApi.createAction).toHaveBeenCalledWith({ title: 'Revisión', typeId: 1, materialId: 1 })
+    expect(actionsApi.createAction).toHaveBeenCalledWith({ title: 'Revisión', typeId: 1, locationId: 1 })
   })
 })
 
