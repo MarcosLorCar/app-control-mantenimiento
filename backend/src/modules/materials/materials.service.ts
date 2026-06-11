@@ -1,12 +1,10 @@
 import { PrismaClient } from '@prisma/client'
 import type { CreateMaterialInput, UpdateMaterialInput } from './materials.schema'
-import { validateAttributes } from './catalog.service'
 
 const MATERIAL_SELECT = {
   id: true,
   name: true,
   description: true,
-  serialNumber: true,
   installedAt: true,
   attributes: true,
   typeId: true,
@@ -15,8 +13,7 @@ const MATERIAL_SELECT = {
       id: true,
       code: true,
       name: true,
-      icon: true,
-      categories: { select: { code: true, name: true, unit: true } }
+      icon: true
     }
   },
   locationId: true,
@@ -44,23 +41,21 @@ export function getMaterial(db: PrismaClient, id: number) {
 }
 
 export async function createMaterial(db: PrismaClient, data: CreateMaterialInput) {
-  const errors = await validateAttributes(db, data.typeId, data.attributes as Record<string, unknown>)
-  if (errors.length > 0) {
-    const err = Object.assign(new Error('Atributos inválidos'), {
-      code: 'INVALID_ATTRIBUTES',
-      errors,
-    })
-    throw err
-  }
-
-
   const { locationId, installedAt, actionId, ...rest } = data
   return db.material.create({
     data: {
-      ...(rest as any),
+      name: rest.name,
+      description: rest.description,
+      attributes: (rest.attributes || {}) as any,
+      typeId: rest.typeId,
       locationId,
       installedAt: installedAt ? new Date(installedAt) : undefined,
-      actions: actionId ? { connect: { id: actionId } } : undefined,
+      actions: actionId ? {
+        create: {
+          actionId: actionId,
+          operation: 'INSTALL'
+        }
+      } : undefined,
     },
     select: MATERIAL_SELECT,
   })

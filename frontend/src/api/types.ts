@@ -36,13 +36,12 @@ export interface Location {
   id: number
   name: string
   description: string | null
-  type: string | null
   latitude: number | null
   longitude: number | null
   path: string
   parentId: number | null
-  infraTypeId: number | null
-  infraType: { id: number; name: string; icon: string | null; color: string | null } | null
+  infraTypeId: number
+  infraType: { id: number; name: string; icon: string | null; color: string | null }
   createdAt: string
   updatedAt: string
   deletedAt: string | null
@@ -57,23 +56,16 @@ export interface LocationDetail extends Location {
   children: Location[]
   materials: Material[]
   actions: Action[]
+  descendantMaterials: Material[]
 }
 
 // ==================== MATERIAL CATALOG ====================
 
-export type MaterialCategoryDataType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM'
-
-export interface MaterialCategory {
+export interface FixedProperty {
   id: number
   code: string
   name: string
-  description: string | null
-  dataType: MaterialCategoryDataType
-  unit: string | null
-  required: boolean
-  sortOrder: number
-  enumValues: string[]
-  materialTypeId: number
+  type: 'STRING' | 'DATE' | 'NUMBER' | 'BOOLEAN'
 }
 
 export interface MaterialType {
@@ -89,11 +81,15 @@ export interface Material {
   id: number
   name: string
   description: string | null
-  serialNumber: string | null
   installedAt: string | null
-  attributes: Record<string, unknown>
+  attributes: Record<string, any>
   typeId: number
-  type: { id: number; code: string; name: string; icon: string | null; categories?: { code: string; name: string; unit: string | null }[] }
+  type: {
+    id: number
+    code: string
+    name: string
+    icon: string | null
+  }
   locationId: number | null
   location: { id: number; name: string; path: string } | null
   createdAt: string
@@ -103,16 +99,6 @@ export interface Material {
 
 // ==================== ACTIONS ====================
 
-export interface ActionType {
-  id: number
-  code: string
-  name: string
-  description: string | null
-  icon: string | null
-  color: string | null
-  deletedAt: string | null
-}
-
 export interface Action {
   id: number
   title: string
@@ -120,24 +106,15 @@ export interface Action {
   performedAt: string
   createdAt: string
   updatedAt: string
-  typeId: number
   locationId: number | null
   latitude?: number | null
   longitude?: number | null
   performedBy: number
-  type: { id: number; code: string; name: string; icon: string | null; color: string | null }
   materials: {
-    id: number
-    name: string
-    typeId: number
-    attributes: Record<string, unknown>
-    type: {
-      id: number
-      code: string
-      name: string
-      icon: string | null
-      categories?: { code: string; name: string; unit: string | null }[]
-    }
+    actionId: number
+    materialId: number
+    operation: 'INSTALL' | 'UNINSTALL'
+    material: Material
   }[]
   location: { id: number; name: string; path: string; parentId: number | null; latitude: number | null; longitude: number | null } | null
   performer: { id: number; fullName: string; email: string }

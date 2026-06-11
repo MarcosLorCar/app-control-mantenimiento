@@ -60,9 +60,6 @@ model Location {
   name        String
   description String?
   
-  // Semantic classification (e.g., 'PARK', 'FIELD', 'ROOM', 'COLUMN')
-  type        String?   
-  
   // Materialized Path for fast path resolution & descendant lookups
   // Format: "/rootId/childId/grandchildId/" (e.g., "/1/4/12/")
   path        String    @default("/")
@@ -74,8 +71,8 @@ model Location {
   latitude    Float?
   longitude   Float?
 
-  infraTypeId Int?
-  infraType   InfrastructureType? @relation(fields: [infraTypeId], references: [id])
+  infraTypeId Int
+  infraType   InfrastructureType @relation(fields: [infraTypeId], references: [id])
 
   // Recursive self-relation
   parentId    Int?
@@ -94,14 +91,6 @@ model Location {
 
 // ==================== MATERIAL CATALOG ====================
 
-enum DataType {
-  STRING
-  NUMBER
-  BOOLEAN
-  DATE
-  ENUM
-}
-
 model MaterialType {
   id          Int       @id @default(autoincrement())
   code        String
@@ -112,27 +101,18 @@ model MaterialType {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  categories MaterialCategory[]
   materials  Material[]
 
   @@map("material_types")
 }
 
-model MaterialCategory {
-  id          Int      @id @default(autoincrement())
-  code        String   @unique
-  name        String
-  description String?
-  dataType    DataType
-  unit        String?
-  required    Boolean  @default(false)
-  sortOrder   Int      @default(0)
-  enumValues  String[]
-  validation  Json?
+model FixedProperty {
+  id    Int    @id @default(autoincrement())
+  code  String @unique
+  name  String
+  type  String @default("STRING")
 
-  materialTypes MaterialType[]
-
-  @@map("material_categories")
+  @@map("fixed_properties")
 }
 
 // ==================== MATERIAL INSTANCES ====================
@@ -141,7 +121,6 @@ model Material {
   id           Int       @id @default(autoincrement())
   name         String
   description  String?
-  serialNumber String?
   installedAt  DateTime  @default(now())
   attributes   Json      @default("{}")
   createdAt    DateTime  @default(now())
@@ -154,7 +133,7 @@ model Material {
   locationId Int?
   location   Location? @relation(fields: [locationId], references: [id])
 
-  actions Action[]
+  actions ActionMaterial[]
 
   @@index([typeId])
   @@index([locationId])
@@ -162,20 +141,6 @@ model Material {
 }
 
 // ==================== ACTIONS ====================
-
-model ActionType {
-  id          Int       @id @default(autoincrement())
-  code        String
-  name        String
-  description String?
-  icon        String?
-  color       String?
-  deletedAt   DateTime?
-
-  actions Action[]
-
-  @@map("action_types")
-}
 
 model Action {
   id          Int      @id @default(autoincrement())
@@ -185,10 +150,7 @@ model Action {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  typeId Int
-  type   ActionType @relation(fields: [typeId], references: [id])
-
-  materials Material[]
+  materials ActionMaterial[]
 
   locationId Int?
   location   Location? @relation(fields: [locationId], references: [id])
@@ -203,4 +165,21 @@ model Action {
   @@index([performedBy])
   @@index([performedAt])
   @@map("actions")
+}
+
+enum MaterialOperation {
+  INSTALL
+  UNINSTALL
+}
+
+model ActionMaterial {
+  actionId    Int
+  materialId  Int
+  operation   MaterialOperation
+
+  action      Action   @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@id([actionId, materialId])
+  @@map("action_materials")
 }

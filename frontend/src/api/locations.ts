@@ -3,9 +3,18 @@ import type { Location, LocationDetail } from './types'
 
 type ApiData<T> = { data: T }
 
-export function listLocations(parentId?: number | null): Promise<Location[]> {
-  const param = parentId === null ? 'parentId=null' : parentId !== undefined ? `parentId=${parentId}` : ''
-  const url = `${API_BASE}/locations${param ? `?${param}` : ''}`
+export function listLocations(parentId?: number | null, infraTypeId?: number): Promise<Location[]> {
+  const params: string[] = []
+  if (parentId === null) {
+    params.push('parentId=null')
+  } else if (parentId !== undefined) {
+    params.push(`parentId=${parentId}`)
+  }
+  if (infraTypeId !== undefined) {
+    params.push(`infraTypeId=${infraTypeId}`)
+  }
+  const query = params.length > 0 ? `?${params.join('&')}` : ''
+  const url = `${API_BASE}/locations${query}`
   return apiFetch<ApiData<Location[]>>(url).then(r => r.data)
 }
 

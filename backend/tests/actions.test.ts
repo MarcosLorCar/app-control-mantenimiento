@@ -36,9 +36,12 @@ describe('Actions', () => {
       await testDb.action.create({
         data: {
           title: 'Revisión inicial',
-          typeId: seed.actionType.id,
-          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
+          materials: {
+            create: [
+              { materialId: seed.material.id, operation: 'INSTALL' }
+            ]
+          }
         },
       })
       const res = await app.inject({
@@ -50,7 +53,6 @@ describe('Actions', () => {
       const data = res.json().data
       expect(data).toHaveLength(1)
       expect(data[0]).toMatchObject({ title: 'Revisión inicial' })
-      expect(data[0].type).toBeDefined()
       expect(data[0].materials).toBeDefined()
       expect(data[0].performer).toBeDefined()
     })
@@ -62,44 +64,49 @@ describe('Actions', () => {
   })
 
   describe('POST /api/v1/actions', () => {
-    it('creates action, then links and unlinks material', async () => {
-      // 1. Create action
+    it('creates action and installs/uninstalls materials', async () => {
+      // Create a material that is not installed in any location (warehouse)
+      const warehouseMaterial = await testDb.material.create({
+        data: {
+          name: 'Repuesto Farola',
+          typeId: seed.materialType.id,
+          locationId: null,
+        }
+      })
+
+      // 1. Create action that installs warehouseMaterial and uninstalls seed.material
       const createRes = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
-          title: 'Mantenimiento General',
-          description: 'Revisión periódica',
-          typeId: seed.actionType.id,
-          locationId: seed.infra.id,
+          title: 'Sustitución de Bombilla',
+          description: 'Se retira la bombilla vieja y se pone el repuesto',
+          locationId: seed.structure.id,
+          materials: [
+            {
+              materialId: seed.material.id,
+              operation: 'UNINSTALL'
+            },
+            {
+              materialId: warehouseMaterial.id,
+              operation: 'INSTALL'
+            }
+          ]
         },
       })
+
       expect(createRes.statusCode).toBe(201)
       const action = createRes.json().data
-      expect(action.materials).toHaveLength(0)
+      expect(action.materials).toHaveLength(2)
 
-      // 2. Link material
-      const linkRes = await app.inject({
-        method: 'POST',
-        url: `/api/v1/actions/${action.id}/materials`,
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: { materialId: seed.material.id },
-      })
-      expect(linkRes.statusCode).toBe(200)
-      const linkedAction = linkRes.json().data
-      expect(linkedAction.materials).toHaveLength(1)
-      expect(linkedAction.materials[0].id).toBe(seed.material.id)
+      // Verify DB status: seed.material should have locationId = null
+      const uninstalledMat = await testDb.material.findUnique({ where: { id: seed.material.id } })
+      expect(uninstalledMat?.locationId).toBeNull()
 
-      // 3. Unlink material
-      const unlinkRes = await app.inject({
-        method: 'DELETE',
-        url: `/api/v1/actions/${action.id}/materials/${seed.material.id}`,
-        headers: { authorization: `Bearer ${editorToken}` },
-      })
-      expect(unlinkRes.statusCode).toBe(200)
-      const unlinkedAction = unlinkRes.json().data
-      expect(unlinkedAction.materials).toHaveLength(0)
+      // warehouseMaterial should now be installed at seed.structure.id
+      const installedMat = await testDb.material.findUnique({ where: { id: warehouseMaterial.id } })
+      expect(installedMat?.locationId).toBe(seed.structure.id)
     })
 
     it('sets performedBy from JWT (current user)', async () => {
@@ -109,7 +116,6 @@ describe('Actions', () => {
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
           title: 'Test performer',
-          typeId: seed.actionType.id,
           locationId: seed.infra.id,
         },
       })
@@ -122,7 +128,7 @@ describe('Actions', () => {
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { title: 'Sin material', typeId: seed.actionType.id },
+        payload: { title: 'Sin material' },
       })
       expect(res.statusCode).toBe(400)
     })
@@ -135,7 +141,6 @@ describe('Actions', () => {
         payload: {
           title: 'Limpieza general',
           description: 'Limpieza de hojas y basura',
-          typeId: seed.actionType.id,
           locationId: seed.infra.id,
           latitude: 40.416775,
           longitude: -3.703790,
@@ -155,10 +160,8 @@ describe('Actions', () => {
         payload: {
           title: 'Instalación farola nueva',
           description: 'Nueva farola instalada en pista',
-          typeId: seed.actionType.id,
           newLocation: {
             name: 'Farola F13 Nueva',
-            type: 'POST',
             parentId: seed.dep.id,
             latitude: 40.4165,
             longitude: -3.6852,
@@ -177,7 +180,6 @@ describe('Actions', () => {
       })
     })
 
-
     it('returns 403 for viewer', async () => {
       const res = await app.inject({
         method: 'POST',
@@ -185,7 +187,6 @@ describe('Actions', () => {
         headers: { authorization: `Bearer ${viewerToken}` },
         payload: {
           title: 'Test',
-          typeId: seed.actionType.id,
           locationId: seed.infra.id,
         },
       })
@@ -198,9 +199,12 @@ describe('Actions', () => {
       const action = await testDb.action.create({
         data: {
           title: 'Detalle test',
-          typeId: seed.actionType.id,
-          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
+          materials: {
+            create: [
+              { materialId: seed.material.id, operation: 'INSTALL' }
+            ]
+          }
         },
       })
       const res = await app.inject({
@@ -211,7 +215,6 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(200)
       const body = res.json().data
       expect(body.id).toBe(action.id)
-      expect(body.type).toBeDefined()
       expect(body.materials).toBeDefined()
       expect(body.performer).toBeDefined()
     })
@@ -231,9 +234,12 @@ describe('Actions', () => {
       await testDb.action.create({
         data: {
           title: 'Acción material',
-          typeId: seed.actionType.id,
-          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
+          materials: {
+            create: [
+              { materialId: seed.material.id, operation: 'INSTALL' }
+            ]
+          }
         },
       })
       const res = await app.inject({
@@ -252,7 +258,6 @@ describe('Actions', () => {
       await testDb.action.create({
         data: {
           title: 'Acción ubicacion',
-          typeId: seed.actionType.id,
           locationId: seed.infra.id,
           performedBy: seed.editor.id,
         },
@@ -269,12 +274,10 @@ describe('Actions', () => {
   })
 
   describe('PATCH /api/v1/actions/:id', () => {
-    it('updates status (requireWrite)', async () => {
+    it('updates description (requireWrite)', async () => {
       const action = await testDb.action.create({
         data: {
           title: 'Para actualizar',
-          typeId: seed.actionType.id,
-          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
         },
       })
@@ -294,8 +297,6 @@ describe('Actions', () => {
       const action = await testDb.action.create({
         data: {
           title: 'Para borrar',
-          typeId: seed.actionType.id,
-          materials: { connect: { id: seed.material.id } },
           performedBy: seed.editor.id,
         },
       })

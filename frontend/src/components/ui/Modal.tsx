@@ -10,12 +10,12 @@ interface ModalProps {
 export function Modal({ title, onClose, children }: ModalProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 sm:mx-0">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+      <div className="bg-card rounded-lg shadow-xl w-full max-w-md mx-4 sm:mx-0 border border-app-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-app-border">
+          <h2 className="text-lg font-semibold text-fg">{title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+            className="text-muted hover:text-fg text-xl leading-none"
           >
             &times;
           </button>

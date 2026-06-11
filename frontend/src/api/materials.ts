@@ -16,7 +16,6 @@ export function createMaterial(body: {
   typeId: number
   attributes?: Record<string, unknown>
   description?: string
-  serialNumber?: string
   installedAt?: string
   locationId: number
   actionId?: number
@@ -29,7 +28,7 @@ export function createMaterial(body: {
 
 export function updateMaterial(
   id: number,
-  body: { name?: string; description?: string; serialNumber?: string; attributes?: Record<string, unknown> },
+  body: { name?: string; description?: string | null; attributes?: Record<string, unknown> },
 ): Promise<Material> {
   return apiFetch<ApiData<Material>>(`${API_BASE}/materials/${id}`, {
     method: 'PATCH',

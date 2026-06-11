@@ -10,15 +10,15 @@ import {
 export const locationKeys = {
   all: ['locations'] as const,
   lists: () => [...locationKeys.all, 'list'] as const,
-  list: (parentId?: number | null) => [...locationKeys.lists(), parentId] as const,
+  list: (parentId?: number | null, infraTypeId?: number) => [...locationKeys.lists(), parentId, infraTypeId] as const,
   details: () => [...locationKeys.all, 'detail'] as const,
   detail: (id: number) => [...locationKeys.details(), id] as const,
 }
 
-export function useLocations(parentId?: number | null) {
+export function useLocations(parentId?: number | null, infraTypeId?: number) {
   return useQuery({
-    queryKey: locationKeys.list(parentId),
-    queryFn: () => listLocations(parentId),
+    queryKey: locationKeys.list(parentId, infraTypeId),
+    queryFn: () => listLocations(parentId, infraTypeId),
   })
 }
 

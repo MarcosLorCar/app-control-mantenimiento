@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE } from './client'
-import type { Role, InfrastructureType, ActionType, MaterialType, MaterialCategory } from './types'
+import type { Role, InfrastructureType, MaterialType, FixedProperty } from './types'
 
 type ApiData<T> = { data: T }
 
@@ -41,35 +41,6 @@ export function listRoles(): Promise<Role[]> {
   return apiFetch<ApiData<Role[]>>(`${API_BASE}/roles`).then(r => r.data)
 }
 
-// ==================== ACTION TYPES ====================
-
-export function listActionTypes(): Promise<ActionType[]> {
-  return apiFetch<ApiData<ActionType[]>>(`${API_BASE}/action-types`).then(r => r.data)
-}
-
-export function createActionType(body: {
-  code: string
-  name: string
-  description?: string
-  icon?: string
-  color?: string
-}): Promise<ActionType> {
-  return apiFetch<ApiData<ActionType>>(`${API_BASE}/action-types`, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  }).then(r => r.data)
-}
-
-export function updateActionType(
-  id: number,
-  body: { name?: string; description?: string; icon?: string | null; color?: string | null },
-): Promise<ActionType> {
-  return apiFetch<ApiData<ActionType>>(`${API_BASE}/action-types/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(body),
-  }).then(r => r.data)
-}
-
 // ==================== MATERIAL TYPES ====================
 
 export function listMaterialTypes(): Promise<MaterialType[]> {
@@ -98,42 +69,23 @@ export function updateMaterialType(
   }).then(r => r.data)
 }
 
-// ==================== MATERIAL CATEGORIES ====================
+// ==================== GLOBAL FIXED PROPERTIES ====================
 
-export function listMaterialCategories(materialTypeId: number): Promise<MaterialCategory[]> {
-  return apiFetch<ApiData<MaterialCategory[]>>(
-    `${API_BASE}/material-types/${materialTypeId}/categories`,
-  ).then(r => r.data)
+export function listFixedProperties(): Promise<FixedProperty[]> {
+  return apiFetch<ApiData<FixedProperty[]>>(`${API_BASE}/fixed-properties`).then(r => r.data)
 }
 
-export function createMaterialCategory(
-  materialTypeId: number,
-  body: {
-    code: string
-    name: string
-    dataType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM'
-    unit?: string
-    required?: boolean
-    sortOrder?: number
-    enumValues?: string[]
-  },
-): Promise<MaterialCategory> {
-  return apiFetch<ApiData<MaterialCategory>>(
-    `${API_BASE}/material-types/${materialTypeId}/categories`,
-    { method: 'POST', body: JSON.stringify(body) },
-  ).then(r => r.data)
-}
-
-export function updateMaterialCategory(
-  id: number,
-  body: { name?: string; unit?: string | null; required?: boolean; sortOrder?: number },
-): Promise<MaterialCategory> {
-  return apiFetch<ApiData<MaterialCategory>>(`${API_BASE}/categories/${id}`, {
-    method: 'PATCH',
+export function createFixedProperty(body: {
+  code: string;
+  name: string;
+  type: 'STRING' | 'DATE' | 'NUMBER' | 'BOOLEAN';
+}): Promise<FixedProperty> {
+  return apiFetch<ApiData<FixedProperty>>(`${API_BASE}/fixed-properties`, {
+    method: 'POST',
     body: JSON.stringify(body),
   }).then(r => r.data)
 }
 
-export function deleteMaterialCategory(id: number): Promise<void> {
-  return apiFetch(`${API_BASE}/categories/${id}`, { method: 'DELETE' }).then(() => undefined)
+export function deleteFixedProperty(id: number): Promise<void> {
+  return apiFetch(`${API_BASE}/fixed-properties/${id}`, { method: 'DELETE' }).then(() => undefined)
 }

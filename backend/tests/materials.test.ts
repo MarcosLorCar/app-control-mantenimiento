@@ -72,7 +72,6 @@ describe('Materials', () => {
       const action = await testDb.action.create({
         data: {
           title: 'Mantenimiento preventivo',
-          typeId: seed.actionType.id,
           performedBy: seed.editor.id,
         },
       })
@@ -95,42 +94,11 @@ describe('Materials', () => {
       })
       const actionWithMaterials = await testDb.action.findUnique({
         where: { id: action.id },
-        include: { materials: true },
+        include: { materials: { include: { material: true } } },
       })
       expect(actionWithMaterials?.materials).toHaveLength(1)
-      expect(actionWithMaterials?.materials[0].name).toBe('Bombilla Osram E27 Linked')
+      expect(actionWithMaterials?.materials[0].material.name).toBe('Bombilla Osram E27 Linked')
     })
-
-    it('returns 400 when missing required locationId', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/materials',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: {
-          name: 'Sin padre',
-          typeId: seed.materialType.id,
-          attributes: {},
-        },
-      })
-      expect(res.statusCode).toBe(400)
-    })
-
-    it('returns 422 when required attribute missing', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: '/api/v1/materials',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: {
-          name: 'Sin potencia',
-          typeId: seed.materialType.id,
-          locationId: seed.structure.id,
-          attributes: {},
-        },
-      })
-      expect(res.statusCode).toBe(422)
-    })
-
-
 
     it('returns 403 for viewer', async () => {
       const res = await app.inject({

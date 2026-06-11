@@ -1,13 +1,19 @@
 import { PrismaClient } from '@prisma/client'
 import type { CreateLocationInput, UpdateLocationInput } from './locations.schema'
 
-export function listLocations(db: PrismaClient, parentId: number | null | undefined) {
-  // If parentId is explicitly null, list root locations
+export function listLocations(
+  db: PrismaClient,
+  filters?: { parentId?: number | null; infraTypeId?: number }
+) {
   const whereClause: any = { deletedAt: null }
-  if (parentId === null) {
-    whereClause.parentId = null
-  } else if (parentId !== undefined) {
-    whereClause.parentId = parentId
+  
+  if (filters) {
+    if (filters.parentId !== undefined) {
+      whereClause.parentId = filters.parentId
+    }
+    if (filters.infraTypeId !== undefined) {
+      whereClause.infraTypeId = filters.infraTypeId
+    }
   }
 
   return db.location.findMany({
@@ -33,13 +39,14 @@ export function listLocations(db: PrismaClient, parentId: number | null | undefi
   })
 }
 
-export function getLocationDetail(db: PrismaClient, id: number) {
-  return db.location.findFirst({
+export async function getLocationDetail(db: PrismaClient, id: number) {
+  const current = await db.location.findFirst({
     where: { id, deletedAt: null },
     include: {
       children: {
         where: { deletedAt: null },
         include: {
+          infraType: { select: { id: true, name: true } },
           _count: {
             select: {
               children: true,
@@ -59,25 +66,70 @@ export function getLocationDetail(db: PrismaClient, id: number) {
       },
       actions: {
         include: {
-          type: { select: { id: true, code: true, name: true, icon: true, color: true } },
           performer: { select: { id: true, fullName: true, email: true } },
-          materials: { select: { id: true, name: true } },
+          materials: {
+            include: {
+              material: {
+                select: { id: true, name: true }
+              }
+            }
+          }
         },
         orderBy: { performedAt: 'desc' },
       },
       infraType: true,
     },
   })
+
+  if (!current) return null
+
+  // Fetch all materials in descendants (subfolders)
+  const descendantMaterials = await db.material.findMany({
+    where: {
+      location: {
+        path: { startsWith: current.path },
+        id: { not: current.id },
+        deletedAt: null,
+      },
+      deletedAt: null,
+    },
+    include: {
+      type: { select: { id: true, name: true, code: true } },
+      location: { select: { id: true, name: true, path: true } },
+    },
+    orderBy: { name: 'asc' },
+  })
+
+  return {
+    ...current,
+    descendantMaterials,
+  }
 }
 
 export async function createLocation(db: PrismaClient, data: CreateLocationInput) {
   const { parentId, ...rest } = data
+  let infraTypeId = rest.infraTypeId
+
+  if (parentId && !infraTypeId) {
+    const parent = await db.location.findFirst({ where: { id: parentId, deletedAt: null } })
+    if (parent) {
+      infraTypeId = parent.infraTypeId
+    }
+  }
+
+  if (!infraTypeId) {
+    throw new Error('La categoría de infraestructura (infraTypeId) es obligatoria')
+  }
 
   // Create node first to get id
   const location = await db.location.create({
     data: {
-      ...rest,
+      name: rest.name,
+      description: rest.description,
+      latitude: rest.latitude,
+      longitude: rest.longitude,
       parentId,
+      infraTypeId,
     },
   })
 
@@ -106,6 +158,7 @@ export async function updateLocation(db: PrismaClient, id: number, data: UpdateL
 
   const { parentId, ...rest } = data
   let newPath = current.path
+  let infraTypeId = rest.infraTypeId ?? current.infraTypeId
 
   // Handle parent change and reparenting cycle prevention
   if (parentId !== undefined && parentId !== current.parentId) {
@@ -130,11 +183,13 @@ export async function updateLocation(db: PrismaClient, id: number, data: UpdateL
       }
 
       parentPath = newParent.path
+      // Inherit parent category when reparenting
+      infraTypeId = newParent.infraTypeId
     }
 
     newPath = `${parentPath}${id}/`
 
-    // Update descendants paths
+    // Update descendants paths and category
     const descendants = await db.location.findMany({
       where: { path: { startsWith: current.path } },
     })
@@ -145,7 +200,7 @@ export async function updateLocation(db: PrismaClient, id: number, data: UpdateL
       const descNewPath = `${newPath}${relativePart}`
       await db.location.update({
         where: { id: desc.id },
-        data: { path: descNewPath },
+        data: { path: descNewPath, infraTypeId },
       })
     }
   }
@@ -153,9 +208,13 @@ export async function updateLocation(db: PrismaClient, id: number, data: UpdateL
   return db.location.update({
     where: { id },
     data: {
-      ...rest,
+      name: rest.name,
+      description: rest.description,
+      latitude: rest.latitude,
+      longitude: rest.longitude,
       parentId,
       path: newPath,
+      infraTypeId,
     },
     include: { infraType: true },
   })

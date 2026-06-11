@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import * as catalogApi from '../../api/catalog'
-import { useActionTypes, useRoles } from '../../hooks/useCatalog'
+import { useFixedProperties, useRoles } from '../../hooks/useCatalog'
 
 vi.mock('../../api/catalog')
 beforeEach(() => { vi.clearAllMocks() })
@@ -15,12 +15,12 @@ function makeWrapper() {
   )
 }
 
-describe('useActionTypes', () => {
-  it('devuelve tipos de acción', async () => {
-    vi.mocked(catalogApi.listActionTypes).mockResolvedValue([
-      { id: 1, code: 'inspection', name: 'Inspección', description: null, icon: null, color: null, deletedAt: null },
+describe('useFixedProperties', () => {
+  it('devuelve propiedades fijas', async () => {
+    vi.mocked(catalogApi.listFixedProperties).mockResolvedValue([
+      { id: 1, code: 'warranty', name: 'Garantía', type: 'DATE' },
     ])
-    const { result } = renderHook(() => useActionTypes(), { wrapper: makeWrapper() })
+    const { result } = renderHook(() => useFixedProperties(), { wrapper: makeWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toHaveLength(1)
   })

@@ -6,16 +6,19 @@ import type { Location } from '../../api/types'
 
 interface Props {
   parentId?: number | null
+  infraTypeId?: number | null
   existing?: Location
   onClose: () => void
+  onSuccess?: (created: Location) => void
 }
 
-export function LocationForm({ parentId, existing, onClose }: Props) {
+export function LocationForm({ parentId, infraTypeId, existing, onClose, onSuccess }: Props) {
   const isEdit = !!existing
   const [name, setName] = useState(existing?.name ?? '')
   const [description, setDescription] = useState(existing?.description ?? '')
-  const [type, setType] = useState(existing?.type ?? 'FOLDER')
-  const [infraTypeId, setInfraTypeId] = useState<number | ''>(existing?.infraTypeId ?? '')
+  const [selectedInfraTypeId, setSelectedInfraTypeId] = useState<number | ''>(
+    existing?.infraTypeId ?? infraTypeId ?? ''
+  )
   const [error, setError] = useState('')
 
   const createLoc = useCreateLocation()
@@ -31,8 +34,7 @@ export function LocationForm({ parentId, existing, onClose }: Props) {
     const body = {
       name: name.trim(),
       description: description.trim() || null,
-      type: type || null,
-      infraTypeId: infraTypeId ? Number(infraTypeId) : null,
+      infraTypeId: selectedInfraTypeId ? Number(selectedInfraTypeId) : null,
       parentId: isEdit ? existing?.parentId : parentId ?? null,
     }
 
@@ -41,19 +43,30 @@ export function LocationForm({ parentId, existing, onClose }: Props) {
       return
     }
 
+    if (!body.parentId && !body.infraTypeId) {
+      setError('La categoría principal es obligatoria para ubicaciones principales.')
+      return
+    }
+
     if (isEdit) {
       updateLoc.mutate(
-        { id: existing!.id, body },
+        { id: existing!.id, body: body as any },
         {
-          onSuccess: onClose,
+          onSuccess: (data) => {
+            if (onSuccess) onSuccess(data)
+            onClose()
+          },
           onError: (e: any) => setError(e?.error?.message ?? 'Error al actualizar ubicación'),
         }
       )
     } else {
       createLoc.mutate(
-        body,
+        body as any,
         {
-          onSuccess: onClose,
+          onSuccess: (data) => {
+            if (onSuccess) onSuccess(data)
+            onClose()
+          },
           onError: (e: any) => setError(e?.error?.message ?? 'Error al crear ubicación'),
         }
       )
@@ -75,38 +88,22 @@ export function LocationForm({ parentId, existing, onClose }: Props) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        {(!parentId || (isEdit && !existing?.parentId)) && (
           <div>
-            <label className="block text-xs font-semibold text-fg-secondary mb-1">Tipo de ubicación</label>
+            <label className="block text-xs font-semibold text-fg-secondary mb-1">Categoría Principal <span className="text-error">*</span></label>
             <select
-              value={type}
-              onChange={e => setType(e.target.value)}
+              value={selectedInfraTypeId}
+              onChange={e => setSelectedInfraTypeId(e.target.value ? Number(e.target.value) : '')}
               className={inputCls}
+              required
             >
-              <option value="FOLDER">Carpeta / Dependencia</option>
-              <option value="INFRASTRUCTURE">Infraestructura Principal</option>
-              <option value="BUILDING">Edificio</option>
-              <option value="ROOM">Sala / Habitación</option>
-              <option value="STRUCTURE">Poste / Farola / Equipamiento</option>
+              <option value="">Seleccionar categoría...</option>
+              {infraTypes.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
             </select>
           </div>
-
-          {(!parentId || (isEdit && !existing?.parentId)) && (
-            <div>
-              <label className="block text-xs font-semibold text-fg-secondary mb-1">Categoría Principal (Opcional)</label>
-              <select
-                value={infraTypeId}
-                onChange={e => setInfraTypeId(e.target.value ? Number(e.target.value) : '')}
-                className={inputCls}
-              >
-                <option value="">Ninguna</option>
-                {infraTypes.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+        )}
 
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">Descripción</label>
@@ -134,7 +131,7 @@ export function LocationForm({ parentId, existing, onClose }: Props) {
             disabled={isPending}
             className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
           >
-            {isPending ? 'Guardando...' : isEdit ? 'Guardar' : 'Crear'}
+            {isPending ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </form>

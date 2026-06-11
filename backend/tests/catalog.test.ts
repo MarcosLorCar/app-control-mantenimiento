@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterAll } from 'vitest'
 import { buildTestApp, getManagerToken, getEditorToken, getViewerToken } from './helpers/app'
 import { testDb, clearDb, seedTestData } from './helpers/db'
 
-describe('Catalog — ActionTypes', () => {
+describe('Catalog — Fixed Properties', () => {
   let app: Awaited<ReturnType<typeof buildTestApp>>
   let seed: Awaited<ReturnType<typeof seedTestData>>
   let managerToken: string
@@ -20,51 +20,49 @@ describe('Catalog — ActionTypes', () => {
 
   afterAll(async () => { await testDb.$disconnect() })
 
-  describe('GET /api/v1/action-types', () => {
+  describe('GET /api/v1/fixed-properties', () => {
     it('returns list for authenticated users', async () => {
+      await testDb.fixedProperty.create({
+        data: { code: 'warranty_date', name: 'Fecha de garantía', type: 'DATE' }
+      })
       const res = await app.inject({
         method: 'GET',
-        url: '/api/v1/action-types',
+        url: '/api/v1/fixed-properties',
         headers: { authorization: `Bearer ${viewerToken}` },
       })
       expect(res.statusCode).toBe(200)
-      expect(res.json().data[0]).toMatchObject({ code: 'inspection', name: 'Inspección' })
+      expect(res.json().data.length).toBeGreaterThanOrEqual(1)
+      const found = res.json().data.find((p: any) => p.code === 'warranty_date')
+      expect(found).toMatchObject({ code: 'warranty_date', name: 'Fecha de garantía', type: 'DATE' })
     })
 
     it('returns 401 without auth', async () => {
-      const res = await app.inject({ method: 'GET', url: '/api/v1/action-types' })
+      const res = await app.inject({ method: 'GET', url: '/api/v1/fixed-properties' })
       expect(res.statusCode).toBe(401)
-    })
-
-    it('excludes soft-deleted action types', async () => {
-      await testDb.actionType.update({ where: { id: seed.actionType.id }, data: { deletedAt: new Date() } })
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/action-types',
-        headers: { authorization: `Bearer ${viewerToken}` },
-      })
-      expect(res.json().data).toHaveLength(0)
     })
   })
 
-  describe('POST /api/v1/action-types', () => {
-    it('creates action type (requireManage)', async () => {
+  describe('POST /api/v1/fixed-properties', () => {
+    it('creates fixed property (requireManage)', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/action-types',
+        url: '/api/v1/fixed-properties',
         headers: { authorization: `Bearer ${managerToken}` },
-        payload: { code: 'replacement', name: 'Sustitución', icon: 'refresh', color: '#10B981' },
+        payload: { code: 'purchase_date', name: 'Fecha de compra', type: 'DATE' },
       })
       expect(res.statusCode).toBe(201)
-      expect(res.json().data).toMatchObject({ code: 'replacement', name: 'Sustitución' })
+      expect(res.json().data).toMatchObject({ code: 'purchase_date', name: 'Fecha de compra', type: 'DATE' })
     })
 
     it('rejects duplicate code', async () => {
+      await testDb.fixedProperty.create({
+        data: { code: 'dup_prop', name: 'Duplicate', type: 'STRING' }
+      })
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/action-types',
+        url: '/api/v1/fixed-properties',
         headers: { authorization: `Bearer ${managerToken}` },
-        payload: { code: 'inspection', name: 'Dup' },
+        payload: { code: 'dup_prop', name: 'Dup', type: 'STRING' },
       })
       expect(res.statusCode).toBe(409)
     })
@@ -72,32 +70,34 @@ describe('Catalog — ActionTypes', () => {
     it('returns 403 for editor', async () => {
       const res = await app.inject({
         method: 'POST',
-        url: '/api/v1/action-types',
+        url: '/api/v1/fixed-properties',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { code: 'repair', name: 'Reparación' },
+        payload: { code: 'some_code', name: 'Some Property', type: 'STRING' },
       })
       expect(res.statusCode).toBe(403)
     })
   })
 
-  describe('PATCH /api/v1/action-types/:id', () => {
-    it('updates action type (requireManage)', async () => {
-      const res = await app.inject({
-        method: 'PATCH',
-        url: `/api/v1/action-types/${seed.actionType.id}`,
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: { name: 'Inspección Actualizada', color: '#FF0000' },
+  describe('DELETE /api/v1/fixed-properties/:id', () => {
+    it('deletes fixed property (requireManage)', async () => {
+      const prop = await testDb.fixedProperty.create({
+        data: { code: 'to_delete', name: 'To Delete', type: 'BOOLEAN' }
       })
-      expect(res.statusCode).toBe(200)
-      expect(res.json().data.name).toBe('Inspección Actualizada')
+      const res = await app.inject({
+        method: 'DELETE',
+        url: `/api/v1/fixed-properties/${prop.id}`,
+        headers: { authorization: `Bearer ${managerToken}` },
+      })
+      expect(res.statusCode).toBe(204)
+      const check = await testDb.fixedProperty.findUnique({ where: { id: prop.id } })
+      expect(check).toBeNull()
     })
 
     it('returns 404 for unknown id', async () => {
       const res = await app.inject({
-        method: 'PATCH',
-        url: '/api/v1/action-types/99999',
+        method: 'DELETE',
+        url: '/api/v1/fixed-properties/99999',
         headers: { authorization: `Bearer ${managerToken}` },
-        payload: { name: 'X' },
       })
       expect(res.statusCode).toBe(404)
     })

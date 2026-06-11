@@ -1,14 +1,15 @@
 import type { FastifyInstance } from 'fastify'
 import {
   CreateMaterialTypeSchema, UpdateMaterialTypeSchema,
-  CreateMaterialCategorySchema, UpdateMaterialCategorySchema,
+  CreateFixedPropertySchema
 } from './materials.schema'
 import {
   listMaterialTypes, createMaterialType, updateMaterialType,
-  listCategories, createCategory, updateCategory, deleteCategory,
+  listFixedProperties, createFixedProperty, deleteFixedProperty
 } from './catalog.service'
 
 export async function materialCatalogRoutes(app: FastifyInstance) {
+  // Material Types Catalog
   app.get('/material-types', { preHandler: [app.verifyToken] }, async (req, reply) => {
     return reply.send({ data: await listMaterialTypes(app.db) })
   })
@@ -42,55 +43,33 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
     return reply.send({ data })
   })
 
-  app.get('/material-types/:id/categories', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const id = Number((req.params as any).id)
-    const type = await app.db.materialType.findFirst({ where: { id, deletedAt: null } })
-    if (!type) {
-      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Tipo de material no encontrado' } })
-    }
-    return reply.send({ data: await listCategories(app.db, id) })
+  // Global Fixed Properties
+  app.get('/fixed-properties', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: await listFixedProperties(app.db) })
   })
 
-  app.post('/material-types/:id/categories', { preHandler: [app.requireManage] }, async (req, reply) => {
-    const materialTypeId = Number((req.params as any).id)
-    const parsed = CreateMaterialCategorySchema.safeParse(req.body)
+  app.post('/fixed-properties', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const parsed = CreateFixedPropertySchema.safeParse(req.body)
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
-    const existing = await app.db.materialCategory.findFirst({
-      where: {
-        code: parsed.data.code,
-        materialTypes: { some: { id: materialTypeId } }
-      }
+    const existing = await app.db.fixedProperty.findUnique({
+      where: { code: parsed.data.code }
     })
     if (existing) {
-      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de categoría ya existe en este tipo' } })
+      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de propiedad ya existe' } })
     }
-    const data = await createCategory(app.db, materialTypeId, parsed.data)
+    const data = await createFixedProperty(app.db, parsed.data)
     return reply.status(201).send({ data })
   })
 
-  app.patch('/categories/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+  app.delete('/fixed-properties/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
     const id = Number((req.params as any).id)
-    const existing = await app.db.materialCategory.findUnique({ where: { id } })
+    const existing = await app.db.fixedProperty.findUnique({ where: { id } })
     if (!existing) {
-      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Categoría no encontrada' } })
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Propiedad no encontrada' } })
     }
-    const parsed = UpdateMaterialCategorySchema.safeParse(req.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
-    }
-    const data = await updateCategory(app.db, id, parsed.data)
-    return reply.send({ data })
-  })
-
-  app.delete('/categories/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
-    const id = Number((req.params as any).id)
-    const existing = await app.db.materialCategory.findUnique({ where: { id } })
-    if (!existing) {
-      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Categoría no encontrada' } })
-    }
-    await deleteCategory(app.db, id)
+    await deleteFixedProperty(app.db, id)
     return reply.status(204).send()
   })
 }

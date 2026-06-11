@@ -11,8 +11,9 @@ import {
 export async function locationsRoutes(app: FastifyInstance) {
   // List locations
   app.get('/', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const query = req.query as { parentId?: string }
+    const query = req.query as { parentId?: string; infraTypeId?: string }
     let parentId: number | null | undefined = undefined
+    let infraTypeId: number | undefined = undefined
 
     if (query.parentId === 'null') {
       parentId = null
@@ -20,7 +21,11 @@ export async function locationsRoutes(app: FastifyInstance) {
       parentId = Number(query.parentId)
     }
 
-    const data = await listLocations(app.db, parentId)
+    if (query.infraTypeId !== undefined) {
+      infraTypeId = Number(query.infraTypeId)
+    }
+
+    const data = await listLocations(app.db, { parentId, infraTypeId })
     return reply.send({ data })
   })
 

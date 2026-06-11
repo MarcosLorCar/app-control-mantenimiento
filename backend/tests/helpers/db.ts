@@ -9,12 +9,13 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL
 export const testDb = new PrismaClient()
 
 export async function clearDb(db: PrismaClient = testDb) {
+  await db.actionMaterial.deleteMany()
   await db.action.deleteMany()
   await db.material.deleteMany()
   await db.location.deleteMany()
-  await db.materialCategory.deleteMany()
+  await db.infrastructureType.deleteMany()
   await db.materialType.deleteMany()
-  await db.actionType.deleteMany()
+  await db.fixedProperty.deleteMany()
   await db.user.deleteMany()
   await db.role.deleteMany()
 }
@@ -59,31 +60,27 @@ export async function seedTestData(db: PrismaClient = testDb) {
     },
   })
 
-  const actionType = await db.actionType.create({
-    data: { code: 'inspection', name: 'Inspección' },
-  })
   const materialType = await db.materialType.create({
     data: {
       code: 'led_bulb',
       name: 'Bombilla LED',
-      categories: {
-        create: [
-          {
-            code: 'power_w',
-            name: 'Potencia (W)',
-            dataType: 'NUMBER',
-            unit: 'W',
-            required: true,
-            sortOrder: 1,
-            enumValues: [],
-          },
-        ],
-      },
     },
   })
 
+  const infraType = await db.infrastructureType.create({
+    data: {
+      name: 'Hospital',
+      description: 'Centros sanitarios',
+    },
+  })
+
+  // Seed serial_number fixed property
+  await db.fixedProperty.create({
+    data: { code: 'serial_number', name: 'Número de Serie', type: 'STRING' },
+  })
+
   const infra = await db.location.create({
-    data: { name: 'Hospital Central', type: 'INFRASTRUCTURE' },
+    data: { name: 'Hospital Central', infraTypeId: infraType.id },
   })
   await db.location.update({
     where: { id: infra.id },
@@ -91,7 +88,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
   })
 
   const dep = await db.location.create({
-    data: { name: 'Ala A', parentId: infra.id, type: 'DEPENDENCY' },
+    data: { name: 'Ala A', parentId: infra.id, infraTypeId: infraType.id },
   })
   await db.location.update({
     where: { id: dep.id },
@@ -99,7 +96,7 @@ export async function seedTestData(db: PrismaClient = testDb) {
   })
 
   const structure = await db.location.create({
-    data: { name: 'Habitación 101', parentId: dep.id, type: 'STRUCTURE' },
+    data: { name: 'Habitación 101', parentId: dep.id, infraTypeId: infraType.id },
   })
   await db.location.update({
     where: { id: structure.id },
@@ -111,26 +108,24 @@ export async function seedTestData(db: PrismaClient = testDb) {
       name: 'Bombilla Philips E27',
       typeId: materialType.id,
       locationId: structure.id,
-      attributes: { power_w: 9 },
+      attributes: { serial_number: 'SN-TEST-123', power_w: 9 },
     },
   })
 
-  // TODO: remove aliases after tasks 3-8 migrate all test files to manager/editor/viewer naming
   // Keep backwards-compatible aliases
   const adminRole = managerRole
   const adminUser = manager
   const readerRole = viewerRole
   const readerUser = viewer
   const editorUser = editor
-  const inspectionType = actionType
 
   return {
     managerRole, editorRole, viewerRole,
     manager, editor, viewer,
-    actionType,
     materialType,
+    infraType,
     infra, dep, structure, material,
     // backwards-compat aliases
-    adminRole, adminUser, editorUser, readerRole, readerUser, inspectionType,
+    adminRole, adminUser, editorUser, readerRole, readerUser,
   }
 }

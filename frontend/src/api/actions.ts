@@ -13,11 +13,10 @@ export function getAction(id: number): Promise<Action> {
 
 export function createAction(body: {
   title: string
-  typeId: number
   locationId?: number | null
   latitude?: number | null
   longitude?: number | null
-  description?: string
+  description?: string | null
   performedAt?: string
   newLocation?: {
     name: string
@@ -25,7 +24,16 @@ export function createAction(body: {
     parentId?: number | null
     latitude?: number | null
     longitude?: number | null
+    infraTypeId?: number | null
   } | null
+  materials?: {
+    materialId?: number
+    name?: string
+    typeId?: number
+    description?: string | null
+    attributes?: Record<string, any>
+    operation: 'INSTALL' | 'UNINSTALL'
+  }[]
 }): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions`, {
     method: 'POST',
@@ -35,7 +43,7 @@ export function createAction(body: {
 
 export function updateAction(
   id: number,
-  body: { title?: string; description?: string; performedAt?: string },
+  body: { title?: string; description?: string | null; performedAt?: string },
 ): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${id}`, {
     method: 'PATCH',
@@ -53,17 +61,4 @@ export function listMaterialActions(materialId: number): Promise<Action[]> {
 
 export function listLocationActions(locationId: number): Promise<Action[]> {
   return apiFetch<ApiData<Action[]>>(`${API_BASE}/locations/${locationId}/actions`).then(r => r.data)
-}
-
-export function associateMaterialToAction(actionId: number, materialId: number): Promise<Action> {
-  return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${actionId}/materials`, {
-    method: 'POST',
-    body: JSON.stringify({ materialId }),
-  }).then(r => r.data)
-}
-
-export function disassociateMaterialFromAction(actionId: number, materialId: number): Promise<Action> {
-  return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${actionId}/materials/${materialId}`, {
-    method: 'DELETE',
-  }).then(r => r.data)
 }

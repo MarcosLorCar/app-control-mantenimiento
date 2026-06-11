@@ -12,15 +12,8 @@ export async function materialsRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
-    try {
-      const data = await createMaterial(app.db, parsed.data)
-      return reply.status(201).send({ data })
-    } catch (err: any) {
-      if (err.code === 'INVALID_ATTRIBUTES') {
-        return reply.status(422).send({ error: { code: 'INVALID_ATTRIBUTES', message: err.message, details: err.errors } })
-      }
-      throw err
-    }
+    const data = await createMaterial(app.db, parsed.data)
+    return reply.status(201).send({ data })
   })
 
   app.get('/materials/:id', { preHandler: [app.verifyToken] }, async (req, reply) => {

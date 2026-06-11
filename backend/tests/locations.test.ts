@@ -60,7 +60,7 @@ describe('Locations API', () => {
         method: 'POST',
         url: '/api/v1/locations',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { name: 'Campus Principal', type: 'INFRASTRUCTURE' },
+        payload: { name: 'Campus Principal', infraTypeId: seed.infraType.id },
       })
       expect(res.statusCode).toBe(201)
       const data = res.json().data
@@ -73,7 +73,7 @@ describe('Locations API', () => {
         method: 'POST',
         url: '/api/v1/locations',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { name: 'Planta 2', parentId: seed.dep.id, type: 'DEPENDENCY' },
+        payload: { name: 'Planta 2', parentId: seed.dep.id },
       })
       expect(res.statusCode).toBe(201)
       const data = res.json().data
@@ -125,7 +125,7 @@ describe('Locations API', () => {
     it('reparents node and updates path of node and descendants', async () => {
       // Create another root location
       const anotherRoot = await testDb.location.create({
-        data: { name: 'Otro Edificio', path: '/' },
+        data: { name: 'Otro Edificio', path: '/', infraTypeId: seed.infraType.id },
       })
       await testDb.location.update({
         where: { id: anotherRoot.id },
