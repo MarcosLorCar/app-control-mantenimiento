@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Folder, Search, Plus, ChevronRight, GitBranch, Package, Zap, ChevronLeft, AlertCircle } from 'lucide-react'
+import { Folder, Search, Plus, ChevronRight, GitBranch, Package, Zap, ChevronLeft, AlertCircle, MapPin } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
+import { getCategoryIcon } from '../../utils/categoryIcons'
+import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
 
 export function CategoryLocationList() {
   const { id } = useParams<{ id: string }>()
@@ -16,6 +18,7 @@ export function CategoryLocationList() {
   
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
 
   const activeCategory = categories.find(c => c.id === categoryId)
 
@@ -45,8 +48,7 @@ export function CategoryLocationList() {
     </div>
   )
 
-  const iconColor = activeCategory.color ?? 'var(--primary)'
-  const iconBg = activeCategory.color ? `${activeCategory.color}15` : 'var(--info-bg)'
+  const CatIcon = getCategoryIcon(activeCategory.icon)
 
   return (
     <div className="space-y-6 relative min-h-[70vh]">
@@ -61,15 +63,8 @@ export function CategoryLocationList() {
 
       {/* Header Info */}
       <div className="flex items-center gap-4 border-b border-app-border/40 pb-5">
-        <div
-          className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl shrink-0"
-          style={{ backgroundColor: iconBg }}
-        >
-          {activeCategory.icon ? (
-            <span>{activeCategory.icon}</span>
-          ) : (
-            <Folder className="w-6 h-6" style={{ color: iconColor }} />
-          )}
+        <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-primary/10 shrink-0">
+          <CatIcon className="w-7 h-7 text-primary" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-fg leading-tight">
@@ -117,14 +112,18 @@ export function CategoryLocationList() {
               role="button"
               className="flex items-start gap-4 p-5 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
             >
-              <div
-                className="w-12 h-12 rounded-[10px] flex items-center justify-center shrink-0 transition-all group-hover:scale-110"
-                style={{ backgroundColor: iconBg }}
-              >
-                {activeCategory.icon ? (
-                  <span className="text-2xl">{activeCategory.icon}</span>
+              <div className="w-16 h-16 rounded-[10px] flex items-center justify-center shrink-0 transition-all group-hover:scale-110 bg-primary/10 overflow-hidden">
+                {loc.image ? (
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); setPreviewImage({ src: loc.image!, alt: loc.name }) }}
+                    className="w-full h-full"
+                    title="Ver foto"
+                  >
+                    <img src={loc.image} alt={loc.name} className="w-full h-full object-cover" />
+                  </button>
                 ) : (
-                  <Folder className="w-5.5 h-5.5" style={{ color: iconColor }} />
+                  <MapPin className="w-6 h-6 text-primary" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -180,6 +179,14 @@ export function CategoryLocationList() {
           infraTypeId={categoryId}
           onClose={() => setShowForm(false)}
           onSuccess={handleCreateSuccess}
+        />
+      )}
+
+      {previewImage && (
+        <ImagePreviewModal
+          src={previewImage.src}
+          alt={previewImage.alt}
+          onClose={() => setPreviewImage(null)}
         />
       )}
     </div>

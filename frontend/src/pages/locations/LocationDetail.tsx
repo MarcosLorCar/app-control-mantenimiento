@@ -1,13 +1,17 @@
-import { useState, Fragment } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight } from 'lucide-react'
-import { useLocation, useDeleteLocation, useLocations } from '../../hooks/useLocations'
+import { createPortal } from 'react-dom'
+import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight, ChevronDown, Camera, Calendar, MapPin } from 'lucide-react'
+import { useLocation, useDeleteLocation, useLocations, useUploadLocationImage, useDeleteLocationImage } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
 import { MaterialForm } from '../../components/forms/MaterialForm'
 import type { Location, Material } from '../../api/types'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
+import { getCategoryIcon } from '../../utils/categoryIcons'
+import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
+
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -21,20 +25,96 @@ export function LocationDetail() {
   const { data: loc, isLoading, error } = useLocation(locationId)
   const { data: allLocs = [] } = useLocations(undefined) // Fetch all for breadcrumbs name resolution
   const deleteLoc = useDeleteLocation()
+  const uploadImageMutation = useUploadLocationImage()
+  const deleteImageMutation = useDeleteLocationImage()
 
   const [showEdit, setShowEdit] = useState(false)
   const [showAddChild, setShowAddChild] = useState(false)
   const [showAddMaterial, setShowAddMaterial] = useState(false)
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
+  const [expandedChildIds, setExpandedChildIds] = useState<Set<number>>(new Set())
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
+  const [pasteStatus, setPasteStatus] = useState<'success' | 'no-image' | null>(null)
+
+  const handleDeleteImage = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm('¿Eliminar la foto de esta ubicación?')) return
+    try {
+      await deleteImageMutation.mutateAsync(locationId)
+    } catch (err) {
+      alert('Error al eliminar la imagen')
+      console.error(err)
+    }
+  }
+
+  const toggleExpanded = (childId: number) => {
+    setExpandedChildIds(prev => {
+      const next = new Set(prev)
+      if (next.has(childId)) {
+        next.delete(childId)
+      } else {
+        next.add(childId)
+      }
+      return next
+    })
+  }
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      await uploadImageMutation.mutateAsync({ id: locationId, file })
+    } catch (err) {
+      alert('Error al subir la imagen')
+      console.error(err)
+    }
+  }
+
+  // Paste-to-upload: listen for Ctrl+V anywhere on this page
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Ignore if user is typing in an input/textarea
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+      const items = Array.from(e.clipboardData?.items ?? [])
+      const imageItem = items.find(item => item.type.startsWith('image/'))
+      if (!imageItem) {
+        setPasteStatus('no-image')
+        setTimeout(() => setPasteStatus(null), 2500)
+        return
+      }
+
+      const file = imageItem.getAsFile()
+      if (!file) return
+      try {
+        await uploadImageMutation.mutateAsync({ id: locationId, file })
+        setPasteStatus('success')
+        setTimeout(() => setPasteStatus(null), 2500)
+      } catch (err) {
+        console.error('Paste upload failed', err)
+      }
+    }
+
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [locationId, uploadImageMutation])
 
   async function handleDelete() {
     if (!confirm('¿Eliminar esta ubicación? Sus sub-ubicaciones subirán un nivel en la jerarquía. Esta acción no se puede deshacer.')) return
-    await deleteLoc.mutateAsync(locationId)
-    // Redirect to category view on delete
-    if (loc?.infraTypeId) {
-      navigate(`/categories/${loc.infraTypeId}`)
-    } else {
-      navigate('/')
+    // Capture navigation target NOW, before the mutation clears the cache
+    const redirectTo = loc?.parentId
+      ? `/locations/${loc.parentId}`
+      : loc?.infraTypeId
+        ? `/categories/${loc.infraTypeId}`
+        : '/'
+    try {
+      await deleteLoc.mutateAsync(locationId)
+      navigate(redirectTo)
+    } catch (err) {
+      console.error('Error al eliminar la ubicación:', err)
+      alert('No se pudo eliminar la ubicación. Por favor, inténtalo de nuevo.')
     }
   }
 
@@ -75,20 +155,69 @@ export function LocationDetail() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
-              <Folder className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-fg leading-tight">{loc.name}</h1>
+          {/* Category Icon / Custom Image Header Display */}
+          {(() => {
+            return (
+              <div className="flex items-center gap-3.5">
+                <div className="relative shrink-0">
+                  <div className="w-20 h-20 bg-primary/10 rounded-xl flex items-center justify-center text-primary overflow-hidden border border-app-border/45 shadow-sm">
+                    {loc.image ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImage({ src: loc.image!, alt: loc.name })}
+                        className="w-full h-full"
+                        title="Ver foto en grande"
+                      >
+                        <img src={loc.image} alt={loc.name} className="w-full h-full object-cover animate-fade-in" />
+                      </button>
+                    ) : (
+                      <MapPin className="w-7 h-7" />
+                    )}
+                  </div>
+                  <RoleGuard require="write">
+                    <div className="absolute -inset-1 pointer-events-none">
+                      {/* Camera upload badge */}
+                      <label 
+                        className="absolute bottom-0 right-0 w-6 h-6 bg-primary text-primary-fg rounded-full flex items-center justify-center shadow-md border border-card pointer-events-auto cursor-pointer hover:bg-[var(--primary-hover)] active:scale-95 transition-all"
+                        title="Cambiar foto / Tomar foto"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageChange}
+                          disabled={uploadImageMutation.isPending}
+                        />
+                      </label>
+                      
+                      {/* Trash removal badge */}
+                      {loc.image && (
+                        <button
+                          type="button"
+                          onClick={handleDeleteImage}
+                          disabled={deleteImageMutation.isPending}
+                          className="absolute -top-1 -right-1 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center shadow-md border border-card pointer-events-auto cursor-pointer hover:bg-rose-600 active:scale-95 transition-all"
+                          title="Eliminar foto"
+                        >
+                          <Trash className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </RoleGuard>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-fg leading-tight">{loc.name}</h1>
+                  </div>
+                  {loc.infraType && (
+                    <p className="text-[11px] font-mono uppercase text-primary tracking-wider mt-0.5">{loc.infraType.name}</p>
+                  )}
+                </div>
               </div>
-              {loc.infraType && (
-                <p className="text-[11px] font-mono uppercase text-primary tracking-wider mt-0.5">{loc.infraType.name}</p>
-              )}
-            </div>
-          </div>
-          {loc.description && <p className="text-sm text-fg-secondary mt-2 pl-13">{loc.description}</p>}
+            )
+          })()}
+          {loc.description && <p className="text-sm text-fg-secondary mt-2 pl-19.5">{loc.description}</p>}
         </div>
 
         {/* Header Action Buttons */}
@@ -177,7 +306,11 @@ export function LocationDetail() {
                     <tbody className="divide-y divide-app-border/40">
                       {/* 1. Direct Materials (Instalados aquí) */}
                       {loc.materials.map(mat => (
-                        <tr key={`mat-${mat.id}`} className="hover:bg-app-bg/30 transition-colors">
+                        <tr
+                          key={`mat-${mat.id}`}
+                          onClick={() => setEditingMaterial(mat)}
+                          className="hover:bg-app-bg/30 transition-colors cursor-pointer"
+                        >
                           <td className="py-3 text-fg pl-2">
                             <span className="font-semibold block">📦 {mat.name}</span>
                             <span className="text-[11px] text-fg-secondary block line-clamp-1 mt-0.5">{mat.description || 'Sin descripción'}</span>
@@ -187,7 +320,10 @@ export function LocationDetail() {
                           <td className="py-3 text-muted">{mat.installedAt ? formatDate(mat.installedAt) : '—'}</td>
                           <td className="py-3 text-right">
                             <button
-                              onClick={() => setEditingMaterial(mat)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setEditingMaterial(mat)
+                              }}
                               className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                             >
                               Ver / Editar Ficha
@@ -201,6 +337,7 @@ export function LocationDetail() {
                         const branchMaterials = loc.descendantMaterials?.filter(
                           mat => mat.location?.path.startsWith(child.path)
                         ) || []
+                        const isExpanded = expandedChildIds.has(child.id)
 
                         return (
                           <Fragment key={`child-group-${child.id}`}>
@@ -208,7 +345,24 @@ export function LocationDetail() {
                             <tr key={`child-${child.id}`} className="hover:bg-app-bg/30 transition-colors bg-app-bg/5">
                               <td className="py-3 text-fg font-semibold pl-6">
                                 <div className="flex items-center gap-2">
-                                  <Folder className="w-4 h-4 text-primary shrink-0" />
+                                  <button
+                                    onClick={() => toggleExpanded(child.id)}
+                                    className="p-1 hover:bg-app-bg/50 rounded text-muted hover:text-fg transition-colors"
+                                  >
+                                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                  </button>
+                                  {child.image ? (
+                                    <button
+                                      type="button"
+                                      onClick={e => { e.stopPropagation(); setPreviewImage({ src: child.image!, alt: child.name }) }}
+                                      className="w-9 h-9 rounded-lg overflow-hidden shrink-0 border border-app-border/40 hover:ring-2 hover:ring-primary/50 transition-all"
+                                      title="Ver foto"
+                                    >
+                                      <img src={child.image} alt={child.name} className="w-full h-full object-cover" />
+                                    </button>
+                                  ) : (
+                                    <Folder className="w-4 h-4 text-primary shrink-0" />
+                                  )}
                                   <button
                                     onClick={() => navigate(`/locations/${child.id}`)}
                                     className="hover:underline text-left text-primary font-bold"
@@ -217,7 +371,7 @@ export function LocationDetail() {
                                   </button>
                                 </div>
                                 {child.description && (
-                                  <span className="text-[11px] text-fg-secondary block line-clamp-1 mt-0.5 ml-6">
+                                  <span className="text-[11px] text-fg-secondary block line-clamp-1 mt-0.5 ml-14">
                                     {child.description}
                                   </span>
                                 )}
@@ -237,8 +391,12 @@ export function LocationDetail() {
                             </tr>
 
                             {/* Descendant materials in this child's subtree */}
-                            {branchMaterials.map(mat => (
-                              <tr key={`desc-mat-${mat.id}`} className="hover:bg-app-bg/30 transition-colors opacity-80 bg-app-bg/5">
+                            {isExpanded && branchMaterials.map(mat => (
+                              <tr
+                                key={`desc-mat-${mat.id}`}
+                                onClick={() => setEditingMaterial(mat)}
+                                className="hover:bg-app-bg/30 transition-colors opacity-80 bg-app-bg/5 cursor-pointer"
+                              >
                                 <td className="py-3 text-fg pl-10 border-l-2 border-app-border">
                                   <span className="font-medium block text-fg-secondary">📦 {mat.name}</span>
                                   <span className="text-[11px] text-muted block line-clamp-1 mt-0.5">{mat.description || 'Sin descripción'}</span>
@@ -248,7 +406,10 @@ export function LocationDetail() {
                                 <td className="py-3 text-muted">
                                   <span>Instalado en: </span>
                                   <button
-                                    onClick={() => navigate(`/locations/${mat.locationId}`)}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigate(`/locations/${mat.locationId}`)
+                                    }}
                                     className="hover:underline text-primary font-semibold text-left"
                                   >
                                     {mat.location?.name}
@@ -256,7 +417,10 @@ export function LocationDetail() {
                                 </td>
                                 <td className="py-3 text-right">
                                   <button
-                                    onClick={() => setEditingMaterial(mat)}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setEditingMaterial(mat)
+                                    }}
                                     className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                                   >
                                     Ver / Editar Ficha
@@ -280,7 +444,11 @@ export function LocationDetail() {
                         if (unmatchedMaterials.length === 0) return null
 
                         return unmatchedMaterials.map(mat => (
-                          <tr key={`unmatched-desc-mat-${mat.id}`} className="hover:bg-app-bg/30 transition-colors opacity-80 bg-app-bg/5">
+                          <tr
+                            key={`unmatched-desc-mat-${mat.id}`}
+                            onClick={() => setEditingMaterial(mat)}
+                            className="hover:bg-app-bg/30 transition-colors opacity-80 bg-app-bg/5 cursor-pointer"
+                          >
                             <td className="py-3 text-fg pl-10 border-l-2 border-app-border">
                               <span className="font-medium block text-fg-secondary">📦 {mat.name}</span>
                               <span className="text-[11px] text-muted block line-clamp-1 mt-0.5">{mat.description || 'Sin descripción'}</span>
@@ -290,7 +458,10 @@ export function LocationDetail() {
                             <td className="py-3 text-muted">
                               <span>Instalado en: </span>
                               <button
-                                onClick={() => navigate(`/locations/${mat.locationId}`)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  navigate(`/locations/${mat.locationId}`)
+                                }}
                                 className="hover:underline text-primary font-semibold text-left"
                               >
                                 {mat.location?.name}
@@ -298,7 +469,10 @@ export function LocationDetail() {
                             </td>
                             <td className="py-3 text-right">
                               <button
-                                onClick={() => setEditingMaterial(mat)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingMaterial(mat)
+                                }}
                                 className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                               >
                                 Ver / Editar Ficha
@@ -315,7 +489,11 @@ export function LocationDetail() {
                 <div className="md:hidden space-y-3.5">
                   {/* 1. Direct Materials (Instalados aquí) */}
                   {loc.materials.map(mat => (
-                    <div key={`mat-mob-${mat.id}`} className="p-4 bg-app-bg/15 rounded-xl border border-app-border space-y-2">
+                    <div
+                      key={`mat-mob-${mat.id}`}
+                      onClick={() => setEditingMaterial(mat)}
+                      className="p-4 bg-app-bg/15 rounded-xl border border-app-border space-y-2 cursor-pointer hover:bg-app-bg/30 transition-colors"
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <span className="font-bold text-fg text-sm">📦 {mat.name}</span>
                         <span className="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded bg-app-bg border border-app-border text-muted">
@@ -331,7 +509,10 @@ export function LocationDetail() {
                           Instalado: {mat.installedAt ? formatDate(mat.installedAt) : '—'}
                         </span>
                         <button
-                          onClick={() => setEditingMaterial(mat)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setEditingMaterial(mat)
+                          }}
                           className="text-primary font-bold hover:underline"
                         >
                           Ver / Editar Ficha
@@ -345,75 +526,106 @@ export function LocationDetail() {
                     const branchMaterials = loc.descendantMaterials?.filter(
                       mat => mat.location?.path.startsWith(child.path)
                     ) || []
+                    const isExpanded = expandedChildIds.has(child.id)
 
                     return (
                       <Fragment key={`child-mob-group-${child.id}`}>
                         <div className="bg-primary/5 rounded-xl border border-primary/20 overflow-hidden shadow-sm">
                           {/* Subfolder (child location) header - fully interactable */}
                           <div
-                            onClick={() => navigate(`/locations/${child.id}`)}
+                            onClick={() => toggleExpanded(child.id)}
                             className="p-4 flex items-center justify-between gap-2 cursor-pointer hover:bg-primary/10 transition-colors bg-primary/10 border-b border-primary/20"
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <Folder className="w-4.5 h-4.5 text-primary shrink-0" />
+                              {child.image ? (
+                                <button
+                                  type="button"
+                                  onClick={e => { e.stopPropagation(); setPreviewImage({ src: child.image!, alt: child.name }) }}
+                                  className="w-9 h-9 rounded-lg overflow-hidden shrink-0 border border-app-border/40 hover:ring-2 hover:ring-primary/50 transition-all"
+                                  title="Ver foto"
+                                >
+                                  <img src={child.image} alt={child.name} className="w-full h-full object-cover" />
+                                </button>
+                              ) : (
+                                <Folder className="w-4.5 h-4.5 text-primary shrink-0" />
+                              )}
                               <span className="font-bold text-fg text-sm truncate">{child.name}</span>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-primary shrink-0" />
+                            {isExpanded ? <ChevronDown className="w-4.5 h-4.5 text-primary shrink-0" /> : <ChevronRight className="w-4.5 h-4.5 text-primary shrink-0" />}
                           </div>
 
-                          {/* Description and counts */}
-                          {(child.description || child._count) && (
-                            <div className="p-4 pt-3 pb-3 space-y-1.5 bg-card/20 border-b border-app-border/40">
-                              {child.description && (
-                                <p className="text-xs text-fg-secondary leading-relaxed">{child.description}</p>
-                              )}
-                              <p className="text-[11px] text-muted font-medium">
-                                {child._count?.children || 0} sub-ubicaciones · {child._count?.materials || 0} materiales
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Descendant materials list section inside the folder card */}
-                          {branchMaterials.length > 0 && (
-                            <div className="p-3 bg-card/40 space-y-2.5">
-                              <h4 className="text-[9px] font-bold text-fg-secondary uppercase tracking-wider px-1 mb-1">
-                                Equipos en {child.name}
-                              </h4>
-                              {branchMaterials.map(mat => (
-                                <div
-                                  key={`desc-mat-mob-${mat.id}`}
-                                  className="p-3.5 bg-app-bg/20 rounded-lg border border-app-border space-y-2"
-                                >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <span className="font-bold text-fg-secondary text-xs">📦 {mat.name}</span>
-                                    <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-app-bg border border-app-border text-muted shrink-0">
-                                      {mat.type?.name}
-                                    </span>
-                                  </div>
-                                  {mat.description && (
-                                    <p className="text-[11px] text-muted line-clamp-2">{mat.description}</p>
+                          {/* Expanded content */}
+                          {isExpanded && (
+                            <>
+                              {/* Description and counts */}
+                              {(child.description || child._count) && (
+                                <div className="p-4 pt-3 pb-3 space-y-1.5 bg-card/20 border-b border-app-border/40">
+                                  {child.description && (
+                                    <p className="text-xs text-fg-secondary leading-relaxed">{child.description}</p>
                                   )}
-                                  <MaterialAttributePills material={mat} />
-                                  <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-app-border/40 mt-1">
-                                    <span className="text-muted truncate max-w-[170px]">
-                                      En:{' '}
-                                      <button
-                                        onClick={() => navigate(`/locations/${mat.locationId}`)}
-                                        className="text-primary hover:underline font-semibold"
-                                      >
-                                        {mat.location?.name}
-                                      </button>
-                                    </span>
-                                    <button
-                                      onClick={() => setEditingMaterial(mat)}
-                                      className="text-primary font-bold hover:underline"
-                                    >
-                                      Ver / Editar
-                                    </button>
-                                  </div>
+                                  <p className="text-[11px] text-muted font-medium">
+                                    {child._count?.children || 0} sub-ubicaciones · {child._count?.materials || 0} materiales
+                                  </p>
+                                  {/* Abrir link for navigation */}
+                                  <button
+                                    onClick={() => navigate(`/locations/${child.id}`)}
+                                    className="text-primary font-bold text-xs flex items-center gap-0.5 mt-2 hover:underline animate-fade-in"
+                                  >
+                                    Abrir ubicación <ChevronRight className="w-3.5 h-3.5" />
+                                  </button>
                                 </div>
-                              ))}
-                            </div>
+                              )}
+
+                              {/* Descendant materials list section inside the folder card */}
+                              {branchMaterials.length > 0 && (
+                                <div className="p-3 bg-card/40 space-y-2.5">
+                                  <h4 className="text-[9px] font-bold text-fg-secondary uppercase tracking-wider px-1 mb-1">
+                                    Equipos en {child.name}
+                                  </h4>
+                                  {branchMaterials.map(mat => (
+                                    <div
+                                      key={`desc-mat-mob-${mat.id}`}
+                                      onClick={() => setEditingMaterial(mat)}
+                                      className="p-3.5 bg-app-bg/20 rounded-lg border border-app-border space-y-2 cursor-pointer hover:bg-app-bg/40 transition-colors"
+                                    >
+                                      <div className="flex items-start justify-between gap-2">
+                                        <span className="font-bold text-fg-secondary text-xs">📦 {mat.name}</span>
+                                        <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-app-bg border border-app-border text-muted shrink-0">
+                                          {mat.type?.name}
+                                        </span>
+                                      </div>
+                                      {mat.description && (
+                                        <p className="text-[11px] text-muted line-clamp-2">{mat.description}</p>
+                                      )}
+                                      <MaterialAttributePills material={mat} />
+                                      <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-app-border/40 mt-1">
+                                        <span className="text-muted truncate max-w-[170px]">
+                                          En:{' '}
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              navigate(`/locations/${mat.locationId}`)
+                                            }}
+                                            className="text-primary hover:underline font-semibold"
+                                          >
+                                            {mat.location?.name}
+                                          </button>
+                                        </span>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditingMaterial(mat)
+                                          }}
+                                          className="text-primary font-bold hover:underline"
+                                        >
+                                          Ver / Editar
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </Fragment>
@@ -432,7 +644,11 @@ export function LocationDetail() {
                     if (unmatchedMaterials.length === 0) return null
 
                     return unmatchedMaterials.map(mat => (
-                      <div key={`unmatched-desc-mat-mob-${mat.id}`} className="ml-5 p-3.5 bg-app-bg/5 rounded-xl border border-app-border border-l-4 border-l-app-border space-y-2">
+                      <div
+                        key={`unmatched-desc-mat-mob-${mat.id}`}
+                        onClick={() => setEditingMaterial(mat)}
+                        className="ml-5 p-3.5 bg-app-bg/5 rounded-xl border border-app-border border-l-4 border-l-app-border space-y-2 cursor-pointer hover:bg-app-bg/20 transition-colors"
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <span className="font-semibold text-fg-secondary text-[13px]">📦 {mat.name}</span>
                           <span className="text-[9px] font-medium uppercase px-1 py-0.5 rounded bg-app-bg border border-app-border text-muted">
@@ -447,14 +663,20 @@ export function LocationDetail() {
                           <span className="text-muted truncate max-w-[170px]">
                             En:{' '}
                             <button
-                              onClick={() => navigate(`/locations/${mat.locationId}`)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/locations/${mat.locationId}`)
+                              }}
                               className="text-primary hover:underline font-semibold"
                             >
                               {mat.location?.name}
                             </button>
                           </span>
                           <button
-                            onClick={() => setEditingMaterial(mat)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingMaterial(mat)
+                            }}
                             className="text-primary font-bold hover:underline"
                           >
                             Ver / Editar
@@ -475,14 +697,23 @@ export function LocationDetail() {
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg flex items-center gap-2">
                 <Zap className="w-4 h-4 text-primary" /> Historial de Trabajos
               </h2>
-              <RoleGuard require="write">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => navigate(`/actions/new?locationId=${rootId}`)}
-                  className="flex items-center gap-1 text-[11px] font-semibold bg-primary text-primary-fg px-3 py-1.5 rounded-lg hover:bg-[var(--primary-hover)] transition-all shadow-sm"
+                  onClick={() => navigate(`/actions?view=calendar&locationId=${locationId}`)}
+                  title="Ver calendario de trabajos"
+                  className="flex items-center justify-center border border-app-border p-1.5 rounded-lg text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Registrar Trabajo
+                  <Calendar className="w-4 h-4" />
                 </button>
-              </RoleGuard>
+                <RoleGuard require="write">
+                  <button
+                    onClick={() => navigate(`/actions/new?locationId=${rootId}`)}
+                    className="flex items-center gap-1 text-[11px] font-semibold bg-primary text-primary-fg px-3 py-1.5 rounded-lg hover:bg-[var(--primary-hover)] transition-all shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Registrar Trabajo
+                  </button>
+                </RoleGuard>
+              </div>
             </div>
 
             {loc.actions.length === 0 ? (
@@ -583,6 +814,30 @@ export function LocationDetail() {
           material={editingMaterial}
           onClose={() => setEditingMaterial(null)}
         />
+      )}
+
+      {previewImage && (
+        <ImagePreviewModal
+          src={previewImage.src}
+          alt={previewImage.alt}
+          onClose={() => setPreviewImage(null)}
+        />
+      )}
+
+      {/* Paste-upload toast */}
+      {pasteStatus && createPortal(
+        <div
+          className="fixed bottom-6 right-6 z-[9998] flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-medium border"
+          style={{
+            animation: 'fadeScaleIn 0.18s ease',
+            ...(pasteStatus === 'success'
+              ? { background: 'var(--card)', borderColor: 'var(--primary)', color: 'var(--primary)' }
+              : { background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--fg-secondary)' })
+          }}
+        >
+          {pasteStatus === 'success' ? '✓ Imagen pegada correctamente' : 'No hay imagen en el portapapeles'}
+        </div>,
+        document.body
       )}
     </div>
   )

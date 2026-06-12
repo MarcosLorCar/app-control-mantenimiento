@@ -5,6 +5,7 @@ import { useInfrastructureTypes, useCreateInfrastructureType } from '../../hooks
 import { useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { Modal } from '../../components/ui/Modal'
+import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
 
 export function CategoriesList() {
   const navigate = useNavigate()
@@ -15,8 +16,7 @@ export function CategoriesList() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [icon, setIcon] = useState('🌳')
-  const [color, setColor] = useState('#10B981')
+  const [icon, setIcon] = useState('Building2')
   const [formErr, setFormErr] = useState('')
 
   const getCount = (catId: number) => {
@@ -32,15 +32,14 @@ export function CategoriesList() {
       {
         name: name.trim(),
         description: description.trim() || undefined,
-        icon: icon.trim() || undefined,
-        color,
+        icon: icon,
+        color: undefined,
       },
       {
         onSuccess: () => {
           setName('')
           setDescription('')
-          setIcon('🌳')
-          setColor('#10B981')
+          setIcon('Building2')
           setShowAddForm(false)
         },
         onError: (err: any) => {
@@ -80,8 +79,7 @@ export function CategoriesList() {
         )}
         {categories.map(cat => {
           const count = getCount(cat.id)
-          const displayColor = cat.color ?? '#6B7280'
-          const bgLight = displayColor + '10'
+          const CatIcon = getCategoryIcon(cat.icon)
 
           return (
             <div
@@ -92,20 +90,14 @@ export function CategoriesList() {
             >
               {/* Top border decoration */}
               <div 
-                className="absolute top-0 inset-x-0 h-1 transition-all group-hover:h-1.5"
-                style={{ backgroundColor: displayColor }}
+                className="absolute top-0 inset-x-0 h-1 bg-primary/25 transition-all group-hover:h-1.5 group-hover:bg-primary"
               />
 
               <div className="flex items-center gap-3.5 mb-4">
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl transition-transform group-hover:scale-110 group-hover:rotate-3"
-                  style={{ backgroundColor: bgLight }}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform group-hover:scale-110 group-hover:rotate-3"
                 >
-                  {cat.icon ? (
-                    <span>{cat.icon}</span>
-                  ) : (
-                    <Folder className="w-5.5 h-5.5" style={{ color: displayColor }} />
-                  )}
+                  <CatIcon className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="font-bold text-fg text-[16px] group-hover:text-primary transition-colors leading-tight">
@@ -146,41 +138,36 @@ export function CategoriesList() {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Ej: Hospital, Pista de Tenis..."
+                placeholder="Ej: Dependencias Municipales, Colegios..."
                 className={inputCls}
                 required
                 autoFocus
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-1">
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">Icono (Emoji)</label>
-                <input
-                  type="text"
-                  value={icon}
-                  onChange={e => setIcon(e.target.value)}
-                  placeholder="🌳"
-                  maxLength={5}
-                  className={`${inputCls} text-center text-lg`}
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">Color representativo</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={e => setColor(e.target.value)}
-                    className="w-10 h-10 border border-app-border bg-transparent rounded-lg cursor-pointer shrink-0"
-                  />
-                  <input
-                    type="text"
-                    value={color}
-                    onChange={e => setColor(e.target.value)}
-                    className={`${inputCls} font-mono`}
-                  />
-                </div>
+            <div>
+              <label className="block text-xs font-semibold text-fg-secondary mb-2">Seleccionar Icono</label>
+              <div className="grid grid-cols-3 gap-2 border border-app-border rounded-lg p-2.5 bg-card max-h-[160px] overflow-y-auto pr-1">
+                {CATEGORY_ICON_OPTIONS.map(opt => {
+                  const OptIcon = getCategoryIcon(opt.name)
+                  const isSelected = icon === opt.name
+                  return (
+                    <button
+                      key={opt.name}
+                      type="button"
+                      onClick={() => setIcon(opt.name)}
+                      className={`flex flex-col items-center justify-center p-2 rounded-lg border text-[10px] transition-all hover:bg-primary/5 ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 text-primary font-bold'
+                          : 'border-app-border text-muted hover:text-fg'
+                      }`}
+                      title={opt.label}
+                    >
+                      <OptIcon className="w-5 h-5 mb-1 shrink-0" />
+                      <span className="truncate max-w-full text-[9px] text-center">{opt.label.split(' ')[0]}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
