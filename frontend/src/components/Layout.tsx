@@ -49,7 +49,7 @@ export function Layout() {
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? '?'
 
   return (
-    <div className="flex h-screen bg-app-bg text-fg">
+    <div className="flex h-[100dvh] bg-app-bg text-fg">
       {/* Overlay móvil */}
       {sidebarOpen && (
         <div

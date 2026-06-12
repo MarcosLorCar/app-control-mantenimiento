@@ -29,6 +29,10 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    height: 100dvh;
+    overflow: hidden;
+  }
   body {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     color: var(--fg);
