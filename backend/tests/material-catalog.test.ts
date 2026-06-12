@@ -84,11 +84,21 @@ describe('Material Catalog', () => {
       expect(res.json().data.name).toBe('Bombilla LED Actualizada')
     })
 
-    it('returns 403 for editor', async () => {
+    it('allows editor to update material type (requireWrite)', async () => {
       const res = await app.inject({
         method: 'PATCH',
         url: `/api/v1/material-types/${seed.materialType.id}`,
         headers: { authorization: `Bearer ${editorToken}` },
+        payload: { name: 'Bombilla LED Editor' },
+      })
+      expect(res.statusCode).toBe(200)
+    })
+
+    it('returns 403 for viewer', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/material-types/${seed.materialType.id}`,
+        headers: { authorization: `Bearer ${viewerToken}` },
         payload: { name: 'X' },
       })
       expect(res.statusCode).toBe(403)

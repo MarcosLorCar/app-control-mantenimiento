@@ -50,37 +50,6 @@ async function main() {
     },
   })
 
-  // Categorías de infraestructura (Infrastructure Types)
-  const hospitalCat = await prisma.infrastructureType.create({
-    data: { name: 'Hospital', description: 'Centros médicos, clínicas y complejos hospitalarios', icon: '🏥', color: '#EF4444' },
-  })
-  const parkCat = await prisma.infrastructureType.create({
-    data: { name: 'Parque', description: 'Parques públicos, jardines urbanos y áreas recreativas', icon: '🌳', color: '#10B981' },
-  })
-  const officeCat = await prisma.infrastructureType.create({
-    data: { name: 'Edificio', description: 'Edificios corporativos, oficinas y sedes centrales', icon: '🏢', color: '#8B5CF6' },
-  })
-  const factoryCat = await prisma.infrastructureType.create({
-    data: { name: 'Planta Industrial', description: 'Fábricas, naves industriales y almacenes de distribución', icon: '🏭', color: '#F59E0B' },
-  })
-
-  // Tipos de material (Material Types)
-  const hvac = await prisma.materialType.create({
-    data: { code: 'sistema_hvac', name: 'Sistema Climatización', description: 'Equipos e intercambiadores de climatización industrial (HVAC/CRAC)' },
-  })
-  const generator = await prisma.materialType.create({
-    data: { code: 'grupo_electrogeno', name: 'Grupo Electrógeno', description: 'Generadores eléctricos diésel de emergencia y respaldo' },
-  })
-  const pump = await prisma.materialType.create({
-    data: { code: 'bomba_hidraulica', name: 'Bomba Hidráulica', description: 'Bombas de agua de recirculación, succión o presión' },
-  })
-  const ledLight = await prisma.materialType.create({
-    data: { code: 'foco_led', name: 'Foco LED Exterior', description: 'Proyectores y luminarias LED exteriores de alta potencia' },
-  })
-  const sensor = await prisma.materialType.create({
-    data: { code: 'sensor_iot', name: 'Sensor IoT', description: 'Sensores de temperatura, humedad y variables ambientales con conexión de red' },
-  })
-
   // Propiedades Fijas Globales (Fixed Properties)
   await prisma.fixedProperty.create({
     data: { code: 'serial_number', name: 'Número de Serie', type: 'STRING' },
@@ -95,384 +64,618 @@ async function main() {
     data: { code: 'supplier', name: 'Proveedor', type: 'STRING' },
   })
 
+  // Categorías de infraestructura (Infrastructure Types)
+  const dependenciasCat = await prisma.infrastructureType.create({
+    data: { name: 'Dependencias Municipales', description: 'Edificios públicos y dependencias del ayuntamiento', icon: 'Building2' },
+  })
+
+  const fuentesCat = await prisma.infrastructureType.create({
+    data: { name: 'Fuentes', description: 'Fuentes ornamentales y de agua', icon: 'Droplet' },
+  })
+
+  const colegiosCat = await prisma.infrastructureType.create({
+    data: { name: 'Colegios', description: 'Centros educativos y colegios públicos', icon: 'GraduationCap' },
+  })
+
+  // Tipos de material (Material Types)
+  const mtBomba = await prisma.materialType.create({
+    data: {
+      code: 'bomba',
+      name: 'Bomba Hidráulica',
+      description: 'Bombas de recirculación, succión o caudal de agua',
+      infraTypeId: fuentesCat.id,
+      customAttributes: [
+        { code: 'marca', name: 'Marca', type: 'STRING' },
+        { code: 'modelo', name: 'Modelo', type: 'STRING' },
+        { code: 'potencia_cv', name: 'Potencia (CV)', type: 'NUMBER' },
+        { code: 'caudal_max_lh', name: 'Caudal Máx. (l/h)', type: 'NUMBER' },
+        { code: 'voltaje', name: 'Voltaje', type: 'STRING' },
+        { code: 'corriente_nominal_a', name: 'Corriente Nominal (A)', type: 'NUMBER' }
+      ]
+    },
+  })
+  const mtMotor = await prisma.materialType.create({
+    data: {
+      code: 'motor',
+      name: 'Motor Eléctrico',
+      description: 'Motores eléctricos trifásicos o monofásicos de accionamiento',
+      infraTypeId: fuentesCat.id,
+      customAttributes: [
+        { code: 'marca', name: 'Marca', type: 'STRING' },
+        { code: 'modelo', name: 'Modelo', type: 'STRING' },
+        { code: 'potencia_kw', name: 'Potencia (kW)', type: 'NUMBER' },
+        { code: 'rpm', name: 'R.P.M.', type: 'NUMBER' },
+        { code: 'tension_v', name: 'Tensión (V)', type: 'STRING' }
+      ]
+    },
+  })
+  const mtAlumbrado = await prisma.materialType.create({
+    data: { code: 'alumbrado', name: 'Alumbrado / Proyector', description: 'Focos subacuáticos e iluminación ornamental', infraTypeId: fuentesCat.id },
+  })
+  const mtSondaNivel = await prisma.materialType.create({
+    data: { code: 'sonda_nivel', name: 'Sonda de Nivel', description: 'Sondas conductivas de nivel de agua', infraTypeId: fuentesCat.id },
+  })
+  const mtBoyaNivel = await prisma.materialType.create({
+    data: { code: 'boya_nivel', name: 'Boya de Nivel', description: 'Interruptor de flotador mecánico de nivel', infraTypeId: fuentesCat.id },
+  })
+  const mtMagnetotermico = await prisma.materialType.create({
+    data: { code: 'magnetotermico', name: 'Interruptor Magnetotérmico', description: 'Interruptores de protección eléctrica contra sobrecargas y cortocircuitos', infraTypeId: fuentesCat.id },
+  })
+  const mtDiferencial = await prisma.materialType.create({
+    data: { code: 'diferencial', name: 'Interruptor Diferencial', description: 'Dispositivos de protección contra derivaciones y contactos directos', infraTypeId: fuentesCat.id },
+  })
+  const mtSeccionador = await prisma.materialType.create({
+    data: { code: 'seccionador', name: 'Interruptor de Maniobra / Seccionador', description: 'Interruptor general rotativo de corte y maniobra en carga', infraTypeId: fuentesCat.id },
+  })
+  const mtContactor = await prisma.materialType.create({
+    data: { code: 'contactor', name: 'Contactor', description: 'Contactor de potencia para arranque y control de cargas', infraTypeId: fuentesCat.id },
+  })
+  const mtRelojProgramador = await prisma.materialType.create({
+    data: { code: 'reloj_programador', name: 'Reloj Programador', description: 'Interruptor horario analógico o digital para programaciones temporales', infraTypeId: fuentesCat.id },
+  })
+  const mtSelector = await prisma.materialType.create({
+    data: { code: 'selector', name: 'Selector de Posición', description: 'Selectores giratorios manuales de modo (Manual/Off/Automático)', infraTypeId: fuentesCat.id },
+  })
+  const mtReleControl = await prisma.materialType.create({
+    data: { code: 'rele_control', name: 'Relé de Control', description: 'Relés electrónicos auxiliares (control de nivel, sondas, etc.)', infraTypeId: fuentesCat.id },
+  })
+  const mtTransformador = await prisma.materialType.create({
+    data: { code: 'transformador', name: 'Transformador', description: 'Transformadores de aislamiento y seguridad de tensión', infraTypeId: fuentesCat.id },
+  })
+
   // --- UBICACIONES (Locations Hierarchy) ---
-  
-  // 1. HOSPITAL CLÍNICO
-  const hospital = await prisma.location.create({
+  // Root Location: Fuente del Torreón
+  const torreonRoot = await prisma.location.create({
     data: {
-      name: 'Hospital Clínico San Carlos',
-      description: 'Complejo hospitalario del sector central',
-      infraTypeId: hospitalCat.id,
-      latitude: 40.4429,
-      longitude: -3.7275,
+      name: 'Fuente del Torreón',
+      description: 'Fuente ornamental histórica del parque del Torreón',
+      infraTypeId: fuentesCat.id,
+      latitude: 40.4188,
+      longitude: -3.6841,
     },
   })
   await prisma.location.update({
-    where: { id: hospital.id },
-    data: { path: `/${hospital.id}/` },
+    where: { id: torreonRoot.id },
+    data: { path: `/${torreonRoot.id}/` },
   })
 
-  const centralTermica = await prisma.location.create({
+  // Sub-location 1: Fuente (Vaso y maquinaria de agua)
+  const vasoFuente = await prisma.location.create({
     data: {
-      name: 'Central Térmica (Sótano)',
-      description: 'Sala técnica de calderas, enfriadoras y grupos electrógenos',
-      infraTypeId: hospitalCat.id,
-      parentId: hospital.id,
-      latitude: 40.4430,
-      longitude: -3.7276,
+      name: 'Fuente (Vaso y Maquinaria)',
+      description: 'Vaso de la fuente, tuberías, bombas y elementos hidráulicos',
+      infraTypeId: fuentesCat.id,
+      parentId: torreonRoot.id,
+      latitude: 40.4188,
+      longitude: -3.6841,
     },
   })
   await prisma.location.update({
-    where: { id: centralTermica.id },
-    data: { path: `/${hospital.id}/${centralTermica.id}/` },
+    where: { id: vasoFuente.id },
+    data: { path: `/${torreonRoot.id}/${vasoFuente.id}/` },
   })
 
-  const planta3 = await prisma.location.create({
+  // Sub-location 2: Cuadro de mando y protección
+  const cuadroMando = await prisma.location.create({
     data: {
-      name: 'Planta 3 - Quirófanos',
-      description: 'Área quirúrgica de alta esterilidad',
-      infraTypeId: hospitalCat.id,
-      parentId: hospital.id,
-      latitude: 40.4428,
-      longitude: -3.7274,
+      name: 'Cuadro de Mando y Protección',
+      description: 'Armario de control eléctrico y protecciones de la fuente',
+      infraTypeId: fuentesCat.id,
+      parentId: torreonRoot.id,
+      latitude: 40.4189,
+      longitude: -3.6840,
     },
   })
   await prisma.location.update({
-    where: { id: planta3.id },
-    data: { path: `/${hospital.id}/${planta3.id}/` },
+    where: { id: cuadroMando.id },
+    data: { path: `/${torreonRoot.id}/${cuadroMando.id}/` },
   })
 
-  const quirofanoQ1 = await prisma.location.create({
+  // --- INSTALACIÓN DE MATERIALES ---
+
+  // 1. En la ubicación: Fuente
+  const matBomba = await prisma.material.create({
     data: {
-      name: 'Quirófano Inteligente Q1',
-      description: 'Sala de intervenciones Q1 equipada con telemetría',
-      infraTypeId: hospitalCat.id,
-      parentId: planta3.id,
-      latitude: 40.4428,
-      longitude: -3.7274,
-    },
-  })
-  await prisma.location.update({
-    where: { id: quirofanoQ1.id },
-    data: { path: `/${hospital.id}/${planta3.id}/${quirofanoQ1.id}/` },
-  })
-
-  // 2. PARQUE DEL RETIRO
-  const retiropark = await prisma.location.create({
-    data: {
-      name: 'Parque de El Retiro',
-      description: 'Jardín histórico y parque público principal',
-      infraTypeId: parkCat.id,
-      latitude: 40.4153,
-      longitude: -3.6845,
-    },
-  })
-  await prisma.location.update({
-    where: { id: retiropark.id },
-    data: { path: `/${retiropark.id}/` },
-  })
-
-  const estanqueGrande = await prisma.location.create({
-    data: {
-      name: 'Estanque Grande del Retiro',
-      description: 'Lago artificial recreativo',
-      infraTypeId: parkCat.id,
-      parentId: retiropark.id,
-      latitude: 40.4170,
-      longitude: -3.6828,
-    },
-  })
-  await prisma.location.update({
-    where: { id: estanqueGrande.id },
-    data: { path: `/${retiropark.id}/${estanqueGrande.id}/` },
-  })
-
-  const estacionBombeo = await prisma.location.create({
-    data: {
-      name: 'Estación de Bombeo Estanque',
-      description: 'Caseta técnica subterránea de control de agua y recirculación',
-      infraTypeId: parkCat.id,
-      parentId: estanqueGrande.id,
-      latitude: 40.4172,
-      longitude: -3.6826,
-    },
-  })
-  await prisma.location.update({
-    where: { id: estacionBombeo.id },
-    data: { path: `/${retiropark.id}/${estanqueGrande.id}/${estacionBombeo.id}/` },
-  })
-
-  const pistaAtletismo = await prisma.location.create({
-    data: {
-      name: 'Pista de Atletismo Retiro',
-      description: 'Área deportiva al aire libre',
-      infraTypeId: parkCat.id,
-      parentId: retiropark.id,
-      latitude: 40.4120,
-      longitude: -3.6860,
-    },
-  })
-  await prisma.location.update({
-    where: { id: pistaAtletismo.id },
-    data: { path: `/${retiropark.id}/${pistaAtletismo.id}/` },
-  })
-
-  const torreIluminacion = await prisma.location.create({
-    data: {
-      name: 'Torre de Iluminación T1',
-      description: 'Torre norte de focos para la pista de atletismo',
-      infraTypeId: parkCat.id,
-      parentId: pistaAtletismo.id,
-      latitude: 40.4121,
-      longitude: -3.6861,
-    },
-  })
-  await prisma.location.update({
-    where: { id: torreIluminacion.id },
-    data: { path: `/${retiropark.id}/${pistaAtletismo.id}/${torreIluminacion.id}/` },
-  })
-
-  // 3. SEDE CORPORATIVA
-  const sedeCorp = await prisma.location.create({
-    data: {
-      name: 'Sede Corporativa Central',
-      description: 'Edificio de oficinas del grupo administrativo',
-      infraTypeId: officeCat.id,
-      latitude: 40.4601,
-      longitude: -3.6905,
-    },
-  })
-  await prisma.location.update({
-    where: { id: sedeCorp.id },
-    data: { path: `/${sedeCorp.id}/` },
-  })
-
-  const dataCenter = await prisma.location.create({
-    data: {
-      name: 'Centro de Datos (Sótano -2)',
-      description: 'Data Center principal y nodos de red de la sede',
-      infraTypeId: officeCat.id,
-      parentId: sedeCorp.id,
-      latitude: 40.4602,
-      longitude: -3.6906,
-    },
-  })
-  await prisma.location.update({
-    where: { id: dataCenter.id },
-    data: { path: `/${sedeCorp.id}/${dataCenter.id}/` },
-  })
-
-  const filaA = await prisma.location.create({
-    data: {
-      name: 'Fila A - Servidores',
-      description: 'Racks del 01 al 12 con equipamiento de misión crítica',
-      infraTypeId: officeCat.id,
-      parentId: dataCenter.id,
-      latitude: 40.4602,
-      longitude: -3.6906,
-    },
-  })
-  await prisma.location.update({
-    where: { id: filaA.id },
-    data: { path: `/${sedeCorp.id}/${dataCenter.id}/${filaA.id}/` },
-  })
-
-  // --- MATERIALES (Instances) ---
-
-  const hvacHosp = await prisma.material.create({
-    data: {
-      name: 'Climatizador Principal HVAC-01',
-      typeId: hvac.id,
-      description: 'Unidad de climatización central de agua refrigerada para el área médica',
-      locationId: centralTermica.id,
+      name: 'Bomba',
+      typeId: mtBomba.id,
+      description: 'Bomba centrífuga sumergida de recirculación de caudal',
+      locationId: vasoFuente.id,
       attributes: {
-        serial_number: 'CLIM-HVAC-9921',
-        purchase_date: '2024-03-15',
+        serial_number: 'BOMBA-ESP-9988',
+        purchase_date: '2025-02-10',
         warranty_period: 36,
-        supplier: 'ClimaCorp S.A.',
-      },
-    },
+        supplier: 'Suministros Hidráulicos S.L.',
+        marca: 'Espa',
+        modelo: 'Silen S 100',
+        potencia_cv: 1.0,
+        caudal_max_lh: 15000,
+        voltaje: '230V',
+        corriente_nominal_a: 4.5
+      }
+    }
   })
 
-  const genHosp = await prisma.material.create({
+  const matMotor = await prisma.material.create({
     data: {
-      name: 'Generador de Respaldo GEN-450',
-      typeId: generator.id,
-      description: 'Grupo electrógeno diésel de 450kVA con arranque automático',
-      locationId: centralTermica.id,
+      name: 'Motor',
+      typeId: mtMotor.id,
+      description: 'Motor eléctrico acoplado a la bomba de recirculación',
+      locationId: vasoFuente.id,
       attributes: {
-        serial_number: 'GEN-DIESEL-4001',
-        purchase_date: '2024-05-10',
+        serial_number: 'MOT-SIEM-4433',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Suministros Hidráulicos S.L.',
+        marca: 'Siemens',
+        modelo: '1LA7083',
+        potencia_kw: 0.75,
+        rpm: 1420,
+        tension_v: '230/400V',
+        cos_phi: 0.82
+      }
+    }
+  })
+
+  const matAlumbrado = await prisma.material.create({
+    data: {
+      name: 'Alumbrado',
+      typeId: mtAlumbrado.id,
+      description: 'Conjunto de proyectores LED de iluminación subacuática',
+      locationId: vasoFuente.id,
+      attributes: {
+        serial_number: 'LUM-LED-VASO-01',
+        purchase_date: '2025-02-10',
         warranty_period: 24,
-        supplier: 'Generadores del Norte',
-      },
-    },
+        supplier: 'Electricidad Retiro',
+        marca: 'AstralPool',
+        modelo: 'LED Blanco 12V',
+        potencia_w: 24,
+        lumenes: 1485,
+        tipo_led: 'Subacuático IP68'
+      }
+    }
   })
 
-  const sensorQ1 = await prisma.material.create({
+  const matSondaLlenado = await prisma.material.create({
     data: {
-      name: 'Sensor Temp/Hum IoT Q1',
-      typeId: sensor.id,
-      description: 'Sensor de precisión inalámbrico para monitorización de salas blancas',
-      locationId: quirofanoQ1.id,
+      name: 'Sondas de llenado',
+      typeId: mtSondaNivel.id,
+      description: 'Sondas conductivas superiores para el control de llenado automático del vaso',
+      locationId: vasoFuente.id,
       attributes: {
-        serial_number: 'SNS-TEMP-0012',
-        purchase_date: '2025-02-01',
+        serial_number: 'SND-LLENADO-01',
+        purchase_date: '2025-03-01',
+        warranty_period: 24,
+        supplier: 'Toscano Control',
+        marca: 'Toscano',
+        modelo: 'SN-1',
+        tipo: 'Varilla / Conductiva',
+        material: 'Acero Inoxidable'
+      }
+    }
+  })
+
+  const matSondaMin = await prisma.material.create({
+    data: {
+      name: 'Sondas de nivel mínimo',
+      typeId: mtSondaNivel.id,
+      description: 'Sondas conductivas de nivel crítico inferior de agua',
+      locationId: vasoFuente.id,
+      attributes: {
+        serial_number: 'SND-NIVMIN-02',
+        purchase_date: '2025-03-01',
+        warranty_period: 24,
+        supplier: 'Toscano Control',
+        marca: 'Toscano',
+        modelo: 'SN-1',
+        tipo: 'Varilla / Conductiva',
+        material: 'Acero Inoxidable'
+      }
+    }
+  })
+
+  const matBoyaLlenado = await prisma.material.create({
+    data: {
+      name: 'Boya de llenado',
+      typeId: mtBoyaNivel.id,
+      description: 'Boya de flotador mecánica de llenado automático de seguridad',
+      locationId: vasoFuente.id,
+      attributes: {
+        serial_number: 'BOYA-LLEN-01',
+        purchase_date: '2025-02-10',
         warranty_period: 12,
-        supplier: 'Sensors Inc.',
-      },
-    },
+        supplier: 'Suministros Hidráulicos S.L.',
+        marca: 'Kari',
+        modelo: 'Kari-1',
+        tipo: 'Boya flotante de cable',
+        longitud_cable_m: 5
+      }
+    }
   })
 
-  const bombaRetiro = await prisma.material.create({
+  const matBoyaMin = await prisma.material.create({
     data: {
-      name: 'Bomba de Recirculación B-01',
-      typeId: pump.id,
-      description: 'Bomba centrífuga sumergida de caudal variable para el estanque',
-      locationId: estacionBombeo.id,
+      name: 'Boya de nivel mínimo',
+      typeId: mtBoyaNivel.id,
+      description: 'Boya flotante de seguridad para protección de marcha en seco de la bomba',
+      locationId: vasoFuente.id,
       attributes: {
-        serial_number: 'BOMBA-HYDR-8891',
-        purchase_date: '2025-01-20',
-        warranty_period: 24,
-        supplier: 'Bombas e Hidráulicos',
-      },
-    },
+        serial_number: 'BOYA-NIVMIN-02',
+        purchase_date: '2025-02-10',
+        warranty_period: 12,
+        supplier: 'Suministros Hidráulicos S.L.',
+        marca: 'Kari',
+        modelo: 'Kari-1',
+        tipo: 'Boya flotante de cable',
+        longitud_cable_m: 5
+      }
+    }
   })
 
-  const proyectorPista = await prisma.material.create({
+  // 2. En la ubicación: Cuadro de mando y protección
+  const matIGM = await prisma.material.create({
     data: {
-      name: 'Proyector LED 200W P1',
-      typeId: ledLight.id,
-      description: 'Foco de alta potencia exterior estanco IP66 para áreas deportivas',
-      locationId: torreIluminacion.id,
+      name: 'Interruptor General magnetotermico',
+      typeId: mtMagnetotermico.id,
+      description: 'Interruptor General Automático (IGA) principal del cuadro de mando',
+      locationId: cuadroMando.id,
       attributes: {
-        serial_number: 'LED-PROJ-7721',
-        purchase_date: '2024-11-12',
-        warranty_period: 60,
-        supplier: 'Lumen Lux',
-      },
-    },
-  })
-
-  const cracSede = await prisma.material.create({
-    data: {
-      name: 'Aire Acondicionado de Precisión CRAC-02',
-      typeId: hvac.id,
-      description: 'Climatizador de expansión directa especial para CPD',
-      locationId: dataCenter.id,
-      attributes: {
-        serial_number: 'CRAC-PREC-5512',
-        purchase_date: '2023-09-08',
-        warranty_period: 24,
-        supplier: 'CoolingTech',
-      },
-    },
-  })
-
-  // Materiales en niveles de ubicación intermedios
-  await prisma.material.create({
-    data: {
-      name: 'Sensor Ambiental Vestíbulo',
-      typeId: sensor.id,
-      description: 'Sensor IoT de monitorización de ambiente en el hall principal del Hospital',
-      locationId: hospital.id,
-      attributes: {
-        serial_number: 'SNS-AMB-HOSP-001',
-        purchase_date: '2025-03-20',
-        warranty_period: 24,
-        supplier: 'Sensors Inc.',
-      },
-    },
-  })
-
-  await prisma.material.create({
-    data: {
-      name: 'Extractor de Flujo Laminar EXT-P3',
-      typeId: hvac.id,
-      description: 'Extractor de aire regulado para la Planta 3 - Quirófanos',
-      locationId: planta3.id,
-      attributes: {
-        serial_number: 'EXTR-FLUX-P3-09',
-        purchase_date: '2024-06-01',
+        serial_number: 'IGA-SCHN-25A',
+        purchase_date: '2025-02-10',
         warranty_period: 36,
-        supplier: 'ClimaCorp S.A.',
-      },
+        supplier: 'Electricidad Retiro',
+        marca: 'Schneider',
+        modelo: 'iC60N 2P 25A',
+        intensidad_a: 25,
+        polos: '2P',
+        curva: 'C',
+        poder_corte_ka: 6
+      }
+    }
+  })
+
+  const matIGD = await prisma.material.create({
+    data: {
+      name: 'Interruptor General diferencial',
+      typeId: mtDiferencial.id,
+      description: 'Interruptor diferencial general para protección de derivaciones a tierra',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'ID-SCHN-40A',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'Schneider',
+        modelo: 'iID 2P 40A 30mA',
+        intensidad_a: 40,
+        sensibilidad_ma: 30,
+        polos: '2P',
+        tipo: 'AC'
+      }
+    }
+  })
+
+  const matIGMM = await prisma.material.create({
+    data: {
+      name: 'Interruptor general mando y maniobra',
+      typeId: mtSeccionador.id,
+      description: 'Seccionador rotativo general de mando exterior',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'SEC-ABB-32A',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'ABB',
+        modelo: 'OT32F3',
+        intensidad_a: 32,
+        polos: '3P'
+      }
+    }
+  })
+
+  const matPMB = await prisma.material.create({
+    data: {
+      name: 'Interruptor magnetotermico protección de bomba',
+      typeId: mtMagnetotermico.id,
+      description: 'Magnetotérmico individual de protección de la línea de bomba/motor',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'MAG-BOMB-10A',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'Schneider',
+        modelo: 'iC60N 1P+N 10A',
+        intensidad_a: 10,
+        polos: '1P+N',
+        curva: 'C'
+      }
+    }
+  })
+
+  const matPMA = await prisma.material.create({
+    data: {
+      name: 'Interruptor magnetotermico protección de alumbrado',
+      typeId: mtMagnetotermico.id,
+      description: 'Magnetotérmico individual de protección de línea del transformador de luces',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'MAG-ALUM-6A',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'Schneider',
+        modelo: 'iC60N 1P+N 6A',
+        intensidad_a: 6,
+        polos: '1P+N',
+        curva: 'C'
+      }
+    }
+  })
+
+  const matContactorBomba = await prisma.material.create({
+    data: {
+      name: 'Contactor bomba',
+      typeId: mtContactor.id,
+      description: 'Contactor electromecánico de arranque del motor de la bomba',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'CONT-BOMB-01',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'Schneider',
+        modelo: 'LC1D09P7',
+        bobina_v: '230V AC',
+        intensidad_max_a: 9,
+        contactos: '3NO+1NO+1NC'
+      }
+    }
+  })
+
+  const matContactorAlum = await prisma.material.create({
+    data: {
+      name: 'Contactor alumbrado',
+      typeId: mtContactor.id,
+      description: 'Contactor electromecánico para maniobra de encendido de luces',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'CONT-ALUM-02',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'Schneider',
+        modelo: 'LC1D09P7',
+        bobina_v: '230V AC',
+        intensidad_max_a: 9,
+        contactos: '3NO+1NO+1NC'
+      }
+    }
+  })
+
+  const matReloj = await prisma.material.create({
+    data: {
+      name: 'Reloj',
+      typeId: mtRelojProgramador.id,
+      description: 'Reloj temporizador diario analógico para programar encendidos de bomba y luces',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'TEMP-ORB-DIARIO',
+        purchase_date: '2025-02-10',
+        warranty_period: 24,
+        supplier: 'Electricidad Retiro',
+        marca: 'Orbis',
+        modelo: 'Tempus',
+        tipo: 'Analógico diario',
+        reserva_marcha_h: 150
+      }
+    }
+  })
+
+  const matSelectorBomba = await prisma.material.create({
+    data: {
+      name: 'Manual bomba',
+      typeId: mtSelector.id,
+      description: 'Selector manual - 0 - automático para maniobra de bomba',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'SEL-BOMB-01',
+        purchase_date: '2025-02-10',
+        warranty_period: 24,
+        supplier: 'Electricidad Retiro',
+        marca: 'Giovenzana',
+        modelo: 'P0120008S',
+        posiciones: 'Manual - 0 - Automático',
+        diametro_mm: 22
+      }
+    }
+  })
+
+  const matSelectorAlum = await prisma.material.create({
+    data: {
+      name: 'Manual alumbrado',
+      typeId: mtSelector.id,
+      description: 'Selector manual - 0 - automático para maniobra de iluminación',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'SEL-ALUM-02',
+        purchase_date: '2025-02-10',
+        warranty_period: 24,
+        supplier: 'Electricidad Retiro',
+        marca: 'Giovenzana',
+        modelo: 'P0120008S',
+        posiciones: 'Manual - 0 - Automático',
+        diametro_mm: 22
+      }
+    }
+  })
+
+  const matReleLlenado = await prisma.material.create({
+    data: {
+      name: 'Rele llenado',
+      typeId: mtReleControl.id,
+      description: 'Relé electrónico de control de nivel para regulación automática de llenado por sondas',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'RELE-LLEN-TH1',
+        purchase_date: '2025-03-01',
+        warranty_period: 24,
+        supplier: 'Toscano Control',
+        marca: 'Toscano',
+        modelo: 'TH-1',
+        funcion: 'Control de llenado por sondas',
+        alimentacion_v: '230V AC'
+      }
+    }
+  })
+
+  const matSelectorLlenado = await prisma.material.create({
+    data: {
+      name: 'Manual llenado',
+      typeId: mtSelector.id,
+      description: 'Selector manual - 0 - automático para maniobra de electroválvula de llenado',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'SEL-LLEN-03',
+        purchase_date: '2025-03-01',
+        warranty_period: 24,
+        supplier: 'Electricidad Retiro',
+        marca: 'Giovenzana',
+        modelo: 'P0120008S',
+        posiciones: 'Manual - 0 - Automático',
+        diametro_mm: 22
+      }
+    }
+  })
+
+  const matTransfoLlenado = await prisma.material.create({
+    data: {
+      name: 'Transformador electroválvula de llenado',
+      typeId: mtTransformador.id,
+      description: 'Transformador reductor de tensión de seguridad para mando de electroválvula a 24V AC',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'TRA-LLEN-24V',
+        purchase_date: '2025-03-01',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'Polylux',
+        modelo: 'P24',
+        potencia_va: 50,
+        tension_primario_v: '230V',
+        tension_secundario_v: '24V'
+      }
+    }
+  })
+
+  const matTransfoAlum = await prisma.material.create({
+    data: {
+      name: 'Transformador salida alumbrado',
+      typeId: mtTransformador.id,
+      description: 'Transformador reductor de seguridad de alta potencia para proyectores LED de 12V AC',
+      locationId: cuadroMando.id,
+      attributes: {
+        serial_number: 'TRA-ALUM-12V',
+        purchase_date: '2025-02-10',
+        warranty_period: 36,
+        supplier: 'Electricidad Retiro',
+        marca: 'Polylux',
+        modelo: 'P12',
+        potencia_va: 100,
+        tension_primario_v: '230V',
+        tension_secundario_v: '12V'
+      }
+    }
+  })
+
+  // --- REGISTRO DE TRABAJOS / ACCIONES HISTÓRICAS ---
+  // Las acciones se asocian a la ubicación raíz: Fuente del Torreón
+
+  // Acción 1: Puesta en marcha e instalación de equipos
+  const actInstalacion = await prisma.action.create({
+    data: {
+      title: 'Puesta en marcha e instalación inicial de equipos',
+      description: 'Se completan las conexiones eléctricas en el cuadro, anclaje de bomba y motor, colocación de sondas de nivel y verificación de presiones. Arranque de prueba exitoso.',
+      locationId: torreonRoot.id,
+      performedBy: adminUser.id,
+      performedAt: new Date('2025-02-15T09:00:00Z'),
     },
   })
 
-  // --- ACCIONES (Maintenance actions) ---
+  // Vinculamos todos los materiales instalados al momento de esta puesta en marcha
+  const materialsToLink = [
+    matBomba, matMotor, matAlumbrado, matSondaLlenado, matSondaMin,
+    matBoyaLlenado, matBoyaMin, matIGM, matIGD, matIGMM, matPMB, matPMA,
+    matContactorBomba, matContactorAlum, matReloj, matSelectorBomba,
+    matSelectorAlum, matReleLlenado, matSelectorLlenado, matTransfoLlenado, matTransfoAlum
+  ]
 
-  const actHosp = await prisma.action.create({
+  await prisma.actionMaterial.createMany({
+    data: materialsToLink.map(mat => ({
+      actionId: actInstalacion.id,
+      materialId: mat.id,
+      operation: 'INSTALL'
+    }))
+  })
+
+  // Acción 2: Limpieza y calibración de sensores de vaso
+  const actMantenimientoSondas = await prisma.action.create({
     data: {
-      title: 'Instalación de Equipos de Central Térmica',
-      description: 'Se realiza la descarga, anclaje y cableado del climatizador principal y el grupo de emergencia. Pruebas de arranque en carga superadas satisfactoriamente.',
-      locationId: centralTermica.id,
-      performedBy: adminUser.id,
-      performedAt: new Date('2024-03-18T10:00:00Z'),
+      title: 'Limpieza periódica y calibración de sondas de nivel',
+      description: 'Se limpian las varillas de las sondas de llenado y nivel mínimo por acumulación de cal. Se verifica la activación correcta del relé de llenado y boyas de seguridad.',
+      locationId: torreonRoot.id,
+      performedBy: editorUser.id,
+      performedAt: new Date('2025-05-12T10:30:00Z'),
     },
   })
 
   await prisma.actionMaterial.createMany({
     data: [
-      { actionId: actHosp.id, materialId: hvacHosp.id, operation: 'INSTALL' },
-      { actionId: actHosp.id, materialId: genHosp.id, operation: 'INSTALL' },
-    ],
+      { actionId: actMantenimientoSondas.id, materialId: matSondaLlenado.id, operation: 'UPDATE' },
+      { actionId: actMantenimientoSondas.id, materialId: matSondaMin.id, operation: 'UPDATE' },
+      { actionId: actMantenimientoSondas.id, materialId: matBoyaLlenado.id, operation: 'UPDATE' },
+      { actionId: actMantenimientoSondas.id, materialId: matBoyaMin.id, operation: 'UPDATE' },
+    ]
   })
 
-  const actQ1 = await prisma.action.create({
+  // Acción 3: Sustitución de Magnetotérmico de Alumbrado por fallo
+  const actSustitucionMag = await prisma.action.create({
     data: {
-      title: 'Calibración y Puesta en Marcha de Sensor IoT',
-      description: 'Montaje de soporte de pared en Quirófano Q1, conexión a la red IoT del hospital y calibración del transductor de temperatura frente a patrón certificado.',
-      locationId: quirofanoQ1.id,
-      performedBy: adminUser.id,
-      performedAt: new Date('2025-02-03T09:00:00Z'),
-    },
-  })
-
-  await prisma.actionMaterial.create({
-    data: { actionId: actQ1.id, materialId: sensorQ1.id, operation: 'INSTALL' },
-  })
-
-  const actRet = await prisma.action.create({
-    data: {
-      title: 'Mantenimiento Preventivo de Bomba Estanque',
-      description: 'Extracción de la bomba centrífuga sumergida, limpieza manual de la rejilla de aspiración, comprobación de la holgura del rodete e inspección de sellos mecánicos.',
-      locationId: estacionBombeo.id,
+      title: 'Sustitución de interruptor magnetotérmico de protección de alumbrado',
+      description: 'Se detectó que el magnetotérmico de luces saltaba esporádicamente incluso sin carga activa. Se sustituyó por un repuesto nuevo idéntico de Schneider 6A.',
+      locationId: torreonRoot.id,
       performedBy: editorUser.id,
-      performedAt: new Date('2025-05-10T08:30:00Z'),
+      performedAt: new Date('2025-06-01T16:00:00Z'),
     },
   })
 
   await prisma.actionMaterial.create({
-    data: { actionId: actRet.id, materialId: bombaRetiro.id, operation: 'INSTALL' },
-  })
-
-  const actPist = await prisma.action.create({
     data: {
-      title: 'Adecuación de Iluminación Deportiva',
-      description: 'Sustitución de proyector de vapor de sodio fundido de 400W por nueva luminaria LED de 200W en la Torre T1. Se ajusta la orientación para optimizar el haz luminoso.',
-      locationId: torreIluminacion.id,
-      performedBy: editorUser.id,
-      performedAt: new Date('2024-11-15T15:00:00Z'),
-    },
-  })
-
-  await prisma.actionMaterial.create({
-    data: { actionId: actPist.id, materialId: proyectorPista.id, operation: 'INSTALL' },
-  })
-
-  const actCp = await prisma.action.create({
-    data: {
-      title: 'Montaje de Climatizador Precisión CPD',
-      description: 'Instalación de la unidad interna evaporadora CRAC-02. Conexión de tubería de refrigerante ecológico R410A y pruebas de estanqueidad de nitrógeno.',
-      locationId: dataCenter.id,
-      performedBy: adminUser.id,
-      performedAt: new Date('2023-09-12T11:00:00Z'),
-    },
-  })
-
-  await prisma.actionMaterial.create({
-    data: { actionId: actCp.id, materialId: cracSede.id, operation: 'INSTALL' },
+      actionId: actSustitucionMag.id,
+      materialId: matPMA.id,
+      operation: 'UPDATE'
+    }
   })
 
   console.log('Seed completado.')

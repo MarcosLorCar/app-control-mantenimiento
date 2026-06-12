@@ -82,7 +82,7 @@ describe('Actions', () => {
         payload: {
           title: 'Sustitución de Bombilla',
           description: 'Se retira la bombilla vieja y se pone el repuesto',
-          locationId: seed.structure.id,
+          locationId: seed.infra.id,
           materials: [
             {
               materialId: seed.material.id,
@@ -90,7 +90,8 @@ describe('Actions', () => {
             },
             {
               materialId: warehouseMaterial.id,
-              operation: 'INSTALL'
+              operation: 'INSTALL',
+              locationId: seed.structure.id
             }
           ]
         },
@@ -161,8 +162,9 @@ describe('Actions', () => {
           title: 'Instalación farola nueva',
           description: 'Nueva farola instalada en pista',
           newLocation: {
-            name: 'Farola F13 Nueva',
-            parentId: seed.dep.id,
+            name: 'Nueva Infraestructura Raíz',
+            parentId: null,
+            infraTypeId: seed.infraType.id,
             latitude: 40.4165,
             longitude: -3.6852,
           },
@@ -173,8 +175,8 @@ describe('Actions', () => {
       expect(body).toMatchObject({ title: 'Instalación farola nueva' })
       expect(body.locationId).toBeDefined()
       expect(body.location).toMatchObject({
-        name: 'Farola F13 Nueva',
-        parentId: seed.dep.id,
+        name: 'Nueva Infraestructura Raíz',
+        parentId: null,
         latitude: 40.4165,
         longitude: -3.6852,
       })
