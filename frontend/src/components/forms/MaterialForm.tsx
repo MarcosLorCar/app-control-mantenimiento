@@ -1,8 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal } from '../ui/Modal'
 import { useCreateMaterial } from '../../hooks/useMaterials'
-import { useMaterialTypes, useCreateMaterialType, useFixedProperties } from '../../hooks/useCatalog'
-import { Eye } from 'lucide-react'
+import { useLocation } from '../../hooks/useLocations'
+import {
+  useMaterialTypes,
+  useCreateMaterialType,
+  useUpdateMaterialType,
+  useFixedProperties,
+} from '../../hooks/useCatalog'
+import { Plus } from 'lucide-react'
 import type { Material } from '../../api/types'
 
 interface Props {
@@ -16,57 +22,111 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
   const [typeId, setTypeId] = useState<number>(0)
   const [description, setDescription] = useState('')
   const [attributes, setAttributes] = useState<Record<string, any>>({})
-  const [showAdvancedAttrs, setShowAdvancedAttrs] = useState(false)
   const [error, setError] = useState('')
 
   // Inline "nuevo tipo de material" fields
   const [showNewTypeInput, setShowNewTypeInput] = useState(false)
   const [newTypeName, setNewTypeName] = useState('')
 
+  // Inline custom attributes states
+  const [customAttrs, setCustomAttrs] = useState<{ code: string; name: string; type: string }[]>([])
+  const [newAttrName, setNewAttrName] = useState('')
+
   const createMaterialMut = useCreateMaterial()
   const createMaterialTypeMut = useCreateMaterialType()
-  const { data: materialTypes = [] } = useMaterialTypes()
+  const updateMaterialTypeMut = useUpdateMaterialType()
+
+  const { data: locationDetail } = useLocation(locationId)
+  const categoryId = locationDetail?.infraTypeId ?? null
+
+  const { data: materialTypes = [] } = useMaterialTypes(categoryId)
+  const { data: allSystemTypes = [] } = useMaterialTypes()
   const { data: fixedProperties = [] } = useFixedProperties()
 
   const [localCreatedTypes, setLocalCreatedTypes] = useState<any[]>([])
-  const allMaterialTypes = [...materialTypes, ...localCreatedTypes]
+  const allMaterialTypes = [...materialTypes, ...localCreatedTypes].filter(
+    (t, idx, arr) => arr.findIndex(item => item.id === t.id) === idx
+  )
 
-  const isPending = createMaterialMut.isPending || createMaterialTypeMut.isPending
+  const isPending = createMaterialMut.isPending || createMaterialTypeMut.isPending || updateMaterialTypeMut.isPending
   const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
+
+  // Update custom fields when type changes
+  useEffect(() => {
+    if (showNewTypeInput) {
+      setCustomAttrs([])
+    } else if (typeId) {
+      const selectedType = allMaterialTypes.find(t => t.id === typeId)
+      if (selectedType && selectedType.customAttributes) {
+        try {
+          const attrs = typeof selectedType.customAttributes === 'string'
+            ? JSON.parse(selectedType.customAttributes)
+            : selectedType.customAttributes
+          setCustomAttrs(Array.isArray(attrs) ? attrs : [])
+        } catch {
+          setCustomAttrs([])
+        }
+      } else {
+        setCustomAttrs([])
+      }
+    } else {
+      setCustomAttrs([])
+    }
+  }, [typeId, showNewTypeInput])
 
   function handleTypeChange(val: string) {
     if (val === '__new__') {
       setShowNewTypeInput(true)
+      setTypeId(0)
     } else {
       setShowNewTypeInput(false)
       setTypeId(Number(val))
     }
   }
 
-  function handleCreateType() {
+  async function handleConfirmNewType() {
     if (!newTypeName.trim()) return
-    const code = newTypeName.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_')
-    createMaterialTypeMut.mutate(
-      { code, name: newTypeName.trim() },
-      {
-        onSuccess: (created) => {
-          setLocalCreatedTypes(prev => [...prev, created])
-          setTypeId(created.id)
-          setNewTypeName('')
-          setShowNewTypeInput(false)
-        },
-        onError: (err: any) => {
-          setError(err?.error?.message ?? 'Error al crear tipo de material')
-        }
-      }
-    )
+    setError('')
+    try {
+      const code = newTypeName.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9_]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 50)
+
+      const createdType = await createMaterialTypeMut.mutateAsync({
+        code,
+        name: newTypeName.trim(),
+        infraTypeId: categoryId,
+        customAttributes: []
+      })
+
+      setLocalCreatedTypes(prev => [...prev, createdType])
+      setTypeId(createdType.id)
+      setShowNewTypeInput(false)
+      setNewTypeName('')
+    } catch (err: any) {
+      setError(err?.error?.message ?? 'Error al crear el tipo de material')
+    }
+  }
+
+  function handleAddCustomAttr() {
+    if (!newAttrName.trim()) return
+    const code = newAttrName.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_')
+    if (customAttrs.some(a => a.code === code) || fixedProperties.some(p => p.code === code)) {
+      setError('Ya existe una propiedad con ese nombre o código.')
+      return
+    }
+    setCustomAttrs(prev => [...prev, { code, name: newAttrName.trim(), type: 'STRING' }])
+    setNewAttrName('')
+    setError('')
   }
 
   const handleAttrChange = (code: string, val: any) => {
     setAttributes(prev => ({ ...prev, [code]: val }))
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
@@ -75,29 +135,54 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
       return
     }
 
-    if (!typeId) {
+    if (!showNewTypeInput && !typeId) {
       setError('El tipo de material es obligatorio.')
       return
     }
 
-    createMaterialMut.mutate(
-      {
-        name: name.trim(),
-        typeId,
-        description: description.trim() || undefined,
-        attributes,
-        locationId,
-      },
-      {
-        onSuccess: (data) => {
-          if (onSuccess) onSuccess(data)
-          onClose()
-        },
-        onError: (err: any) => {
-          setError(err?.error?.message ?? 'Error al añadir el material')
+    if (showNewTypeInput) {
+      setError('Por favor, confirme el nuevo tipo de material primero.')
+      return
+    }
+
+    try {
+      let finalTypeId = typeId
+
+      // Check if we need to update the existing Material Type's custom attributes
+      const selectedType = allMaterialTypes.find(t => t.id === typeId)
+      if (selectedType) {
+        const oldAttrs = selectedType.customAttributes || []
+        const oldLength = Array.isArray(oldAttrs) ? oldAttrs.length : 0
+        if (customAttrs.length > oldLength) {
+          await updateMaterialTypeMut.mutateAsync({
+            id: typeId,
+            body: { customAttributes: customAttrs }
+          })
         }
       }
-    )
+
+      // 3. Save the Material itself
+      createMaterialMut.mutate(
+        {
+          name: name.trim(),
+          typeId: finalTypeId,
+          description: description.trim() || undefined,
+          attributes,
+          locationId,
+        },
+        {
+          onSuccess: (data) => {
+            if (onSuccess) onSuccess(data)
+            onClose()
+          },
+          onError: (err: any) => {
+            setError(err?.error?.message ?? 'Error al añadir el material')
+          }
+        }
+      )
+    } catch (err: any) {
+      setError(err?.error?.message ?? 'Error al procesar el tipo de material')
+    }
   }
 
   return (
@@ -128,33 +213,43 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
             className={inputCls}
             required
           >
-            <option value="">Seleccionar tipo...</option>
+            <option value="" disabled hidden>Seleccionar tipo...</option>
+            <option value="__new__" className="text-blue-500 font-semibold" style={{ color: 'var(--primary, #2563eb)' }}>
+              + Crear nuevo tipo...
+            </option>
             {allMaterialTypes.map(t => (
               <option key={t.id} value={String(t.id)}>{t.name}</option>
             ))}
-            <option value="__new__">+ Crear nuevo tipo...</option>
           </select>
 
           {showNewTypeInput && (
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
+                list="material-type-suggestions"
                 value={newTypeName}
                 onChange={e => setNewTypeName(e.target.value)}
-                placeholder="Nombre del nuevo tipo (ej: Compresor)"
+                placeholder="Nombre del nuevo tipo (ej: Alumbrado)"
                 className={inputCls}
+                required
                 autoFocus
               />
               <button
                 type="button"
-                onClick={handleCreateType}
-                disabled={!newTypeName.trim() || createMaterialTypeMut.isPending}
-                className="px-3 py-2 text-xs text-primary-fg bg-primary rounded-lg disabled:opacity-50 shrink-0 font-semibold"
+                onClick={handleConfirmNewType}
+                disabled={createMaterialTypeMut.isPending}
+                className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors font-semibold shrink-0"
               >
-                Crear
+                {createMaterialTypeMut.isPending ? 'Confirmando...' : 'Confirmar'}
               </button>
             </div>
           )}
+
+          <datalist id="material-type-suggestions">
+            {allSystemTypes.map(t => (
+              <option key={t.id} value={t.name} />
+            ))}
+          </datalist>
         </div>
 
         <div>
@@ -168,11 +263,89 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
           />
         </div>
 
+        {/* Technical Attributes Section */}
+        {typeId > 0 && !showNewTypeInput && (
+          <div className="space-y-3 pt-2 border-t border-app-border/40">
+            <h4 className="text-xs font-bold text-fg-secondary uppercase tracking-wider">Propiedades Técnicas</h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* 1. Custom Material-Type-Specific Properties */}
+              {customAttrs.map(attr => {
+                const val = attributes[attr.code] ?? ''
+                return (
+                  <div key={attr.code}>
+                    <label className="block text-[11px] font-semibold text-primary mb-1">
+                      {attr.name}
+                    </label>
+                    <input
+                      type={attr.type === 'NUMBER' ? 'number' : attr.type === 'DATE' ? 'date' : 'text'}
+                      value={attr.type === 'NUMBER' && val === '' ? '' : val}
+                      onChange={e => {
+                        let parsedVal: any = e.target.value
+                        if (attr.type === 'NUMBER') {
+                          parsedVal = e.target.value === '' ? '' : Number(e.target.value)
+                        }
+                        handleAttrChange(attr.code, parsedVal)
+                      }}
+                      placeholder={`Ej: ${attr.name}`}
+                      className={inputCls}
+                    />
+                  </div>
+                )
+              })}
 
+              {/* 2. Global Fixed Properties */}
+              {fixedProperties.map(prop => {
+                const val = attributes[prop.code] ?? ''
+                return (
+                  <div key={prop.code}>
+                    <label className="block text-[11px] font-semibold text-muted mb-1">
+                      {prop.name} (Global)
+                    </label>
+                    <input
+                      type={prop.type === 'NUMBER' ? 'number' : prop.type === 'DATE' ? 'date' : 'text'}
+                      value={prop.type === 'NUMBER' && val === '' ? '' : val}
+                      onChange={e => {
+                        let parsedVal: any = e.target.value
+                        if (prop.type === 'NUMBER') {
+                          parsedVal = e.target.value === '' ? '' : Number(e.target.value)
+                        }
+                        handleAttrChange(prop.code, parsedVal)
+                      }}
+                      placeholder={`Ej: ${prop.name}`}
+                      className={inputCls}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* 3. Inline custom attribute adder */}
+            <div className="pt-2 border-t border-dashed border-app-border/40 space-y-1.5">
+              <label className="block text-[10px] font-semibold text-fg-secondary">Añadir Campo/Propiedad Técnica (Inline)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newAttrName}
+                  onChange={e => setNewAttrName(e.target.value)}
+                  placeholder="Ej: Potencia (W), Marca, Modelo..."
+                  className="flex-1 border border-app-border rounded-lg px-3 py-1 bg-card text-xs text-fg focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomAttr}
+                  className="px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Añadir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && <p className="text-error text-xs">{error}</p>}
 
-        <div className="flex justify-end gap-3 pt-2 border-t border-app-border/40">
+        <div className="sticky bottom-0 bg-card flex justify-end gap-3 pt-4 pb-1 border-t border-app-border/40 z-10">
           <button
             type="button"
             onClick={onClose}

@@ -1,8 +1,13 @@
-import { useState, Fragment } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { Modal } from '../ui/Modal'
 import { useLocation } from '../../hooks/useLocations'
-import { useMaterialTypes, useCreateMaterialType, useFixedProperties } from '../../hooks/useCatalog'
-import { Plus, Trash, Pencil, Folder, Package, RotateCcw, ChevronDown, ChevronRight, Eye } from 'lucide-react'
+import {
+  useMaterialTypes,
+  useCreateMaterialType,
+  useUpdateMaterialType,
+  useFixedProperties,
+} from '../../hooks/useCatalog'
+import { Plus, Trash, Pencil, Folder, Package, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import type { Material, Location } from '../../api/types'
 
 export interface MaterialChange {
@@ -19,6 +24,7 @@ export interface MaterialChange {
     code: string
     name: string
     icon: string | null
+    customAttributes?: any
   }
 }
 
@@ -44,26 +50,58 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
   const [dialogTypeId, setDialogTypeId] = useState<number>(0)
   const [dialogDescription, setDialogDescription] = useState('')
   const [dialogAttributes, setDialogAttributes] = useState<Record<string, any>>({})
-  const [showAdvancedAttrs, setShowAdvancedAttrs] = useState(false)
   const [dialogError, setDialogError] = useState('')
 
   // Inline "nuevo tipo de material" fields
   const [showNewTypeInput, setShowNewTypeInput] = useState(false)
   const [newTypeName, setNewTypeName] = useState('')
 
+  // Inline custom attributes states
+  const [customAttrs, setCustomAttrs] = useState<{ code: string; name: string; type: string }[]>([])
+  const [newAttrName, setNewAttrName] = useState('')
+
   // Queries
   const { data: rootDetail, isLoading: loadingRoot } = useLocation(rootLocationId)
-  const { data: materialTypes = [] } = useMaterialTypes()
+  const rootLoc = allLocations.find(l => l.id === rootLocationId)
+  const categoryId = rootLoc?.infraTypeId ?? null
+
+  const { data: materialTypes = [] } = useMaterialTypes(categoryId)
+  const { data: allSystemTypes = [] } = useMaterialTypes()
   const { data: fixedProperties = [] } = useFixedProperties()
   const createMaterialTypeMut = useCreateMaterialType()
+  const updateMaterialTypeMut = useUpdateMaterialType()
 
   const [localCreatedTypes, setLocalCreatedTypes] = useState<any[]>([])
-  const allMaterialTypes = [...materialTypes, ...localCreatedTypes]
+  const allMaterialTypes = [...materialTypes, ...localCreatedTypes].filter(
+    (t, idx, arr) => arr.findIndex(item => item.id === t.id) === idx
+  )
 
   const isLoading = loadingRoot
-
-  const [localCreatedTypesPlaceholder, setLocalCreatedTypesPlaceholder] = useState<any[]>([]) // dummy to match lines or just leave it
+  const isPending = createMaterialTypeMut.isPending || updateMaterialTypeMut.isPending
   const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
+
+  // Update custom attributes when dialogTypeId or showNewTypeInput changes
+  useEffect(() => {
+    if (showNewTypeInput) {
+      setCustomAttrs([])
+    } else if (dialogTypeId) {
+      const selectedType = allMaterialTypes.find(t => t.id === dialogTypeId)
+      if (selectedType && selectedType.customAttributes) {
+        try {
+          const attrs = typeof selectedType.customAttributes === 'string'
+            ? JSON.parse(selectedType.customAttributes)
+            : selectedType.customAttributes
+          setCustomAttrs(Array.isArray(attrs) ? attrs : [])
+        } catch {
+          setCustomAttrs([])
+        }
+      } else {
+        setCustomAttrs([])
+      }
+    } else {
+      setCustomAttrs([])
+    }
+  }, [dialogTypeId, showNewTypeInput])
 
   // Toggle node expansion
   const toggleNode = (id: number) => {
@@ -79,8 +117,10 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
     setDialogTypeId(0)
     setDialogDescription('')
     setDialogAttributes({})
-    setShowAdvancedAttrs(false)
     setShowNewTypeInput(false)
+    setNewTypeName('')
+    setCustomAttrs([])
+    setNewAttrName('')
     setDialogError('')
     setShowDialog(true)
   }
@@ -92,8 +132,24 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
     setDialogTypeId(mat.typeId)
     setDialogDescription(mat.description ?? '')
     setDialogAttributes(mat.attributes ?? {})
-    setShowAdvancedAttrs(Object.keys(mat.attributes ?? {}).length > 0)
     setShowNewTypeInput(false)
+    setNewTypeName('')
+    setNewAttrName('')
+
+    const selectedType = allMaterialTypes.find(t => t.id === mat.typeId)
+    if (selectedType && selectedType.customAttributes) {
+      try {
+        const attrs = typeof selectedType.customAttributes === 'string'
+          ? JSON.parse(selectedType.customAttributes)
+          : selectedType.customAttributes
+        setCustomAttrs(Array.isArray(attrs) ? attrs : [])
+      } catch {
+        setCustomAttrs([])
+      }
+    } else {
+      setCustomAttrs([])
+    }
+
     setDialogError('')
     setShowDialog(true)
   }
@@ -101,87 +157,143 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
   function handleTypeChange(val: string) {
     if (val === '__new__') {
       setShowNewTypeInput(true)
+      setDialogTypeId(0)
     } else {
       setShowNewTypeInput(false)
       setDialogTypeId(Number(val))
     }
   }
 
-  function handleCreateType() {
+  async function handleConfirmNewType() {
     if (!newTypeName.trim()) return
-    const code = newTypeName.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_')
-    createMaterialTypeMut.mutate(
-      { code, name: newTypeName.trim() },
-      {
-        onSuccess: (created) => {
-          setLocalCreatedTypes(prev => [...prev, created])
-          setDialogTypeId(created.id)
-          setNewTypeName('')
-          setShowNewTypeInput(false)
-        },
-        onError: (err: any) => {
-          setDialogError(err?.error?.message ?? 'Error al crear tipo de material')
-        }
-      }
-    )
+    setDialogError('')
+    try {
+      const code = newTypeName.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9_]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 50)
+
+      const createdType = await createMaterialTypeMut.mutateAsync({
+        code,
+        name: newTypeName.trim(),
+        infraTypeId: categoryId,
+        customAttributes: []
+      })
+
+      setLocalCreatedTypes(prev => [...prev, createdType])
+      setDialogTypeId(createdType.id)
+      setShowNewTypeInput(false)
+      setNewTypeName('')
+    } catch (err: any) {
+      setDialogError(err?.error?.message ?? 'Error al crear el tipo de material')
+    }
   }
 
-  function handleSaveDialog() {
-    if (!dialogName.trim() || !dialogTypeId) {
-      setDialogError('Nombre y tipo son obligatorios.')
+  function handleAddCustomAttr() {
+    if (!newAttrName.trim()) return
+    const code = newAttrName.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_')
+    if (customAttrs.some(a => a.code === code) || fixedProperties.some(p => p.code === code)) {
+      setDialogError('Ya existe una propiedad con ese nombre o código.')
       return
     }
-    const typeObj = allMaterialTypes.find(t => t.id === dialogTypeId)
-    if (!typeObj) return
+    setCustomAttrs(prev => [...prev, { code, name: newAttrName.trim(), type: 'STRING' }])
+    setNewAttrName('')
+    setDialogError('')
+  }
 
-    if (dialogEditingChangeId) {
-      // Editing staged or existing change
-      const exists = changes.some(c => c.tempId === dialogEditingChangeId)
-      if (exists) {
-        setChanges(prev => prev.map(c => {
-          if (c.tempId === dialogEditingChangeId) {
-            return {
-              ...c,
-              name: dialogName.trim(),
-              typeId: dialogTypeId,
-              description: dialogDescription.trim() || null,
-              attributes: dialogAttributes,
-              type: typeObj,
-              operation: c.operation === 'INSTALL' ? 'INSTALL' : 'UPDATE'
+  async function handleSaveDialog(e: React.FormEvent) {
+    e.preventDefault()
+    setDialogError('')
+
+    if (!dialogName.trim()) {
+      setDialogError('Nombre es obligatorio.')
+      return
+    }
+
+    if (!showNewTypeInput && !dialogTypeId) {
+      setDialogError('Tipo de material es obligatorio.')
+      return
+    }
+
+    if (showNewTypeInput) {
+      setDialogError('Por favor, confirme el nuevo tipo de material primero.')
+      return
+    }
+
+    try {
+      let finalTypeId = dialogTypeId
+      let typeObj = allMaterialTypes.find(t => t.id === dialogTypeId)
+
+      // Check if we need to update custom attributes of the existing type
+      const selectedType = allMaterialTypes.find(t => t.id === dialogTypeId)
+      if (selectedType) {
+        const oldAttrs = selectedType.customAttributes || []
+        const oldLength = Array.isArray(oldAttrs) ? oldAttrs.length : 0
+        if (customAttrs.length > oldLength) {
+          const updatedType = await updateMaterialTypeMut.mutateAsync({
+            id: dialogTypeId,
+            body: { customAttributes: customAttrs }
+          })
+          // Update local types list to keep cache updated
+          setLocalCreatedTypes(prev => prev.map(t => t.id === dialogTypeId ? updatedType : t))
+          typeObj = updatedType
+        }
+      }
+
+      if (!typeObj) return
+
+      if (dialogEditingChangeId) {
+        // Editing staged or existing change
+        const exists = changes.some(c => c.tempId === dialogEditingChangeId)
+        if (exists) {
+          setChanges(prev => prev.map(c => {
+            if (c.tempId === dialogEditingChangeId) {
+              return {
+                ...c,
+                name: dialogName.trim(),
+                typeId: finalTypeId,
+                description: dialogDescription.trim() || null,
+                attributes: dialogAttributes,
+                type: typeObj!,
+                operation: c.operation === 'INSTALL' ? 'INSTALL' : 'UPDATE'
+              }
             }
+            return c
+          }))
+        } else if (dialogEditingChangeId.startsWith('existing-')) {
+          const matId = Number(dialogEditingChangeId.replace('existing-', ''))
+          const newUpdateChange: MaterialChange = {
+            tempId: dialogEditingChangeId,
+            materialId: matId,
+            name: dialogName.trim(),
+            typeId: finalTypeId,
+            description: dialogDescription.trim() || null,
+            attributes: dialogAttributes,
+            locationId: dialogTargetFolderId,
+            operation: 'UPDATE',
+            type: typeObj!
           }
-          return c
-        }))
-      } else if (dialogEditingChangeId.startsWith('existing-')) {
-        const matId = Number(dialogEditingChangeId.replace('existing-', ''))
-        const newUpdateChange: MaterialChange = {
-          tempId: dialogEditingChangeId,
-          materialId: matId,
+          setChanges(prev => [...prev, newUpdateChange])
+        }
+      } else {
+        // Adding new material to this folder
+        const newChange: MaterialChange = {
+          tempId: `new-${Date.now()}-${Math.random()}`,
           name: dialogName.trim(),
-          typeId: dialogTypeId,
+          typeId: finalTypeId,
           description: dialogDescription.trim() || null,
           attributes: dialogAttributes,
           locationId: dialogTargetFolderId,
-          operation: 'UPDATE',
-          type: typeObj
+          operation: 'INSTALL',
+          type: typeObj!
         }
-        setChanges(prev => [...prev, newUpdateChange])
+        setChanges(prev => [...prev, newChange])
       }
-    } else {
-      // Adding new material to this folder
-      const newChange: MaterialChange = {
-        tempId: `new-${Date.now()}-${Math.random()}`,
-        name: dialogName.trim(),
-        typeId: dialogTypeId,
-        description: dialogDescription.trim() || null,
-        attributes: dialogAttributes,
-        locationId: dialogTargetFolderId,
-        operation: 'INSTALL',
-        type: typeObj
-      }
-      setChanges(prev => [...prev, newChange])
+      setShowDialog(false)
+    } catch (err: any) {
+      setDialogError(err?.error?.message ?? 'Error al guardar tipo de material')
     }
-    setShowDialog(false)
   }
 
   // Toggle uninstall/remove of existing material
@@ -442,6 +554,7 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
                     )}
                   </div>
 
+                  {/* Actions column - cleaned up to avoid duplicate restore buttons */}
                   <div className="flex items-center gap-1.5 shrink-0 pl-1">
                     {!isDeleted && (
                       <button
@@ -453,28 +566,37 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                     )}
-                    {(isEdited || isDeleted) && (
+                    {isDeleted ? (
                       <button
                         type="button"
-                        onClick={() => handleRestoreMaterial(m.id)}
+                        onClick={() => handleRemoveMaterial(m, node.id)}
                         className="p-1 text-primary hover:text-primary-hover hover:bg-app-bg rounded transition-colors"
-                        title="Deshacer cambios"
+                        title="Restaurar"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                       </button>
+                    ) : (
+                      <>
+                        {isEdited && (
+                          <button
+                            type="button"
+                            onClick={() => handleRestoreMaterial(m.id)}
+                            className="p-1 text-primary hover:text-primary-hover hover:bg-app-bg rounded transition-colors"
+                            title="Deshacer cambios"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMaterial(m, node.id)}
+                          className="p-1 text-muted hover:text-error hover:bg-app-bg rounded transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash className="w-3.5 h-3.5" />
+                        </button>
+                      </>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMaterial(m, node.id)}
-                      className="p-1 text-muted hover:text-error hover:bg-app-bg rounded transition-colors"
-                      title={isDeleted ? 'Restaurar' : 'Eliminar'}
-                    >
-                      {isDeleted ? (
-                        <RotateCcw className="w-3.5 h-3.5 text-primary hover:text-primary-hover" />
-                      ) : (
-                        <Trash className="w-3.5 h-3.5" />
-                      )}
-                    </button>
                   </div>
                 </div>
               )
@@ -498,12 +620,12 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
           ) : rootNode ? (
             renderTreeNode(rootNode, 0)
           ) : (
-            <div className="text-center py-20 text-error text-sm">Error al cargar la ubicación raíz.</div>
+            <div className="text-center py-20 text-muted text-sm italic">Ubicación no encontrada.</div>
           )}
         </div>
 
-        {/* Modal actions */}
-        <div className="flex justify-end gap-3 pt-3 border-t border-app-border/40 bg-card shrink-0">
+        {/* Action buttons */}
+        <div className="flex justify-end gap-3 pt-4 pb-1 border-t border-app-border shrink-0 bg-card">
           <button
             type="button"
             onClick={onClose}
@@ -515,35 +637,29 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
             type="button"
             onClick={() => onConfirm(changes)}
             disabled={isLoading}
-            className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors font-semibold"
+            className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] transition-colors font-bold"
           >
             Confirmar Cambios ({changes.length})
           </button>
         </div>
       </div>
 
-      {/* Sub-modal: Stage Add/Edit Material */}
+      {/* Sub-modal Form Dialog for Adding/Editing Materials */}
       {showDialog && (
         <Modal
-          title={dialogEditingChangeId ? 'Editar Detalles del Equipo' : 'Registrar Equipo'}
+          title={dialogEditingChangeId ? 'Editar Material' : 'Añadir Material a la Ubicación'}
           onClose={() => setShowDialog(false)}
         >
-          <form
-            onSubmit={e => {
-              e.preventDefault()
-              handleSaveDialog()
-            }}
-            className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
-          >
+          <form onSubmit={handleSaveDialog} className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             <div>
               <label className="block text-xs font-semibold text-fg-secondary mb-1">
-                Nombre del Equipo <span className="text-error">*</span>
+                Nombre del Material <span className="text-error">*</span>
               </label>
               <input
                 type="text"
                 value={dialogName}
                 onChange={e => setDialogName(e.target.value)}
-                placeholder="Ej: Bombilla Inteligente Retiro 4"
+                placeholder="Ej: Bomba Centrífuga"
                 className={inputCls}
                 required
                 autoFocus
@@ -560,33 +676,43 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
                 className={inputCls}
                 required
               >
-                <option value="">Seleccionar tipo...</option>
+                <option value="" disabled hidden>Seleccionar tipo...</option>
+                <option value="__new__" className="text-blue-500 font-semibold" style={{ color: 'var(--primary, #2563eb)' }}>
+                  + Crear nuevo tipo...
+                </option>
                 {allMaterialTypes.map(t => (
                   <option key={t.id} value={String(t.id)}>{t.name}</option>
                 ))}
-                <option value="__new__">+ Crear nuevo tipo...</option>
               </select>
 
               {showNewTypeInput && (
                 <div className="mt-2 flex gap-2">
                   <input
                     type="text"
+                    list="dialog-material-type-suggestions"
                     value={newTypeName}
                     onChange={e => setNewTypeName(e.target.value)}
                     placeholder="Nombre del nuevo tipo"
                     className={inputCls}
+                    required
                     autoFocus
                   />
                   <button
                     type="button"
-                    onClick={handleCreateType}
-                    disabled={!newTypeName.trim() || createMaterialTypeMut.isPending}
-                    className="px-3 py-2 text-xs text-primary-fg bg-primary rounded-lg disabled:opacity-50 shrink-0 font-semibold"
+                    onClick={handleConfirmNewType}
+                    disabled={createMaterialTypeMut.isPending}
+                    className="px-3 py-2 text-xs text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors font-semibold shrink-0"
                   >
-                    Crear
+                    {createMaterialTypeMut.isPending ? 'Confirmando...' : 'Confirmar'}
                   </button>
                 </div>
               )}
+
+              <datalist id="dialog-material-type-suggestions">
+                {allSystemTypes.map(t => (
+                  <option key={t.id} value={t.name} />
+                ))}
+              </datalist>
             </div>
 
             <div>
@@ -600,10 +726,89 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
               />
             </div>
 
+            {/* Technical Attributes Section */}
+            {dialogTypeId > 0 && !showNewTypeInput && (
+              <div className="space-y-3 pt-2 border-t border-app-border/40">
+                <h4 className="text-xs font-bold text-fg-secondary uppercase tracking-wider">Propiedades Técnicas</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* 1. Custom Material-Type-Specific Properties */}
+                  {customAttrs.map(attr => {
+                    const val = dialogAttributes[attr.code] ?? ''
+                    return (
+                      <div key={attr.code}>
+                        <label className="block text-[11px] font-semibold text-primary mb-1">
+                          {attr.name}
+                        </label>
+                        <input
+                          type={attr.type === 'NUMBER' ? 'number' : attr.type === 'DATE' ? 'date' : 'text'}
+                          value={attr.type === 'NUMBER' && val === '' ? '' : val}
+                          onChange={e => {
+                            let parsedVal: any = e.target.value
+                            if (attr.type === 'NUMBER') {
+                              parsedVal = e.target.value === '' ? '' : Number(e.target.value)
+                            }
+                            setDialogAttributes(prev => ({ ...prev, [attr.code]: parsedVal }))
+                          }}
+                          placeholder={`Ej: ${attr.name}`}
+                          className={inputCls}
+                        />
+                      </div>
+                    )
+                  })}
+
+                  {/* 2. Global Fixed Properties */}
+                  {fixedProperties.map(prop => {
+                    const val = dialogAttributes[prop.code] ?? ''
+                    return (
+                      <div key={prop.code}>
+                        <label className="block text-[11px] font-semibold text-muted mb-1">
+                          {prop.name} (Global)
+                        </label>
+                        <input
+                          type={prop.type === 'NUMBER' ? 'number' : prop.type === 'DATE' ? 'date' : 'text'}
+                          value={prop.type === 'NUMBER' && val === '' ? '' : val}
+                          onChange={e => {
+                            let parsedVal: any = e.target.value
+                            if (prop.type === 'NUMBER') {
+                              parsedVal = e.target.value === '' ? '' : Number(e.target.value)
+                            }
+                            setDialogAttributes(prev => ({ ...prev, [prop.code]: parsedVal }))
+                          }}
+                          placeholder={`Ej: ${prop.name}`}
+                          className={inputCls}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* 3. Inline custom attribute adder */}
+                <div className="pt-2 border-t border-dashed border-app-border/40 space-y-1.5">
+                  <label className="block text-[10px] font-semibold text-fg-secondary">Añadir Campo/Propiedad Técnica (Inline)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newAttrName}
+                      onChange={e => setNewAttrName(e.target.value)}
+                      placeholder="Ej: Potencia (W), Marca, Modelo..."
+                      className="flex-1 border border-app-border rounded-lg px-3 py-1 bg-card text-xs text-fg focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomAttr}
+                      disabled={isPending}
+                      className="px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Añadir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {dialogError && <p className="text-error text-xs">{dialogError}</p>}
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-app-border">
+            <div className="sticky bottom-0 bg-card flex justify-end gap-2 pt-4 pb-1 border-t border-app-border z-10">
               <button
                 type="button"
                 onClick={() => setShowDialog(false)}
@@ -613,9 +818,10 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
               </button>
               <button
                 type="submit"
+                disabled={isPending}
                 className="px-3 py-1.5 text-xs text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] font-semibold"
               >
-                Aceptar
+                {isPending ? 'Guardando...' : 'Aceptar'}
               </button>
             </div>
           </form>
