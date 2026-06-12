@@ -1,16 +1,21 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Search, Package } from 'lucide-react'
 import { useMaterials } from '../../hooks/useMaterials'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
+import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
+import type { Material } from '../../api/types'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 export function MaterialsPage() {
+  const navigate = useNavigate()
   const { data: materials = [], isLoading } = useMaterials()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
 
   const allTypes = Array.from(
     new Map(materials.map(m => [m.type.id, m.type.name])).entries()
@@ -20,6 +25,7 @@ export function MaterialsPage() {
     const matchesSearch =
       m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.type.name.toLowerCase().includes(search.toLowerCase()) ||
+      (m.location?.name ?? '').toLowerCase().includes(search.toLowerCase()) ||
       (String(m.attributes?.serial_number ?? '')).toLowerCase().includes(search.toLowerCase())
     const matchesType = !typeFilter || String(m.type.id) === typeFilter
     return matchesSearch && matchesType
@@ -36,7 +42,7 @@ export function MaterialsPage() {
           <Search className="w-4 h-4 text-muted shrink-0" />
           <input
             type="text"
-            placeholder="Buscar por nombre o tipo..."
+            placeholder="Buscar por nombre, tipo o ubicación..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
@@ -71,9 +77,9 @@ export function MaterialsPage() {
               style={{ borderBottom: '1px solid var(--border)' }}
             >
               <div className="flex-1 px-4">Nombre</div>
+              <div className="w-48 px-3">Ubicación</div>
+              <div className="w-32 px-3">Instalado</div>
               <div className="w-40 px-3">Tipo</div>
-              <div className="w-36 px-3">Nº Serie</div>
-              <div className="w-28 px-3">Instalado</div>
             </div>
 
             {filtered.length === 0 ? (
@@ -84,7 +90,8 @@ export function MaterialsPage() {
               filtered.map(m => (
                 <div
                   key={m.id}
-                  className="flex flex-col md:flex-row md:items-center min-h-[50px] py-3 md:py-2 text-[13px] hover:bg-app-bg transition-colors px-4 md:px-0"
+                  onClick={() => setSelectedMaterial(m)}
+                  className="flex flex-col md:flex-row md:items-center min-h-[50px] py-3 md:py-2 text-[13px] hover:bg-app-bg transition-colors px-4 md:px-0 cursor-pointer"
                   style={{ borderBottom: '1px solid var(--border)' }}
                 >
                   <div className="flex-1 flex items-start gap-2 min-w-0 md:px-4">
@@ -95,27 +102,61 @@ export function MaterialsPage() {
                       
                       {/* Mobile metadata detail block */}
                       <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[11px] text-muted md:hidden">
-                        <span>Tipo: <span className="text-fg-secondary font-medium">{m.type.name}</span></span>
-                        {m.attributes?.serial_number && (
-                          <span>S/N: <span className="text-fg-secondary font-medium">{m.attributes.serial_number}</span></span>
-                        )}
+                        <span>
+                          Ubicación:{' '}
+                          {m.location ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/locations/${m.locationId}`)
+                              }}
+                              className="text-primary hover:underline font-semibold text-left"
+                            >
+                              {m.location.name}
+                            </button>
+                          ) : (
+                            <span className="text-fg-secondary font-medium">—</span>
+                          )}
+                        </span>
                         {m.installedAt && (
                           <span>Instalado: <span className="text-fg-secondary font-medium">{formatDate(m.installedAt)}</span></span>
                         )}
+                        <span>Tipo: <span className="text-fg-secondary font-medium">{m.type.name}</span></span>
                       </div>
                     </div>
                   </div>
-                  <div className="hidden md:block w-40 px-3 text-fg-secondary truncate">{m.type.name}</div>
-                  <div className="hidden md:block w-36 px-3 text-muted truncate">{String(m.attributes?.serial_number ?? '—')}</div>
-                  <div className="hidden md:block w-28 px-3 text-muted">
+                  <div className="hidden md:block w-48 px-3 text-fg-secondary truncate">
+                    {m.location ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/locations/${m.locationId}`)
+                        }}
+                        className="text-primary hover:underline font-semibold text-left truncate max-w-full"
+                      >
+                        {m.location.name}
+                      </button>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                  <div className="hidden md:block w-32 px-3 text-muted">
                     {m.installedAt ? formatDate(m.installedAt) : '—'}
                   </div>
+                  <div className="hidden md:block w-40 px-3 text-fg-secondary truncate">{m.type.name}</div>
                 </div>
               ))
             )}
           </div>
         )}
       </div>
+
+      {selectedMaterial && (
+        <MaterialEditAttributesModal
+          material={selectedMaterial}
+          onClose={() => setSelectedMaterial(null)}
+        />
+      )}
     </div>
   )
 }
