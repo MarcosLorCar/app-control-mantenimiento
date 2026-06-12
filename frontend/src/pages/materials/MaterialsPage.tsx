@@ -32,7 +32,7 @@ export function MaterialsPage() {
   })
 
   return (
-    <div className="flex flex-col h-full -m-5 md:-m-8">
+    <div className="flex flex-col min-h-full -m-5 md:-m-8">
       {/* Barra de filtros */}
       <div
         className="flex flex-col sm:flex-row sm:items-center gap-3 px-5 sm:px-7 py-3 bg-card shrink-0"
@@ -63,7 +63,7 @@ export function MaterialsPage() {
       </div>
 
       {/* Contenido */}
-      <div className="flex-1 overflow-auto p-5 md:p-7 flex flex-col gap-3">
+      <div className="p-5 md:p-7 flex flex-col gap-3">
         <p className="text-[13px] text-muted">
           {filtered.length} material{filtered.length !== 1 ? 'es' : ''}
         </p>
