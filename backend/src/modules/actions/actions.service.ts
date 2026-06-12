@@ -11,7 +11,8 @@ const ACTION_INCLUDE = {
               id: true,
               code: true,
               name: true,
-              icon: true
+              icon: true,
+              customAttributes: true
             }
           }
         }

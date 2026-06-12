@@ -50,7 +50,8 @@ model InfrastructureType {
   color       String?
   deletedAt   DateTime?
 
-  locations Location[]
+  locations     Location[]
+  materialTypes MaterialType[] // <--- Relation to MaterialType
 
   @@map("infrastructure_types")
 }
@@ -70,6 +71,7 @@ model Location {
 
   latitude    Float?
   longitude   Float?
+  image       String?   // <--- Image path of the location
 
   infraTypeId Int
   infraType   InfrastructureType @relation(fields: [infraTypeId], references: [id])
@@ -92,14 +94,17 @@ model Location {
 // ==================== MATERIAL CATALOG ====================
 
 model MaterialType {
-  id          Int       @id @default(autoincrement())
-  code        String
-  name        String
-  description String?
-  icon        String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id               Int       @id @default(autoincrement())
+  code             String
+  name             String
+  description      String?
+  icon             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+  infraTypeId      Int?      // <--- Belongs to Category
+  infraType        InfrastructureType? @relation(fields: [infraTypeId], references: [id])
+  customAttributes Json      @default("[]") // <--- Technical attributes per material type
 
   materials  Material[]
 

@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import type { CreateLocationInput, UpdateLocationInput } from './locations.schema'
 
-export function listLocations(
+export async function listLocations(
   db: PrismaClient,
   filters?: { parentId?: number | null; infraTypeId?: number }
 ) {
@@ -16,7 +16,7 @@ export function listLocations(
     }
   }
 
-  return db.location.findMany({
+  const locations = await db.location.findMany({
     where: whereClause,
     include: {
       _count: {
@@ -36,6 +36,34 @@ export function listLocations(
       },
     },
     orderBy: { name: 'asc' },
+  })
+
+  // Fetch active materials and their location's path to count recursively
+  const materials = await db.material.findMany({
+    where: {
+      deletedAt: null,
+      location: {
+        deletedAt: null
+      }
+    },
+    select: {
+      location: {
+        select: {
+          path: true
+        }
+      }
+    }
+  })
+
+  return locations.map(loc => {
+    const recursiveMaterialsCount = materials.filter(m => m.location?.path.startsWith(loc.path)).length
+    return {
+      ...loc,
+      _count: {
+        ...loc._count,
+        materials: recursiveMaterialsCount
+      }
+    }
   })
 }
 
@@ -60,7 +88,7 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
       materials: {
         where: { deletedAt: null },
         include: {
-          type: { select: { id: true, name: true, code: true } },
+          type: { select: { id: true, name: true, code: true, customAttributes: true } },
         },
         orderBy: { name: 'asc' },
       },
@@ -83,6 +111,23 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
 
   if (!current) return null
 
+  // Fetch active materials and their location's path to count recursively
+  const materials = await db.material.findMany({
+    where: {
+      deletedAt: null,
+      location: {
+        deletedAt: null
+      }
+    },
+    select: {
+      location: {
+        select: {
+          path: true
+        }
+      }
+    }
+  })
+
   // Fetch all materials in descendants (subfolders)
   const descendantMaterials = await db.material.findMany({
     where: {
@@ -94,14 +139,26 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
       deletedAt: null,
     },
     include: {
-      type: { select: { id: true, name: true, code: true } },
+      type: { select: { id: true, name: true, code: true, customAttributes: true } },
       location: { select: { id: true, name: true, path: true } },
     },
     orderBy: { name: 'asc' },
   })
 
+  const mappedChildren = current.children.map(child => {
+    const recursiveMaterialsCount = materials.filter(m => m.location?.path.startsWith(child.path)).length
+    return {
+      ...child,
+      _count: {
+        ...child._count,
+        materials: recursiveMaterialsCount
+      }
+    }
+  })
+
   return {
     ...current,
+    children: mappedChildren,
     descendantMaterials,
   }
 }

@@ -35,7 +35,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     jwtDecode: 'refreshJwtDecode',
     cookie: { cookieName: 'refreshToken', signed: false },
   })
-  await app.register(fastifyMultipart, { limits: { fileSize: 500 * 1024 } })
+  await app.register(fastifyMultipart, { limits: { fileSize: 10 * 1024 * 1024 } })
   await app.register(fastifyStatic, {
     root: path.join(__dirname, '..', 'uploads'),
     prefix: '/uploads/',

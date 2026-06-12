@@ -5,12 +5,15 @@ export const CreateMaterialTypeSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   icon: z.string().optional(),
+  infraTypeId: z.number().int().positive().nullable().optional(),
+  customAttributes: z.unknown().optional(),
 })
 
 export const UpdateMaterialTypeSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().optional(),
   icon: z.string().optional(),
+  customAttributes: z.unknown().optional(),
 })
 
 export const CreateFixedPropertySchema = z.object({

@@ -11,7 +11,9 @@ import {
 export async function materialCatalogRoutes(app: FastifyInstance) {
   // Material Types Catalog
   app.get('/material-types', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    return reply.send({ data: await listMaterialTypes(app.db) })
+    const query = req.query as { infraTypeId?: string }
+    const infraTypeId = query.infraTypeId ? Number(query.infraTypeId) : undefined
+    return reply.send({ data: await listMaterialTypes(app.db, infraTypeId) })
   })
 
   app.post('/material-types', { preHandler: [app.requireWrite] }, async (req, reply) => {
@@ -20,16 +22,45 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
     const existing = await app.db.materialType.findFirst({
-      where: { code: parsed.data.code, deletedAt: null },
+      where: {
+        OR: [
+          { code: parsed.data.code },
+          { name: { equals: parsed.data.name, mode: 'insensitive' } }
+        ]
+      }
     })
+
     if (existing) {
-      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de tipo ya existe' } })
+      const shouldSync = parsed.data.infraTypeId && existing.infraTypeId !== parsed.data.infraTypeId && existing.infraTypeId !== null
+      const shouldRestore = existing.deletedAt !== null
+
+      if (shouldSync || shouldRestore) {
+        const updated = await app.db.materialType.update({
+          where: { id: existing.id },
+          data: {
+            infraTypeId: shouldSync ? null : existing.infraTypeId,
+            deletedAt: shouldRestore ? null : undefined,
+          },
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            description: true,
+            icon: true,
+            infraTypeId: true,
+            customAttributes: true,
+          }
+        })
+        return reply.status(200).send({ data: updated })
+      }
+      return reply.status(200).send({ data: existing })
     }
+
     const data = await createMaterialType(app.db, parsed.data)
     return reply.status(201).send({ data })
   })
 
-  app.patch('/material-types/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+  app.patch('/material-types/:id', { preHandler: [app.requireWrite] }, async (req, reply) => {
     const id = Number((req.params as any).id)
     const existing = await app.db.materialType.findFirst({ where: { id, deletedAt: null } })
     if (!existing) {

@@ -13,7 +13,8 @@ const MATERIAL_SELECT = {
       id: true,
       code: true,
       name: true,
-      icon: true
+      icon: true,
+      customAttributes: true
     }
   },
   locationId: true,
