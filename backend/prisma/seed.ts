@@ -369,6 +369,37 @@ async function main() {
     },
   })
 
+  // Materiales en niveles de ubicación intermedios
+  await prisma.material.create({
+    data: {
+      name: 'Sensor Ambiental Vestíbulo',
+      typeId: sensor.id,
+      description: 'Sensor IoT de monitorización de ambiente en el hall principal del Hospital',
+      locationId: hospital.id,
+      attributes: {
+        serial_number: 'SNS-AMB-HOSP-001',
+        purchase_date: '2025-03-20',
+        warranty_period: 24,
+        supplier: 'Sensors Inc.',
+      },
+    },
+  })
+
+  await prisma.material.create({
+    data: {
+      name: 'Extractor de Flujo Laminar EXT-P3',
+      typeId: hvac.id,
+      description: 'Extractor de aire regulado para la Planta 3 - Quirófanos',
+      locationId: planta3.id,
+      attributes: {
+        serial_number: 'EXTR-FLUX-P3-09',
+        purchase_date: '2024-06-01',
+        warranty_period: 36,
+        supplier: 'ClimaCorp S.A.',
+      },
+    },
+  })
+
   // --- ACCIONES (Maintenance actions) ---
 
   const actHosp = await prisma.action.create({

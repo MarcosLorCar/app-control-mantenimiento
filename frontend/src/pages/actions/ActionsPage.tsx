@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Plus } from 'lucide-react'
 import { useActions } from '../../hooks/useActions'
 import { RoleGuard } from '../../components/RoleGuard'
-import { ActionForm } from './ActionForm'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -14,7 +13,6 @@ export function ActionsPage() {
   const { data: actions = [], isLoading } = useActions()
 
   const [search, setSearch] = useState('')
-  const [showNewForm, setShowNewForm] = useState(false)
 
   const filtered = actions.filter(a =>
     a.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -43,7 +41,7 @@ export function ActionsPage() {
         </div>
         <RoleGuard require="write">
           <button
-            onClick={() => setShowNewForm(true)}
+            onClick={() => navigate('/actions/new')}
             className="flex items-center justify-center gap-1.5 bg-primary text-primary-fg text-[13px] font-medium px-4 h-9 rounded-lg hover:bg-[var(--primary-hover)] transition-colors shrink-0 w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
@@ -133,8 +131,6 @@ export function ActionsPage() {
           )}
         </div>
       </div>
-
-      {showNewForm && <ActionForm onClose={() => setShowNewForm(false)} />}
     </div>
   )
 }

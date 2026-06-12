@@ -170,6 +170,7 @@ model Action {
 enum MaterialOperation {
   INSTALL
   UNINSTALL
+  UPDATE
 }
 
 model ActionMaterial {

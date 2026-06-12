@@ -122,21 +122,23 @@ export function LocationList() {
                 )}
 
                 {/* Foreshadowing previews */}
-                <div className="flex items-center gap-4 mt-4 text-xs text-fg-secondary">
-                  <div className="flex items-center gap-1 bg-app-bg px-2 py-1 rounded border border-app-border" title="Sub-ubicaciones">
-                    <GitBranch className="w-3.5 h-3.5 text-muted" />
-                    <span className="font-medium text-fg">{count.children}</span>
-                    <span className="text-muted text-[10px]">subs</span>
-                  </div>
-                  <div className="flex items-center gap-1 bg-app-bg px-2 py-1 rounded border border-app-border" title="Materiales Instalados">
-                    <Package className="w-3.5 h-3.5 text-muted" />
+                <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] text-fg-secondary">
+                  {count.children > 0 && (
+                    <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Sub-ubicaciones">
+                      <GitBranch className="w-3 h-3 text-muted" />
+                      <span className="font-medium text-fg">{count.children}</span>
+                      <span className="text-muted text-[9px]">subs</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Materiales Instalados">
+                    <Package className="w-3 h-3 text-muted" />
                     <span className="font-medium text-fg">{count.materials}</span>
-                    <span className="text-muted text-[10px]">materiales</span>
+                    <span className="text-muted text-[9px]">materiales</span>
                   </div>
-                  <div className="flex items-center gap-1 bg-app-bg px-2 py-1 rounded border border-app-border" title="Acciones Realizadas">
-                    <Zap className="w-3.5 h-3.5 text-muted" />
+                  <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Acciones Realizadas">
+                    <Zap className="w-3 h-3 text-muted" />
                     <span className="font-medium text-fg">{count.actions}</span>
-                    <span className="text-muted text-[10px]">acciones</span>
+                    <span className="text-muted text-[9px]">acciones</span>
                   </div>
                 </div>
               </div>

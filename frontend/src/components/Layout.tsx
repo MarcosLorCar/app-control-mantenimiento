@@ -18,10 +18,11 @@ const ADMIN_ITEMS = [
 ]
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
-  '/': { title: 'Ubicaciones por Categoría', subtitle: 'Selecciona una categoría de infraestructura' },
+  '/': { title: 'Ubicaciones por Categoría', subtitle: '' },
   '/categories': { title: 'Navegador de Ubicaciones', subtitle: 'Ubicaciones registradas en la categoría' },
   '/locations': { title: 'Ficha de Ubicación', subtitle: 'Detalle de equipos, materiales y acciones' },
   '/actions': { title: 'Gestión de Acciones', subtitle: 'Registro y seguimiento de acciones' },
+  '/actions/new': { title: 'Registrar Trabajo / Mantenimiento', subtitle: 'Registra una intervención en una infraestructura principal' },
   '/materials': { title: 'Inventario de Materiales', subtitle: 'Listado completo de materiales en el sistema' },
   '/admin': { title: 'Usuarios', subtitle: 'Gestión de usuarios del sistema' },
   '/admin/catalog': { title: 'Configuración del Catálogo', subtitle: 'Gestión de categorías y propiedades del sistema' },
@@ -149,7 +150,7 @@ export function Layout() {
       {/* Contenido principal */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Topbar */}
-        <header className="h-16 bg-card flex items-center justify-between px-7 shrink-0"
+        <header className="h-20 bg-card flex items-center justify-between px-7 shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3">
             <button

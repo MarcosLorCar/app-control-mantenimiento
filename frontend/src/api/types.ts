@@ -113,7 +113,7 @@ export interface Action {
   materials: {
     actionId: number
     materialId: number
-    operation: 'INSTALL' | 'UNINSTALL'
+    operation: 'INSTALL' | 'UNINSTALL' | 'UPDATE'
     material: Material
   }[]
   location: { id: number; name: string; path: string; parentId: number | null; latitude: number | null; longitude: number | null } | null

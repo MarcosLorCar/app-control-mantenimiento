@@ -10,7 +10,13 @@ import {
 export const locationKeys = {
   all: ['locations'] as const,
   lists: () => [...locationKeys.all, 'list'] as const,
-  list: (parentId?: number | null, infraTypeId?: number) => [...locationKeys.lists(), parentId, infraTypeId] as const,
+  list: (parentId?: number | null, infraTypeId?: number) => [
+    ...locationKeys.lists(),
+    {
+      parentId: parentId === undefined ? 'all' : parentId,
+      infraTypeId: infraTypeId === undefined ? 'all' : infraTypeId
+    }
+  ] as const,
   details: () => [...locationKeys.all, 'detail'] as const,
   detail: (id: number) => [...locationKeys.details(), id] as const,
 }

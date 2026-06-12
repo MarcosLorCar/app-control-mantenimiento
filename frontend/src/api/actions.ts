@@ -32,7 +32,8 @@ export function createAction(body: {
     typeId?: number
     description?: string | null
     attributes?: Record<string, any>
-    operation: 'INSTALL' | 'UNINSTALL'
+    locationId?: number | null
+    operation: 'INSTALL' | 'UNINSTALL' | 'UPDATE'
   }[]
 }): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions`, {

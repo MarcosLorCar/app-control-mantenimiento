@@ -12,6 +12,7 @@ import { Catalog } from './pages/admin/Catalog'
 import { ChangePassword } from './pages/ChangePassword'
 import { ActionsPage } from './pages/actions/ActionsPage'
 import { ActionDetail } from './pages/actions/ActionDetail'
+import { ActionFormPage } from './pages/actions/ActionFormPage'
 import { MaterialsPage } from './pages/materials/MaterialsPage'
 
 const queryClient = new QueryClient({
@@ -32,6 +33,7 @@ export default function App() {
                 <Route path="/categories/:id" element={<CategoryLocationList />} />
                 <Route path="/locations/:id" element={<LocationDetail />} />
                 <Route path="/actions" element={<ActionsPage />} />
+                <Route path="/actions/new" element={<ActionFormPage />} />
                 <Route path="/actions/:id" element={<ActionDetail />} />
                 <Route path="/materials" element={<MaterialsPage />} />
                 <Route path="/admin" element={<Users />} />

@@ -9,7 +9,7 @@ import { Modal } from '../../components/ui/Modal'
 export function CategoriesList() {
   const navigate = useNavigate()
   const { data: categories = [], isLoading: loadingCats, error: catErr } = useInfrastructureTypes()
-  const { data: rootLocations = [] } = useLocations(null) // Fetch root locations to calculate counts
+  const { data: allLocations = [] } = useLocations(undefined) // Fetch all locations to calculate counts
   const createCat = useCreateInfrastructureType()
 
   const [showAddForm, setShowAddForm] = useState(false)
@@ -20,7 +20,7 @@ export function CategoriesList() {
   const [formErr, setFormErr] = useState('')
 
   const getCount = (catId: number) => {
-    return rootLocations.filter(loc => loc.infraTypeId === catId).length
+    return allLocations.filter(loc => loc.infraTypeId === catId && loc.parentId === null).length
   }
 
   function handleSubmit(e: React.FormEvent) {

@@ -85,12 +85,12 @@ export function ActionDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column (2/3 width): Materials Diff (Git-like) */}
+        {/* Left Column (2/3 width): Materials Changes */}
         <div className="lg:col-span-2 space-y-6">
           <section className="bg-card rounded-xl border border-app-border p-5 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" /> Cambios en Materiales (Git Diff)
+                <Package className="w-4 h-4 text-primary" /> Cambios en Materiales
               </h2>
             </div>
 
@@ -101,44 +101,75 @@ export function ActionDetail() {
             ) : (
               <div className="space-y-3">
                 {action.materials.map(am => {
-                  const isInstall = am.operation === 'INSTALL'
+                  const op = am.operation
                   const m = am.material
+                  
+                  let cardCls = ''
+                  let badgeCls = ''
+                  let badgeIcon = null
+                  let btnColorCls = ''
+                  let opText = ''
+
+                  if (op === 'INSTALL') {
+                    cardCls = 'bg-emerald-500/[0.06] border-emerald-500/20 hover:border-emerald-500/40 text-fg'
+                    badgeCls = 'bg-emerald-500/15 text-emerald-500'
+                    badgeIcon = <Plus className="w-4 h-4" />
+                    btnColorCls = 'text-emerald-500'
+                    opText = 'Instalado'
+                  } else if (op === 'UPDATE') {
+                    cardCls = 'bg-blue-500/[0.06] border-blue-500/20 hover:border-blue-500/40 text-fg'
+                    badgeCls = 'bg-blue-500/15 text-blue-500'
+                    badgeIcon = <Pencil className="w-4 h-4" />
+                    btnColorCls = 'text-blue-500'
+                    opText = 'Modificado'
+                  } else {
+                    // UNINSTALL
+                    cardCls = 'bg-rose-500/[0.04] border-rose-500/10 hover:border-rose-500/30 text-fg-secondary'
+                    badgeCls = 'bg-rose-500/15 text-rose-500'
+                    badgeIcon = <Minus className="w-4 h-4" />
+                    btnColorCls = 'text-rose-400'
+                    opText = 'Retirado'
+                  }
                   
                   return (
                     <div
                       key={m.id}
-                      className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
-                        isInstall
-                          ? 'bg-emerald-500/[0.06] border-emerald-500/20 hover:border-emerald-500/40 text-fg'
-                          : 'bg-rose-500/[0.04] border-rose-500/10 hover:border-rose-500/30 text-fg-secondary'
-                      }`}
+                      className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${cardCls}`}
                     >
                       {/* Operation Symbol Badge */}
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${
-                          isInstall
-                            ? 'bg-emerald-500/15 text-emerald-500'
-                            : 'bg-rose-500/15 text-rose-500'
-                        }`}
-                      >
-                        {isInstall ? <Plus className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${badgeCls}`}>
+                        {badgeIcon}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between flex-wrap gap-2">
-                          <h3 className="font-bold text-sm text-fg truncate">
-                            {m.name}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-sm text-fg truncate">
+                              {m.name}
+                            </h3>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ${
+                              op === 'INSTALL' ? 'bg-emerald-500/10 text-emerald-600' :
+                              op === 'UPDATE' ? 'bg-blue-500/10 text-blue-600' : 'bg-rose-500/10 text-rose-500'
+                            }`}>
+                              {opText}
+                            </span>
+                          </div>
                           <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded bg-card border border-app-border text-muted">
                             {m.type.name}
                           </span>
                         </div>
 
+                        {m.description && (
+                          <p className="text-xs text-fg-secondary mt-2 leading-relaxed">
+                            {m.description}
+                          </p>
+                        )}
 
-
-                        <p className="text-xs text-fg-secondary mt-2 leading-relaxed">
-                          {m.description || 'Sin descripción técnica.'}
-                        </p>
+                        {m.location && m.locationId !== action.locationId && (
+                          <p className="text-[11px] text-muted mt-2 flex items-center gap-1">
+                            <Folder className="w-3.5 h-3.5" /> Ubicación: <span className="font-semibold text-primary">{m.location.name}</span>
+                          </p>
+                        )}
 
                         <MaterialAttributePills material={m} />
                       </div>
@@ -146,9 +177,7 @@ export function ActionDetail() {
                       {/* Clickable details action */}
                       <button
                         onClick={() => setEditingMaterial(m)}
-                        className={`text-[11px] font-semibold hover:underline shrink-0 self-center ${
-                          isInstall ? 'text-emerald-500' : 'text-rose-400'
-                        }`}
+                        className={`text-[11px] font-semibold hover:underline shrink-0 self-center ${btnColorCls}`}
                       >
                         Detalles
                       </button>

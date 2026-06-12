@@ -21,7 +21,8 @@ export const CreateActionSchema = z.object({
       typeId: z.number().int().positive().optional(),
       description: z.string().optional().nullable(),
       attributes: z.record(z.any()).optional().default({}),
-      operation: z.enum(['INSTALL', 'UNINSTALL'])
+      locationId: z.number().int().positive().nullable().optional(),
+      operation: z.enum(['INSTALL', 'UNINSTALL', 'UPDATE'])
     })
   ).optional(),
 }).refine(data => {

@@ -96,6 +96,17 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
     locationId = updatedLoc.id
   }
 
+  // Validate that locationId points to a root location (parentId === null)
+  if (locationId) {
+    const loc = await db.location.findFirst({ where: { id: locationId, deletedAt: null } })
+    if (loc && loc.parentId !== null) {
+      throw Object.assign(new Error('Los trabajos solo pueden registrarse en ubicaciones raíz (infraestructuras principales)'), {
+        code: 'VALIDATION_ERROR',
+        statusCode: 400
+      })
+    }
+  }
+
   // Create primary action record
   const action = await db.action.create({
     data: {
@@ -112,6 +123,8 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
   // Handle material operations
   if (materials && materials.length > 0) {
     for (const item of materials) {
+      const targetLocationId = item.locationId !== undefined ? item.locationId : locationId
+
       if (item.operation === 'UNINSTALL') {
         if (!item.materialId) continue
         
@@ -135,7 +148,7 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
           // If installing existing material
           await db.material.update({
             where: { id: materialId },
-            data: { locationId }
+            data: { locationId: targetLocationId }
           })
         } else {
           // If creating and installing new material
@@ -150,7 +163,7 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
               typeId: item.typeId,
               description: item.description,
               attributes: (item.attributes || {}) as any,
-              locationId,
+              locationId: targetLocationId,
               installedAt: performedAt ? new Date(performedAt) : undefined,
             }
           })
@@ -162,6 +175,28 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
             actionId: action.id,
             materialId: materialId,
             operation: 'INSTALL'
+          }
+        })
+      } else if (item.operation === 'UPDATE') {
+        if (!item.materialId) continue
+
+        const updateData: any = {}
+        if (item.name !== undefined) updateData.name = item.name
+        if (item.typeId !== undefined) updateData.typeId = item.typeId
+        if (item.description !== undefined) updateData.description = item.description
+        if (item.attributes !== undefined) updateData.attributes = item.attributes
+        if (item.locationId !== undefined) updateData.locationId = item.locationId
+
+        await db.material.update({
+          where: { id: item.materialId },
+          data: updateData
+        })
+
+        await db.actionMaterial.create({
+          data: {
+            actionId: action.id,
+            materialId: item.materialId,
+            operation: 'UPDATE'
           }
         })
       }

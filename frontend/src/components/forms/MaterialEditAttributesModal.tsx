@@ -75,116 +75,116 @@ function MaterialEditAttributesForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre</label>
-        <input
-          type="text"
-          value={material.name}
-          disabled
-          className={`${inputCls} bg-app-bg/50 cursor-not-allowed`}
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="flex flex-col max-h-[70vh]">
+      <div className="flex-1 overflow-y-auto pr-1 pb-4 space-y-4">
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre</label>
+          <input
+            type="text"
+            value={material.name}
+            disabled
+            className={`${inputCls} bg-app-bg/50 cursor-not-allowed`}
+          />
+        </div>
 
-      <div>
-        <label className="block text-xs font-semibold text-fg-secondary mb-1">Tipo de Material</label>
-        <input
-          type="text"
-          value={material.type.name}
-          disabled
-          className={`${inputCls} bg-app-bg/50 cursor-not-allowed`}
-        />
-      </div>
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">Tipo de Material</label>
+          <input
+            type="text"
+            value={material.type.name}
+            disabled
+            className={`${inputCls} bg-app-bg/50 cursor-not-allowed`}
+          />
+        </div>
 
+        <div>
+          <label className="block text-xs font-semibold text-fg-secondary mb-1">Descripción / Ficha Técnica</label>
+          <textarea
+            rows={3}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Especifica las características técnicas aquí (ej: 12W, 1000 lm, 220V)..."
+            className={inputCls}
+          />
+        </div>
 
+        {fixedProperties.length > 0 && (
+          <div className="space-y-3 p-3.5 bg-app-bg/50 rounded-lg border border-app-border">
+            <h4 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-2">Propiedades Fijas</h4>
+            
+            {fixedProperties.map(prop => {
+              const value = attributes[prop.code] ?? ''
+              const label = (
+                <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
+                  {prop.name}
+                </label>
+              )
 
-      <div>
-        <label className="block text-xs font-semibold text-fg-secondary mb-1">Descripción / Ficha Técnica</label>
-        <textarea
-          rows={3}
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          placeholder="Especifica las características técnicas aquí (ej: 12W, 1000 lm, 220V)..."
-          className={inputCls}
-        />
-      </div>
+              if (prop.type === 'DATE') {
+                return (
+                  <div key={prop.id}>
+                    {label}
+                    <input
+                      type="date"
+                      value={value ? value.slice(0, 10) : ''}
+                      onChange={e => handleAttrChange(prop.code, e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                )
+              }
 
-      {fixedProperties.length > 0 && (
-        <div className="space-y-3 p-3.5 bg-app-bg/50 rounded-lg border border-app-border">
-          <h4 className="text-xs font-bold text-fg-secondary uppercase tracking-wider mb-2">Propiedades Fijas</h4>
-          
-          {fixedProperties.map(prop => {
-            const value = attributes[prop.code] ?? ''
-            const label = (
-              <label className="block text-[11px] font-semibold text-fg-secondary mb-1">
-                {prop.name}
-              </label>
-            )
+              if (prop.type === 'NUMBER') {
+                return (
+                  <div key={prop.id}>
+                    {label}
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={e => handleAttrChange(prop.code, e.target.value === '' ? undefined : Number(e.target.value))}
+                      className={inputCls}
+                    />
+                  </div>
+                )
+              }
 
-            if (prop.type === 'DATE') {
+              if (prop.type === 'BOOLEAN') {
+                return (
+                  <div key={prop.id} className="flex items-center gap-2 py-1">
+                    <input
+                      type="checkbox"
+                      id={`prop-${prop.code}`}
+                      checked={!!value}
+                      onChange={e => handleAttrChange(prop.code, e.target.checked)}
+                      className="rounded border-app-border text-primary focus:ring-primary/40"
+                    />
+                    <label htmlFor={`prop-${prop.code}`} className="text-xs font-semibold text-fg-secondary">
+                      {prop.name}
+                    </label>
+                  </div>
+                )
+              }
+
               return (
                 <div key={prop.id}>
                   {label}
                   <input
-                    type="date"
-                    value={value ? value.slice(0, 10) : ''}
+                    type="text"
+                    value={value}
                     onChange={e => handleAttrChange(prop.code, e.target.value)}
                     className={inputCls}
+                    placeholder={`Valor para ${prop.name}`}
                   />
                 </div>
               )
-            }
+            })}
+          </div>
+        )}
 
-            if (prop.type === 'NUMBER') {
-              return (
-                <div key={prop.id}>
-                  {label}
-                  <input
-                    type="number"
-                    value={value}
-                    onChange={e => handleAttrChange(prop.code, e.target.value === '' ? undefined : Number(e.target.value))}
-                    className={inputCls}
-                  />
-                </div>
-              )
-            }
+        {error && <p className="text-error text-sm">{error}</p>}
+      </div>
 
-            if (prop.type === 'BOOLEAN') {
-              return (
-                <div key={prop.id} className="flex items-center gap-2 py-1">
-                  <input
-                    type="checkbox"
-                    id={`prop-${prop.code}`}
-                    checked={!!value}
-                    onChange={e => handleAttrChange(prop.code, e.target.checked)}
-                    className="rounded border-app-border text-primary focus:ring-primary/40"
-                  />
-                  <label htmlFor={`prop-${prop.code}`} className="text-xs font-semibold text-fg-secondary">
-                    {prop.name}
-                  </label>
-                </div>
-              )
-            }
-
-            return (
-              <div key={prop.id}>
-                {label}
-                <input
-                  type="text"
-                  value={value}
-                  onChange={e => handleAttrChange(prop.code, e.target.value)}
-                  className={inputCls}
-                  placeholder={`Valor para ${prop.name}`}
-                />
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {error && <p className="text-error text-sm">{error}</p>}
-
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex justify-end gap-3 pt-3 border-t border-app-border/40 bg-card shrink-0">
         <button
           type="button"
           onClick={onClose}

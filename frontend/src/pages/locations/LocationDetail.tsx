@@ -4,7 +4,7 @@ import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight } fr
 import { useLocation, useDeleteLocation, useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
-import { ActionForm } from '../actions/ActionForm'
+import { MaterialForm } from '../../components/forms/MaterialForm'
 import type { Location, Material } from '../../api/types'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
@@ -24,7 +24,7 @@ export function LocationDetail() {
 
   const [showEdit, setShowEdit] = useState(false)
   const [showAddChild, setShowAddChild] = useState(false)
-  const [showAddActionOnLocation, setShowAddActionOnLocation] = useState(false)
+  const [showAddMaterial, setShowAddMaterial] = useState(false)
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
 
   async function handleDelete() {
@@ -47,6 +47,7 @@ export function LocationDetail() {
     const found = allLocs.find(l => l.id === pid)
     return found || { id: pid, name: pid === locationId ? loc.name : `Cargando...`, infraTypeId: loc.infraTypeId }
   })
+  const rootId = pathIds[0] || locationId
 
   return (
     <div className="space-y-6">
@@ -94,8 +95,24 @@ export function LocationDetail() {
         <div className="flex gap-2 shrink-0 flex-wrap">
           <RoleGuard require="write">
             <button
-              onClick={() => setShowAddChild(true)}
+              onClick={() => navigate(`/actions/new?locationId=${rootId}`)}
               className="flex items-center gap-1.5 bg-primary text-primary-fg px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--primary-hover)] shadow-sm transition-all"
+            >
+              <Zap className="w-3.5 h-3.5" /> Registrar Trabajo
+            </button>
+          </RoleGuard>
+          <RoleGuard require="write">
+            <button
+              onClick={() => setShowAddMaterial(true)}
+              className="flex items-center gap-1.5 border border-app-border px-3.5 py-2 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" /> Añadir Material
+            </button>
+          </RoleGuard>
+          <RoleGuard require="write">
+            <button
+              onClick={() => setShowAddChild(true)}
+              className="flex items-center gap-1.5 border border-app-border px-3.5 py-2 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
             >
               <Plus className="w-3.5 h-3.5" /> Nueva Sub-ubicación
             </button>
@@ -130,6 +147,14 @@ export function LocationDetail() {
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg flex items-center gap-2">
                 <Package className="w-4 h-4 text-primary" /> Inventario de Materiales y Sub-ubicaciones
               </h2>
+              <RoleGuard require="write">
+                <button
+                  onClick={() => setShowAddMaterial(true)}
+                  className="flex items-center gap-1.5 border border-app-border px-3 py-1.5 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
+                >
+                  <Plus className="w-3 h-3" /> Añadir Material
+                </button>
+              </RoleGuard>
             </div>
 
             {!hasItems ? (
@@ -323,65 +348,74 @@ export function LocationDetail() {
 
                     return (
                       <Fragment key={`child-mob-group-${child.id}`}>
-                        {/* Subfolder (child location) card */}
-                        <div className="p-4 bg-primary/5 rounded-xl border border-primary/20 space-y-2">
-                          <div className="flex items-center justify-between gap-2">
+                        <div className="bg-primary/5 rounded-xl border border-primary/20 overflow-hidden shadow-sm">
+                          {/* Subfolder (child location) header - fully interactable */}
+                          <div
+                            onClick={() => navigate(`/locations/${child.id}`)}
+                            className="p-4 flex items-center justify-between gap-2 cursor-pointer hover:bg-primary/10 transition-colors bg-primary/10 border-b border-primary/20"
+                          >
                             <div className="flex items-center gap-2 min-w-0">
                               <Folder className="w-4.5 h-4.5 text-primary shrink-0" />
                               <span className="font-bold text-fg text-sm truncate">{child.name}</span>
                             </div>
-                            <span className="text-[10px] font-semibold text-primary uppercase bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
-                              Sub-ubicación
-                            </span>
+                            <ChevronRight className="w-4 h-4 text-primary shrink-0" />
                           </div>
-                          {child.description && (
-                            <p className="text-xs text-fg-secondary">{child.description}</p>
-                          )}
-                          <p className="text-[11px] text-muted">
-                            {child._count?.children || 0} sub-ubics · {child._count?.materials || 0} materiales
-                          </p>
-                          <div className="flex justify-end pt-1">
-                            <button
-                              onClick={() => navigate(`/locations/${child.id}`)}
-                              className="text-xs font-bold text-primary hover:underline"
-                            >
-                              Abrir Ubicación &rarr;
-                            </button>
-                          </div>
-                        </div>
 
-                        {/* Descendant materials in this child's subtree */}
-                        {branchMaterials.map(mat => (
-                          <div key={`desc-mat-mob-${mat.id}`} className="ml-5 p-3.5 bg-app-bg/5 rounded-xl border border-app-border/75 border-l-4 border-l-primary/40 space-y-2">
-                            <div className="flex items-start justify-between gap-2">
-                              <span className="font-semibold text-fg-secondary text-[13px]">📦 {mat.name}</span>
-                              <span className="text-[9px] font-medium uppercase px-1 py-0.5 rounded bg-app-bg border border-app-border text-muted">
-                                {mat.type?.name}
-                              </span>
+                          {/* Description and counts */}
+                          {(child.description || child._count) && (
+                            <div className="p-4 pt-3 pb-3 space-y-1.5 bg-card/20 border-b border-app-border/40">
+                              {child.description && (
+                                <p className="text-xs text-fg-secondary leading-relaxed">{child.description}</p>
+                              )}
+                              <p className="text-[11px] text-muted font-medium">
+                                {child._count?.children || 0} sub-ubicaciones · {child._count?.materials || 0} materiales
+                              </p>
                             </div>
-                            {mat.description && (
-                              <p className="text-[11px] text-muted">{mat.description}</p>
-                            )}
-                            <MaterialAttributePills material={mat} />
-                            <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-app-border/40 mt-1">
-                              <span className="text-muted truncate max-w-[170px]">
-                                En:{' '}
-                                <button
-                                  onClick={() => navigate(`/locations/${mat.locationId}`)}
-                                  className="text-primary hover:underline font-semibold"
+                          )}
+
+                          {/* Descendant materials list section inside the folder card */}
+                          {branchMaterials.length > 0 && (
+                            <div className="p-3 bg-card/40 space-y-2.5">
+                              <h4 className="text-[9px] font-bold text-fg-secondary uppercase tracking-wider px-1 mb-1">
+                                Equipos en {child.name}
+                              </h4>
+                              {branchMaterials.map(mat => (
+                                <div
+                                  key={`desc-mat-mob-${mat.id}`}
+                                  className="p-3.5 bg-app-bg/20 rounded-lg border border-app-border space-y-2"
                                 >
-                                  {mat.location?.name}
-                                </button>
-                              </span>
-                              <button
-                                onClick={() => setEditingMaterial(mat)}
-                                className="text-primary font-bold hover:underline"
-                              >
-                                Ver / Editar
-                              </button>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <span className="font-bold text-fg-secondary text-xs">📦 {mat.name}</span>
+                                    <span className="text-[9px] font-semibold uppercase px-1.5 py-0.5 rounded bg-app-bg border border-app-border text-muted shrink-0">
+                                      {mat.type?.name}
+                                    </span>
+                                  </div>
+                                  {mat.description && (
+                                    <p className="text-[11px] text-muted line-clamp-2">{mat.description}</p>
+                                  )}
+                                  <MaterialAttributePills material={mat} />
+                                  <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-app-border/40 mt-1">
+                                    <span className="text-muted truncate max-w-[170px]">
+                                      En:{' '}
+                                      <button
+                                        onClick={() => navigate(`/locations/${mat.locationId}`)}
+                                        className="text-primary hover:underline font-semibold"
+                                      >
+                                        {mat.location?.name}
+                                      </button>
+                                    </span>
+                                    <button
+                                      onClick={() => setEditingMaterial(mat)}
+                                      className="text-primary font-bold hover:underline"
+                                    >
+                                      Ver / Editar
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </div>
-                        ))}
+                          )}
+                        </div>
                       </Fragment>
                     )
                   })}
@@ -443,8 +477,8 @@ export function LocationDetail() {
               </h2>
               <RoleGuard require="write">
                 <button
-                  onClick={() => setShowAddActionOnLocation(true)}
-                  className="flex items-center gap-1 text-[11px] font-semibold bg-primary/10 text-primary px-2.5 py-1.5 rounded-lg hover:bg-primary/20 transition-all"
+                  onClick={() => navigate(`/actions/new?locationId=${rootId}`)}
+                  className="flex items-center gap-1 text-[11px] font-semibold bg-primary text-primary-fg px-3 py-1.5 rounded-lg hover:bg-[var(--primary-hover)] transition-all shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" /> Registrar Trabajo
                 </button>
@@ -460,6 +494,7 @@ export function LocationDetail() {
                 {loc.actions.map(act => {
                   const installsCount = act.materials.filter(m => m.operation === 'INSTALL').length
                   const uninstallsCount = act.materials.filter(m => m.operation === 'UNINSTALL').length
+                  const updatesCount = act.materials.filter(m => m.operation === 'UPDATE').length
 
                   return (
                     <div
@@ -483,6 +518,11 @@ export function LocationDetail() {
                           {uninstallsCount > 0 && (
                             <span className="bg-rose-500/10 text-rose-500 px-1.5 py-0.5 rounded border border-rose-500/15">
                               -{uninstallsCount} desinst.
+                            </span>
+                          )}
+                          {updatesCount > 0 && (
+                            <span className="bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/15">
+                              ~{updatesCount} mod.
                             </span>
                           )}
                         </div>
@@ -532,10 +572,10 @@ export function LocationDetail() {
           onClose={() => setShowAddChild(false)}
         />
       )}
-      {showAddActionOnLocation && (
-        <ActionForm
+      {showAddMaterial && (
+        <MaterialForm
           locationId={locationId}
-          onClose={() => setShowAddActionOnLocation(false)}
+          onClose={() => setShowAddMaterial(false)}
         />
       )}
       {editingMaterial && (
