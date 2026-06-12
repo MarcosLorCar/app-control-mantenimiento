@@ -35,3 +35,10 @@
     background-color: var(--bg);
   }
 }
+
+.bg-primary-tint {
+  background-color: color-mix(in srgb, var(--primary) 12%, var(--card, #ffffff)) !important;
+}
+.bg-primary-tint-hover:hover {
+  background-color: color-mix(in srgb, var(--primary) 20%, var(--card, #ffffff)) !important;
+}

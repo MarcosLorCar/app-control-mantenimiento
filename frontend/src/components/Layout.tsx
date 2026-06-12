@@ -148,9 +148,9 @@ export function Layout() {
       </aside>
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Topbar */}
-        <header className="h-20 bg-card flex items-center justify-between px-7 shrink-0"
+        <header className="min-h-[4.5rem] bg-card flex items-center justify-between px-7 py-4 shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3">
             <button
@@ -161,21 +161,22 @@ export function Layout() {
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-[20px] font-bold text-fg leading-tight">{pageInfo.title}</h1>
+              <h1 className="text-[20px] font-bold text-fg leading-snug">{pageInfo.title}</h1>
               {pageInfo.subtitle && (
-                <p className="text-[13px] text-muted leading-tight">{pageInfo.subtitle}</p>
+                <p className="text-[13px] text-muted leading-snug mt-0.5">{pageInfo.subtitle}</p>
               )}
             </div>
           </div>
           <button
-            className="w-9 h-9 rounded-lg border border-app-border flex items-center justify-center text-muted hover:text-fg transition-colors"
+            className="w-9 h-9 rounded-lg border border-app-border flex items-center justify-center text-muted hover:text-fg transition-colors shrink-0"
             title="Notificaciones"
           >
             <Bell className="w-[18px] h-[18px]" />
           </button>
         </header>
 
-        <main className="flex-1 overflow-auto p-5 md:p-8">
+
+        <main className="flex-1 p-5 md:p-8">
           <Outlet />
         </main>
       </div>
