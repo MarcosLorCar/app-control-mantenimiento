@@ -56,3 +56,20 @@ export function updateLocation(
 export function deleteLocation(id: number): Promise<void> {
   return apiFetch(`${API_BASE}/locations/${id}`, { method: 'DELETE' }).then(() => undefined)
 }
+
+export function uploadLocationImage(id: number, file: File): Promise<Location> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiFetch<ApiData<Location>>(`${API_BASE}/locations/${id}/image`, {
+    method: 'POST',
+    body: formData,
+  }).then(r => r.data)
+}
+
+export function deleteLocationImage(id: number): Promise<Location> {
+  return apiFetch<ApiData<Location>>(`${API_BASE}/locations/${id}/image`, {
+    method: 'DELETE',
+  }).then(r => r.data)
+}
+
+

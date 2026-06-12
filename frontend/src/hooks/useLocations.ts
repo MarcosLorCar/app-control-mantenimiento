@@ -5,6 +5,8 @@ import {
   createLocation,
   updateLocation,
   deleteLocation,
+  uploadLocationImage,
+  deleteLocationImage,
 } from '../api/locations'
 
 export const locationKeys = {
@@ -73,3 +75,33 @@ export function useDeleteLocation() {
     },
   })
 }
+
+export function useUploadLocationImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => uploadLocationImage(id, file),
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: locationKeys.lists() })
+      qc.invalidateQueries({ queryKey: locationKeys.detail(variables.id) })
+      if (data.parentId) {
+        qc.invalidateQueries({ queryKey: locationKeys.detail(data.parentId) })
+      }
+    },
+  })
+}
+
+export function useDeleteLocationImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => deleteLocationImage(id),
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: locationKeys.lists() })
+      qc.invalidateQueries({ queryKey: locationKeys.detail(variables) })
+      if (data.parentId) {
+        qc.invalidateQueries({ queryKey: locationKeys.detail(data.parentId) })
+      }
+    },
+  })
+}
+
+

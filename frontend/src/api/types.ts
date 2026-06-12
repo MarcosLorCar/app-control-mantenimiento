@@ -38,6 +38,7 @@ export interface Location {
   description: string | null
   latitude: number | null
   longitude: number | null
+  image: string | null
   path: string
   parentId: number | null
   infraTypeId: number
@@ -75,6 +76,7 @@ export interface MaterialType {
   description: string | null
   icon: string | null
   deletedAt: string | null
+  customAttributes?: any
 }
 
 export interface Material {
@@ -89,6 +91,7 @@ export interface Material {
     code: string
     name: string
     icon: string | null
+    customAttributes?: any
   }
   locationId: number | null
   location: { id: number; name: string; path: string } | null

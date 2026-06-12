@@ -39,10 +39,10 @@ export function useRoles() {
   return useQuery({ queryKey: ['catalog', 'roles'], queryFn: listRoles, staleTime: Infinity })
 }
 
-export function useMaterialTypes() {
+export function useMaterialTypes(infraTypeId?: number | null) {
   return useQuery({
-    queryKey: ['catalog', 'material-types'],
-    queryFn: listMaterialTypes,
+    queryKey: ['catalog', 'material-types', infraTypeId ?? 'all'],
+    queryFn: () => listMaterialTypes(infraTypeId),
     staleTime: Infinity,
   })
 }
@@ -58,7 +58,7 @@ export function useCreateMaterialType() {
 export function useUpdateMaterialType() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateMaterialType>[1] }) =>
+    mutationFn: ({ id, body }: { id: number; body: any }) =>
       updateMaterialType(id, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'material-types'] }),
   })

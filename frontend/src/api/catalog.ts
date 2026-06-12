@@ -43,8 +43,9 @@ export function listRoles(): Promise<Role[]> {
 
 // ==================== MATERIAL TYPES ====================
 
-export function listMaterialTypes(): Promise<MaterialType[]> {
-  return apiFetch<ApiData<MaterialType[]>>(`${API_BASE}/material-types`).then(r => r.data)
+export function listMaterialTypes(infraTypeId?: number | null): Promise<MaterialType[]> {
+  const query = infraTypeId ? `?infraTypeId=${infraTypeId}` : ''
+  return apiFetch<ApiData<MaterialType[]>>(`${API_BASE}/material-types${query}`).then(r => r.data)
 }
 
 export function createMaterialType(body: {
@@ -52,6 +53,8 @@ export function createMaterialType(body: {
   name: string
   description?: string
   icon?: string
+  infraTypeId?: number | null
+  customAttributes?: any
 }): Promise<MaterialType> {
   return apiFetch<ApiData<MaterialType>>(`${API_BASE}/material-types`, {
     method: 'POST',
@@ -61,7 +64,7 @@ export function createMaterialType(body: {
 
 export function updateMaterialType(
   id: number,
-  body: { name?: string; description?: string; icon?: string | null },
+  body: { name?: string; description?: string; icon?: string | null; customAttributes?: any },
 ): Promise<MaterialType> {
   return apiFetch<ApiData<MaterialType>>(`${API_BASE}/material-types/${id}`, {
     method: 'PATCH',
