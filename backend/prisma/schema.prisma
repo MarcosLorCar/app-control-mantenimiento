@@ -23,7 +23,7 @@ model Role {
 
 model User {
   id                 Int       @id @default(autoincrement())
-  email              String
+  email              String    @unique
   passwordHash       String
   fullName           String
   roleId             Int
@@ -95,7 +95,7 @@ model Location {
 
 model MaterialType {
   id               Int       @id @default(autoincrement())
-  code             String
+  code             String    @unique
   name             String
   description      String?
   icon             String?

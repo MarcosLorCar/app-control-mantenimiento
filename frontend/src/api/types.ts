@@ -75,7 +75,11 @@ export interface MaterialType {
   name: string
   description: string | null
   icon: string | null
+  createdAt: string
+  updatedAt: string
   deletedAt: string | null
+  infraTypeId?: number | null
+  infraType?: InfrastructureType | null
   customAttributes?: any
 }
 
