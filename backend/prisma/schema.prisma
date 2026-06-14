@@ -189,3 +189,12 @@ model ActionMaterial {
   @@id([actionId, materialId])
   @@map("action_materials")
 }
+
+model SystemSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+
+  @@map("system_settings")
+}
+

@@ -16,3 +16,12 @@ export const UpdateInfrastructureTypeSchema = z.object({
 
 export type CreateInfrastructureTypeInput = z.infer<typeof CreateInfrastructureTypeSchema>
 export type UpdateInfrastructureTypeInput = z.infer<typeof UpdateInfrastructureTypeSchema>
+
+export const UpdateSystemSettingsSchema = z.object({
+  default_latitude: z.string().min(1),
+  default_longitude: z.string().min(1),
+  default_location_name: z.string().min(1),
+})
+
+export type UpdateSystemSettingsInput = z.infer<typeof UpdateSystemSettingsSchema>
+

@@ -1,14 +1,24 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Plus, Folder, AlertCircle } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Plus, Folder, AlertCircle, Map as MapIcon, Grid } from 'lucide-react'
 import { useInfrastructureTypes, useCreateInfrastructureType } from '../../hooks/useCatalog'
 import { useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { Modal } from '../../components/ui/Modal'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
+import { LocationsMapPage } from './LocationsMapPage'
 
 export function CategoriesList() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  const [activeView, setActiveView] = useState<'map' | 'categories'>(() => {
+    if (searchParams.get('lat') && searchParams.get('lng')) {
+      return 'map'
+    }
+    return (localStorage.getItem('preferred_locations_view') as any) ?? 'categories'
+  })
+
   const { data: categories = [], isLoading: loadingCats, error: catErr } = useInfrastructureTypes()
   const { data: allLocations = [] } = useLocations(undefined) // Fetch all locations to calculate counts
   const createCat = useCreateInfrastructureType()
@@ -66,56 +76,98 @@ export function CategoriesList() {
 
   return (
     <div className="space-y-6 relative min-h-[70vh]">
-      <p className="text-xs text-muted">
-        Selecciona una categoría de infraestructura para ver sus ubicaciones principales.
-      </p>
+      {/* Selector de Vista */}
+      <div className="flex justify-between items-center border-b border-app-border/40 pb-4">
+        <p className="text-xs text-muted">
+          {activeView === 'categories'
+            ? 'Selecciona una categoría de infraestructura para ver sus ubicaciones principales.'
+            : 'Ubicaciones registradas visualizadas en el mapa.'}
+        </p>
+        <div className="flex items-center border border-app-border rounded-lg p-0.5 bg-card shrink-0 shadow-sm">
+          <button
+            onClick={() => {
+              setActiveView('categories')
+              localStorage.setItem('preferred_locations_view', 'categories')
+            }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded text-xs font-semibold transition-all ${
+              activeView === 'categories'
+                ? 'bg-primary text-primary-fg shadow-sm'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            <Grid className="w-3.5 h-3.5" />
+            <span>Lista</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveView('map')
+              localStorage.setItem('preferred_locations_view', 'map')
+            }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded text-xs font-semibold transition-all ${
+              activeView === 'map'
+                ? 'bg-primary text-primary-fg shadow-sm'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            <MapIcon className="w-3.5 h-3.5" />
+            <span>Mapa</span>
+          </button>
+        </div>
+      </div>
 
-      {/* Grid List */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {categories.length === 0 && (
-          <div className="col-span-full bg-card rounded-xl border border-app-border p-12 text-center text-muted text-sm">
-            No hay categorías registradas en el catálogo.
-          </div>
-        )}
-        {categories.map(cat => {
-          const count = getCount(cat.id)
-          const CatIcon = getCategoryIcon(cat.icon)
+      {activeView === 'map' ? (
+        <LocationsMapPage />
+      ) : (
+        <>
+          {/* Grid List */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {categories.length === 0 && (
+              <div className="col-span-full bg-card rounded-xl border border-app-border p-12 text-center text-muted text-sm">
+                No hay categorías registradas en el catálogo.
+              </div>
+            )}
+            {categories.map(cat => {
+              const count = getCount(cat.id)
+              const CatIcon = getCategoryIcon(cat.icon)
 
-          return (
-            <div
-              key={cat.id}
-              onClick={() => navigate(`/categories/${cat.id}`)}
-              role="button"
-              className="flex flex-col p-6 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
-            >
-              {/* Top border decoration */}
-              <div 
-                className="absolute top-0 inset-x-0 h-1 bg-primary/25 transition-all group-hover:h-1.5 group-hover:bg-primary"
-              />
-
-              <div className="flex items-center gap-3.5 mb-4">
+              return (
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform group-hover:scale-110 group-hover:rotate-3"
+                  key={cat.id}
+                  onClick={() => navigate(`/categories/${cat.id}`)}
+                  role="button"
+                  className="flex flex-col p-6 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
                 >
-                  <CatIcon className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-fg text-[16px] group-hover:text-primary transition-colors leading-tight">
-                    {cat.name}
-                  </h3>
-                  <p className="text-[11px] font-semibold text-muted uppercase mt-0.5">
-                    {count} ubicación{count !== 1 ? 'es' : ''}
+                  {/* Top border decoration */}
+                  <div 
+                    className="absolute top-0 inset-x-0 h-1 bg-primary/25 transition-all group-hover:h-1.5 group-hover:bg-primary"
+                  />
+
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform group-hover:scale-110 group-hover:rotate-3"
+                    >
+                      <CatIcon className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-fg text-[16px] group-hover:text-primary transition-colors leading-tight">
+                        {cat.name}
+                      </h3>
+                      <p className="text-[11px] font-semibold text-muted uppercase mt-0.5">
+                        {count} ubicación{count !== 1 ? 'es' : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-fg-secondary line-clamp-3 leading-relaxed flex-1">
+                    {cat.description || 'Sin descripción adicional.'}
                   </p>
                 </div>
-              </div>
+              )
+            })}
+          </div>
+        </>
+      )}
 
-              <p className="text-xs text-fg-secondary line-clamp-3 leading-relaxed flex-1">
-                {cat.description || 'Sin descripción adicional.'}
-              </p>
-            </div>
-          )
-        })}
-      </div>
 
       {/* FAB Button */}
       <RoleGuard require="write">

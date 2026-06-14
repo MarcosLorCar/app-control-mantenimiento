@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE } from './client'
-import type { Role, InfrastructureType, MaterialType, FixedProperty } from './types'
+import type { Role, InfrastructureType, MaterialType, FixedProperty, SystemSetting } from './types'
 
 type ApiData<T> = { data: T }
 
@@ -98,3 +98,21 @@ export function createFixedProperty(body: {
 export function deleteFixedProperty(id: number): Promise<void> {
   return apiFetch(`${API_BASE}/fixed-properties/${id}`, { method: 'DELETE' }).then(() => undefined)
 }
+
+// ==================== SYSTEM SETTINGS ====================
+
+export function listSystemSettings(): Promise<SystemSetting[]> {
+  return apiFetch<ApiData<SystemSetting[]>>(`${API_BASE}/system-settings`).then(r => r.data)
+}
+
+export function updateSystemSettings(body: {
+  default_latitude: string
+  default_longitude: string
+  default_location_name: string
+}): Promise<SystemSetting[]> {
+  return apiFetch<ApiData<SystemSetting[]>>(`${API_BASE}/system-settings`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).then(r => r.data)
+}
+

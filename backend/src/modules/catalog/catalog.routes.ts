@@ -1,10 +1,12 @@
 import type { FastifyInstance } from 'fastify'
 import {
   CreateInfrastructureTypeSchema, UpdateInfrastructureTypeSchema,
+  UpdateSystemSettingsSchema,
 } from './catalog.schema'
 import {
   listInfrastructureTypes, getInfrastructureType, createInfrastructureType, updateInfrastructureType, softDeleteInfrastructureType,
   listRoles,
+  listSystemSettings, updateSystemSettings,
 } from './catalog.service'
 
 export async function catalogRoutes(app: FastifyInstance) {
@@ -53,6 +55,20 @@ export async function catalogRoutes(app: FastifyInstance) {
   // Roles
   app.get('/roles', { preHandler: [app.requireManage] }, async (req, reply) => {
     return reply.send({ data: await listRoles(app.db) })
+  })
+
+  // System Settings
+  app.get('/system-settings', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: await listSystemSettings(app.db) })
+  })
+
+  app.post('/system-settings', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const parsed = UpdateSystemSettingsSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
+    }
+    const data = await updateSystemSettings(app.db, parsed.data)
+    return reply.send({ data })
   })
 }
 

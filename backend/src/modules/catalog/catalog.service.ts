@@ -34,3 +34,22 @@ export function softDeleteInfrastructureType(db: PrismaClient, id: number) {
 export function listRoles(db: PrismaClient) {
   return db.role.findMany({ orderBy: { name: 'asc' } })
 }
+
+export function listSystemSettings(db: PrismaClient) {
+  return db.systemSetting.findMany({
+    orderBy: { key: 'asc' },
+  })
+}
+
+export async function updateSystemSettings(db: PrismaClient, data: Record<string, string>) {
+  const promises = Object.entries(data).map(([key, value]) =>
+    db.systemSetting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    })
+  )
+  await Promise.all(promises)
+  return listSystemSettings(db)
+}
+

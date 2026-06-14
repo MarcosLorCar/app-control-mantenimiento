@@ -22,13 +22,15 @@ interface Props {
   latitude: number | null
   longitude: number | null
   onChange: (lat: number, lng: number) => void
+  defaultCenter?: [number, number]
 }
 
 const MADRID_COORDS: [number, number] = [40.416775, -3.703790]
 
-export function LocationMap({ latitude, longitude, onChange }: Props) {
+export function LocationMap({ latitude, longitude, onChange, defaultCenter }: Props) {
+  const fallbackCenter = defaultCenter || MADRID_COORDS
   const [position, setPosition] = useState<[number, number]>(
-    latitude && longitude ? [latitude, longitude] : MADRID_COORDS
+    latitude && longitude ? [latitude, longitude] : fallbackCenter
   )
   const [loadingGps, setLoadingGps] = useState(false)
   const isFirstLoad = useRef(true)
@@ -46,15 +48,15 @@ export function LocationMap({ latitude, longitude, onChange }: Props) {
           },
           () => {
             setLoadingGps(false)
-            onChange(MADRID_COORDS[0], MADRID_COORDS[1])
+            onChange(fallbackCenter[0], fallbackCenter[1])
           },
           { enableHighAccuracy: true, timeout: 5000 }
         )
       } else {
-        onChange(MADRID_COORDS[0], MADRID_COORDS[1])
+        onChange(fallbackCenter[0], fallbackCenter[1])
       }
     }
-  }, [latitude, longitude, onChange])
+  }, [latitude, longitude, onChange, fallbackCenter])
 
   function MapEvents() {
     const map = useMapEvents({
@@ -69,7 +71,7 @@ export function LocationMap({ latitude, longitude, onChange }: Props) {
       if (isFirstLoad.current && (latitude || longitude)) {
         map.setView([latitude!, longitude!], 15)
         isFirstLoad.current = false
-      } else if (isFirstLoad.current && position !== MADRID_COORDS) {
+      } else if (isFirstLoad.current && position !== fallbackCenter) {
         map.setView(position, 15)
         isFirstLoad.current = false
       }

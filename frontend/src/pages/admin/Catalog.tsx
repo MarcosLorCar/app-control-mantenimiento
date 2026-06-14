@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   useInfrastructureTypes, useCreateInfrastructureType,
   useRoles,
   useMaterialTypes, useCreateMaterialType,
   useFixedProperties, useCreateFixedProperty, useDeleteFixedProperty
 } from '../../hooks/useCatalog'
+import { useSystemSettings, useUpdateSystemSettings } from '../../hooks/useSystemSettings'
 import { useAuth } from '../../hooks/useAuth'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
 import { CategoryEditModal } from '../../components/forms/CategoryEditModal'
 import { MaterialTypeEditModal } from '../../components/forms/MaterialTypeEditModal'
+
 
 
 const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
@@ -21,6 +23,60 @@ export function Catalog() {
   const { data: materialTypes = [] } = useMaterialTypes()
   const { data: fixedProperties = [], refetch: refetchProps } = useFixedProperties()
   const { data: roles = [] } = useRoles()
+
+  const { data: settings = [] } = useSystemSettings()
+  const updateSettings = useUpdateSystemSettings()
+
+  const defaultLat = settings.find(s => s.key === 'default_latitude')?.value ?? ''
+  const defaultLng = settings.find(s => s.key === 'default_longitude')?.value ?? ''
+  const defaultLocName = settings.find(s => s.key === 'default_location_name')?.value ?? ''
+
+  const [cfgLat, setCfgLat] = useState('')
+  const [cfgLng, setCfgLng] = useState('')
+  const [cfgLocName, setCfgLocName] = useState('')
+  const [cfgError, setCfgError] = useState('')
+  const [cfgSuccess, setCfgSuccess] = useState('')
+
+  useEffect(() => {
+    if (settings.length > 0) {
+      setCfgLat(defaultLat)
+      setCfgLng(defaultLng)
+      setCfgLocName(defaultLocName)
+    }
+  }, [settings, defaultLat, defaultLng, defaultLocName])
+
+  function handleSaveSettings(e: React.FormEvent) {
+    e.preventDefault()
+    setCfgError('')
+    setCfgSuccess('')
+
+    if (!cfgLat.trim() || !cfgLng.trim() || !cfgLocName.trim()) {
+      setCfgError('Todos los campos son obligatorios.')
+      return
+    }
+
+    if (isNaN(Number(cfgLat)) || isNaN(Number(cfgLng))) {
+      setCfgError('La latitud y longitud deben ser números válidos.')
+      return
+    }
+
+    updateSettings.mutate(
+      {
+        default_latitude: cfgLat.trim(),
+        default_longitude: cfgLng.trim(),
+        default_location_name: cfgLocName.trim(),
+      },
+      {
+        onSuccess: () => {
+          setCfgSuccess('Configuración guardada correctamente.')
+          setTimeout(() => setCfgSuccess(''), 3000)
+        },
+        onError: (err: any) => {
+          setCfgError(err?.error?.message ?? 'Error al guardar la configuración.')
+        },
+      }
+    )
+  }
 
   const addInfraType = useCreateInfrastructureType()
   const addMaterialType = useCreateMaterialType()
@@ -342,6 +398,66 @@ export function Catalog() {
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* Configuración del Sistema (Geolocalización) */}
+        <div className="bg-card rounded-xl border border-app-border p-5 h-fit col-span-1 md:col-span-2 xl:col-span-1">
+          <h2 className="text-[15px] font-semibold text-fg mb-4">Configuración de Geolocalización</h2>
+          <form onSubmit={handleSaveSettings} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-fg-secondary mb-1">Municipio / Ciudad por defecto</label>
+              <input
+                type="text"
+                value={cfgLocName}
+                onChange={e => setCfgLocName(e.target.value)}
+                placeholder="Ej: Ciudad Real"
+                className={inputCls}
+                disabled={!canManage}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-fg-secondary mb-1">Latitud por defecto</label>
+                <input
+                  type="text"
+                  value={cfgLat}
+                  onChange={e => setCfgLat(e.target.value)}
+                  placeholder="Ej: 38.9863"
+                  className={inputCls}
+                  disabled={!canManage}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-fg-secondary mb-1">Longitud por defecto</label>
+                <input
+                  type="text"
+                  value={cfgLng}
+                  onChange={e => setCfgLng(e.target.value)}
+                  placeholder="Ej: -3.9291"
+                  className={inputCls}
+                  disabled={!canManage}
+                  required
+                />
+              </div>
+            </div>
+
+            {cfgError && <p className="text-error text-xs">{cfgError}</p>}
+            {cfgSuccess && <p className="text-emerald-500 text-xs font-semibold">{cfgSuccess}</p>}
+
+            {canManage && (
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={updateSettings.isPending}
+                  className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
+                >
+                  {updateSettings.isPending ? 'Guardando...' : 'Guardar Configuración'}
+                </button>
+              </div>
+            )}
+          </form>
         </div>
 
       </div>

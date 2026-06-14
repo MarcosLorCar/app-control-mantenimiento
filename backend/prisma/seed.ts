@@ -6,6 +6,7 @@ const prisma = new PrismaClient()
 
 async function main() {
   // Borrar en orden seguro (FK constraints)
+  await prisma.systemSetting.deleteMany()
   await prisma.actionMaterial.deleteMany()
   await prisma.action.deleteMany()
   await prisma.material.deleteMany()
@@ -676,6 +677,15 @@ async function main() {
       materialId: matPMA.id,
       operation: 'UPDATE'
     }
+  })
+
+  // Configuración del sistema
+  await prisma.systemSetting.createMany({
+    data: [
+      { key: 'default_latitude', value: '38.9863' },
+      { key: 'default_longitude', value: '-3.9291' },
+      { key: 'default_location_name', value: 'Ciudad Real' },
+    ]
   })
 
   console.log('Seed completado.')
