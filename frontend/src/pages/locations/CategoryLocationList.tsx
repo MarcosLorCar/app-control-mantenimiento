@@ -150,10 +150,10 @@ export function CategoryLocationList() {
                     <span className="font-medium text-fg">{count.materials}</span>
                     <span className="text-muted text-[9px]">materiales</span>
                   </div>
-                  <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Acciones Realizadas">
+                  <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Trabajos Realizados">
                     <Zap className="w-3 h-3 text-muted" />
                     <span className="font-medium text-fg">{count.actions}</span>
-                    <span className="text-muted text-[9px]">acciones</span>
+                    <span className="text-muted text-[9px]">trabajos</span>
                   </div>
                 </div>
               </div>

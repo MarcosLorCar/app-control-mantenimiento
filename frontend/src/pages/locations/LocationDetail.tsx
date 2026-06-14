@@ -1,6 +1,5 @@
 import { useState, useEffect, Fragment } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { createPortal } from 'react-dom'
 import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight, ChevronDown, Camera, Calendar, MapPin } from 'lucide-react'
 import { useLocation, useDeleteLocation, useLocations, useUploadLocationImage, useDeleteLocationImage } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
@@ -11,10 +10,11 @@ import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 import { getCategoryIcon } from '../../utils/categoryIcons'
 import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
+import { PhotoUploadModal } from '../../components/forms/PhotoUploadModal'
 
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export function LocationDetail() {
@@ -34,7 +34,7 @@ export function LocationDetail() {
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
   const [expandedChildIds, setExpandedChildIds] = useState<Set<number>>(new Set())
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
-  const [pasteStatus, setPasteStatus] = useState<'success' | 'no-image' | null>(null)
+  const [showUploadModal, setShowUploadModal] = useState(false)
 
   const handleDeleteImage = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -60,46 +60,9 @@ export function LocationDetail() {
     })
   }
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    try {
-      await uploadImageMutation.mutateAsync({ id: locationId, file })
-    } catch (err) {
-      alert('Error al subir la imagen')
-      console.error(err)
-    }
+  const handleUploadImage = async (file: File) => {
+    await uploadImageMutation.mutateAsync({ id: locationId, file })
   }
-
-  // Paste-to-upload: listen for Ctrl+V anywhere on this page
-  useEffect(() => {
-    const handlePaste = async (e: ClipboardEvent) => {
-      // Ignore if user is typing in an input/textarea
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
-
-      const items = Array.from(e.clipboardData?.items ?? [])
-      const imageItem = items.find(item => item.type.startsWith('image/'))
-      if (!imageItem) {
-        setPasteStatus('no-image')
-        setTimeout(() => setPasteStatus(null), 2500)
-        return
-      }
-
-      const file = imageItem.getAsFile()
-      if (!file) return
-      try {
-        await uploadImageMutation.mutateAsync({ id: locationId, file })
-        setPasteStatus('success')
-        setTimeout(() => setPasteStatus(null), 2500)
-      } catch (err) {
-        console.error('Paste upload failed', err)
-      }
-    }
-
-    window.addEventListener('paste', handlePaste)
-    return () => window.removeEventListener('paste', handlePaste)
-  }, [locationId, uploadImageMutation])
 
   async function handleDelete() {
     if (!confirm('¿Eliminar esta ubicación? Sus sub-ubicaciones subirán un nivel en la jerarquía. Esta acción no se puede deshacer.')) return
@@ -177,19 +140,14 @@ export function LocationDetail() {
                   <RoleGuard require="write">
                     <div className="absolute -inset-1 pointer-events-none">
                       {/* Camera upload badge */}
-                      <label 
+                      <button
+                        type="button"
+                        onClick={() => setShowUploadModal(true)}
                         className="absolute bottom-0 right-0 w-6 h-6 bg-primary text-primary-fg rounded-full flex items-center justify-center shadow-md border border-card pointer-events-auto cursor-pointer hover:bg-[var(--primary-hover)] active:scale-95 transition-all"
                         title="Cambiar foto / Tomar foto"
                       >
                         <Camera className="w-3.5 h-3.5" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageChange}
-                          disabled={uploadImageMutation.isPending}
-                        />
-                      </label>
+                      </button>
                       
                       {/* Trash removal badge */}
                       {loc.image && (
@@ -268,27 +226,40 @@ export function LocationDetail() {
 
       {/* Helper render block to avoid duplicating code between stacked and column layouts */}
       {(() => {
+        const isRootLocation = loc.parentId === null
         const hasItems = loc.children.length > 0 || loc.materials.length > 0 || (loc.descendantMaterials?.length ?? 0) > 0
 
         const materialsSection = (
           <section className="bg-card rounded-xl border border-app-border p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg flex items-center gap-2">
-                <Package className="w-4 h-4 text-primary" /> Inventario de Materiales y Sub-ubicaciones
+                {isRootLocation ? (
+                  <>
+                    <Folder className="w-4 h-4 text-primary" /> Sub-Ubicaciones
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-4 h-4 text-primary" /> Inventario de Materiales y Sub-ubicaciones
+                  </>
+                )}
               </h2>
-              <RoleGuard require="write">
-                <button
-                  onClick={() => setShowAddMaterial(true)}
-                  className="flex items-center gap-1.5 border border-app-border px-3 py-1.5 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
-                >
-                  <Plus className="w-3 h-3" /> Añadir Material
-                </button>
-              </RoleGuard>
+              {!isRootLocation && (
+                <RoleGuard require="write">
+                  <button
+                    onClick={() => setShowAddMaterial(true)}
+                    className="flex items-center gap-1.5 border border-app-border px-3 py-1.5 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
+                  >
+                    <Plus className="w-3 h-3" /> Añadir Material
+                  </button>
+                </RoleGuard>
+              )}
             </div>
 
             {!hasItems ? (
               <div className="p-8 text-center text-muted text-xs italic bg-app-bg/40 rounded-lg border border-dashed border-app-border">
-                Sin materiales o sub-ubicaciones registradas en esta ubicación.
+                {isRootLocation
+                  ? 'Sin sub-ubicaciones registradas en esta ubicación.'
+                  : 'Sin materiales o sub-ubicaciones registradas en esta ubicación.'}
               </div>
             ) : (
               <>
@@ -305,7 +276,7 @@ export function LocationDetail() {
                     </thead>
                     <tbody className="divide-y divide-app-border/40">
                       {/* 1. Direct Materials (Instalados aquí) */}
-                      {loc.materials.map(mat => (
+                      {!isRootLocation && loc.materials.map(mat => (
                         <tr
                           key={`mat-${mat.id}`}
                           onClick={() => setEditingMaterial(mat)}
@@ -488,7 +459,7 @@ export function LocationDetail() {
                 {/* Mobile view stacked cards list */}
                 <div className="md:hidden space-y-3.5">
                   {/* 1. Direct Materials (Instalados aquí) */}
-                  {loc.materials.map(mat => (
+                  {!isRootLocation && loc.materials.map(mat => (
                     <div
                       key={`mat-mob-${mat.id}`}
                       onClick={() => setEditingMaterial(mat)}
@@ -721,7 +692,7 @@ export function LocationDetail() {
                 Sin trabajos registrados en esta ubicación.
               </div>
             ) : (
-              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-3">
                 {loc.actions.map(act => {
                   const installsCount = act.materials.filter(m => m.operation === 'INSTALL').length
                   const uninstallsCount = act.materials.filter(m => m.operation === 'UNINSTALL').length
@@ -824,20 +795,12 @@ export function LocationDetail() {
         />
       )}
 
-      {/* Paste-upload toast */}
-      {pasteStatus && createPortal(
-        <div
-          className="fixed bottom-6 right-6 z-[9998] flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-medium border"
-          style={{
-            animation: 'fadeScaleIn 0.18s ease',
-            ...(pasteStatus === 'success'
-              ? { background: 'var(--card)', borderColor: 'var(--primary)', color: 'var(--primary)' }
-              : { background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--fg-secondary)' })
-          }}
-        >
-          {pasteStatus === 'success' ? '✓ Imagen pegada correctamente' : 'No hay imagen en el portapapeles'}
-        </div>,
-        document.body
+      {showUploadModal && (
+        <PhotoUploadModal
+          onClose={() => setShowUploadModal(false)}
+          onUpload={handleUploadImage}
+          isPending={uploadImageMutation.isPending}
+        />
       )}
     </div>
   )

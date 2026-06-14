@@ -7,7 +7,7 @@ import { MaterialEditAttributesModal } from '../../components/forms/MaterialEdit
 import type { Material } from '../../api/types'
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export function MaterialsPage() {

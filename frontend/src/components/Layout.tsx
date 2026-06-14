@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth'
 
 const GENERAL_ITEMS = [
   { to: '/', icon: Warehouse, label: 'Ubicaciones' },
-  { to: '/actions', icon: ClipboardList, label: 'Acciones' },
+  { to: '/actions', icon: ClipboardList, label: 'Trabajos' },
   { to: '/materials', icon: Package, label: 'Materiales' },
 ]
 
@@ -20,8 +20,8 @@ const ADMIN_ITEMS = [
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Ubicaciones por Categoría', subtitle: '' },
   '/categories': { title: 'Navegador de Ubicaciones', subtitle: 'Ubicaciones registradas en la categoría' },
-  '/locations': { title: 'Ficha de Ubicación', subtitle: 'Detalle de equipos, materiales y acciones' },
-  '/actions': { title: 'Gestión de Acciones', subtitle: 'Registro y seguimiento de acciones' },
+  '/locations': { title: 'Ficha de Ubicación', subtitle: 'Detalle de equipos, materiales y trabajos' },
+  '/actions': { title: 'Gestión de Trabajos', subtitle: 'Registro y seguimiento de trabajos' },
   '/actions/new': { title: 'Registrar Trabajo / Mantenimiento', subtitle: 'Registra una intervención en una infraestructura principal' },
   '/materials': { title: 'Inventario de Materiales', subtitle: 'Listado completo de materiales en el sistema' },
   '/admin': { title: 'Usuarios', subtitle: 'Gestión de usuarios del sistema' },

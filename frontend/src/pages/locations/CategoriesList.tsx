@@ -147,7 +147,7 @@ export function CategoriesList() {
 
             <div>
               <label className="block text-xs font-semibold text-fg-secondary mb-2">Seleccionar Icono</label>
-              <div className="grid grid-cols-3 gap-2 border border-app-border rounded-lg p-2.5 bg-card max-h-[160px] overflow-y-auto pr-1">
+              <div className="grid grid-cols-3 gap-2 border border-app-border rounded-lg p-2.5 bg-card max-h-[160px] overflow-y-auto pr-3">
                 {CATEGORY_ICON_OPTIONS.map(opt => {
                   const OptIcon = getCategoryIcon(opt.name)
                   const isSelected = icon === opt.name

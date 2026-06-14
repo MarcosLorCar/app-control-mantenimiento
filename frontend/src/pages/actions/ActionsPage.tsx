@@ -7,7 +7,7 @@ import { RoleGuard } from '../../components/RoleGuard'
 import { Modal } from '../../components/ui/Modal'
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
+  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 const monthNames = [
@@ -237,7 +237,7 @@ export function ActionsPage() {
             className="flex items-center justify-center gap-1.5 bg-primary text-primary-fg text-[13px] font-medium px-4 h-9 rounded-lg hover:bg-[var(--primary-hover)] transition-colors shrink-0 w-full md:w-auto"
           >
             <Plus className="w-4 h-4" />
-            Nueva Acción
+            Nuevo Trabajo
           </button>
         </RoleGuard>
       </div>
@@ -246,7 +246,7 @@ export function ActionsPage() {
       <div className="flex flex-1 p-5 md:p-7 gap-5">
         <div className="flex-1 min-w-0 flex flex-col">
           <p className="text-[13px] text-muted mb-3">
-            {filtered.length} acción{filtered.length !== 1 ? 'es' : ''}
+            {filtered.length} trabajo{filtered.length !== 1 ? 's' : ''}
           </p>
 
           {loadingActions ? (
@@ -267,7 +267,7 @@ export function ActionsPage() {
               <div>
                 {filtered.length === 0 && (
                   <div className="flex items-center justify-center h-24 text-muted text-sm">
-                    {search ? 'Sin resultados.' : 'No hay acciones registradas.'}
+                    {search ? 'Sin resultados.' : 'No hay trabajos registrados.'}
                   </div>
                 )}
                 {filtered.map(action => (
@@ -329,7 +329,7 @@ export function ActionsPage() {
                   <button
                     onClick={() => prevWithActions && setCurrentDate(new Date(prevWithActions.year, prevWithActions.month, 1))}
                     disabled={!prevWithActions}
-                    title={prevWithActions ? `Ir a ${monthNames[prevWithActions.month]} ${prevWithActions.year}` : 'No hay meses anteriores con acciones'}
+                    title={prevWithActions ? `Ir a ${monthNames[prevWithActions.month]} ${prevWithActions.year}` : 'No hay meses anteriores con trabajos'}
                     className="p-1.5 border border-app-border rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed text-primary hover:bg-primary/10 hover:border-primary/40"
                   >
                     <ChevronsLeft className="w-4 h-4" />
@@ -380,7 +380,7 @@ export function ActionsPage() {
                   <button
                     onClick={() => nextWithActions && setCurrentDate(new Date(nextWithActions.year, nextWithActions.month, 1))}
                     disabled={!nextWithActions}
-                    title={nextWithActions ? `Ir a ${monthNames[nextWithActions.month]} ${nextWithActions.year}` : 'No hay meses siguientes con acciones'}
+                    title={nextWithActions ? `Ir a ${monthNames[nextWithActions.month]} ${nextWithActions.year}` : 'No hay meses siguientes con trabajos'}
                     className="p-1.5 border border-app-border rounded-lg transition-colors disabled:opacity-25 disabled:cursor-not-allowed text-primary hover:bg-primary/10 hover:border-primary/40"
                   >
                     <ChevronsRight className="w-4 h-4" />
@@ -479,10 +479,10 @@ export function ActionsPage() {
       {/* Actions of the Day Modal (mostly for mobile/tablet) */}
       {selectedDayActions && (
         <Modal
-          title={`Acciones del ${selectedDayActions.date.getDate()} de ${monthNames[selectedDayActions.date.getMonth()]}`}
+          title={`Trabajos del ${selectedDayActions.date.getDate()} de ${monthNames[selectedDayActions.date.getMonth()]}`}
           onClose={() => setSelectedDayActions(null)}
         >
-          <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1">
+          <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-3">
             {selectedDayActions.actions.map(action => (
               <div
                 key={action.id}
