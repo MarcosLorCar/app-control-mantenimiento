@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - feature/major-refactoring-and-new-features
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -28,6 +28,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Determine Docker tags
+        id: meta
+        run: |
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          # Replace unsafe characters (slashes, etc.) with dashes, and lowercase it
+          SAFE_BRANCH=$(echo "${BRANCH_NAME}" | sed 's/[^a-zA-Z0-9._-]/-/g' | tr '[:upper:]' '[:lower:]')
+          
+          if [ "${SAFE_BRANCH}" = "main" ]; then
+            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -38,9 +53,7 @@ jobs:
           context: .
           file: backend/Dockerfile
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:latest
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.backend_tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -51,8 +64,6 @@ jobs:
           context: .
           file: frontend/Dockerfile
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:latest
-            ${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.frontend_tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
