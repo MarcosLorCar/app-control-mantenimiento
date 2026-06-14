@@ -10,6 +10,8 @@ import { useAuth } from '../../hooks/useAuth'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
 import { CategoryEditModal } from '../../components/forms/CategoryEditModal'
 import { MaterialTypeEditModal } from '../../components/forms/MaterialTypeEditModal'
+import { LocationMap } from '../../components/ui/LocationMap'
+
 
 
 
@@ -416,30 +418,25 @@ export function Catalog() {
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">Latitud por defecto</label>
-                <input
-                  type="text"
-                  value={cfgLat}
-                  onChange={e => setCfgLat(e.target.value)}
-                  placeholder="Ej: 38.9863"
-                  className={inputCls}
-                  disabled={!canManage}
-                  required
+            {/* Map selection tool */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-fg-secondary">
+                Ubicación central por defecto <span className="text-muted">(Arrastra o haz clic en el mapa)</span>
+              </label>
+              <div className="border border-app-border rounded-lg overflow-hidden bg-card/30">
+                <LocationMap
+                  latitude={cfgLat ? Number(cfgLat) : 38.9863}
+                  longitude={cfgLng ? Number(cfgLng) : -3.9291}
+                  defaultCenter={[38.9863, -3.9291]}
+                  onChange={(lat, lng) => {
+                    setCfgLat(lat.toString())
+                    setCfgLng(lng.toString())
+                  }}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-fg-secondary mb-1">Longitud por defecto</label>
-                <input
-                  type="text"
-                  value={cfgLng}
-                  onChange={e => setCfgLng(e.target.value)}
-                  placeholder="Ej: -3.9291"
-                  className={inputCls}
-                  disabled={!canManage}
-                  required
-                />
+              <div className="flex gap-3 text-[10px] text-muted font-mono bg-app-bg/60 p-2 rounded border border-app-border/40 justify-center">
+                <span>Lat: {Number(cfgLat || '38.9863').toFixed(6)}</span>
+                <span>Lon: {Number(cfgLng || '-3.9291').toFixed(6)}</span>
               </div>
             </div>
 
