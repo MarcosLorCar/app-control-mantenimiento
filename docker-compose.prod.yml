@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: control-actions-db-prod
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_secure_password_change_me
+      POSTGRES_DB: control_actions_prod
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d control_actions_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: control-actions-backend-prod
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres_secure_password_change_me@db:5432/control_actions_prod?schema=public
+      JWT_SECRET: "at_least_32_characters_long_jwt_secret_change_me"
+      JWT_REFRESH_SECRET: "another_at_least_32_characters_long_jwt_refresh_secret_change_me"
+    volumes:
+      - uploads_data:/app/backend/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: control-actions-frontend-prod
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  uploads_data:

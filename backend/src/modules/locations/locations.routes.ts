@@ -105,7 +105,7 @@ export async function locationsRoutes(app: FastifyInstance) {
 
     const buffer = await fileData.toBuffer()
     const filename = `location_${id}_${Date.now()}.webp`
-    const uploadDir = path.join(__dirname, '..', '..', '..', 'uploads')
+    const uploadDir = path.join(process.cwd(), 'uploads')
 
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true })
@@ -148,7 +148,7 @@ export async function locationsRoutes(app: FastifyInstance) {
     if (existing.image) {
       // Extract file name
       const filename = path.basename(existing.image)
-      const filePath = path.join(__dirname, '..', '..', '..', 'uploads', filename)
+      const filePath = path.join(process.cwd(), 'uploads', filename)
       try {
         if (fs.existsSync(filePath)) {
           await fs.promises.unlink(filePath)

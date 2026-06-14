@@ -37,7 +37,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   })
   await app.register(fastifyMultipart, { limits: { fileSize: 10 * 1024 * 1024 } })
   await app.register(fastifyStatic, {
-    root: path.join(__dirname, '..', 'uploads'),
+    root: path.join(process.cwd(), 'uploads'),
     prefix: '/uploads/',
     decorateReply: false,
   })
