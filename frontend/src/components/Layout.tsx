@@ -7,7 +7,7 @@ import {
 import { useAuth } from '../hooks/useAuth'
 
 const GENERAL_ITEMS = [
-  { to: '/', icon: Warehouse, label: 'Ubicaciones' },
+  { to: '/', icon: Warehouse, label: 'Departamentos' },
   { to: '/actions', icon: ClipboardList, label: 'Trabajos' },
   { to: '/materials', icon: Package, label: 'Materiales' },
 ]
@@ -18,7 +18,7 @@ const ADMIN_ITEMS = [
 ]
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
-  '/': { title: 'Ubicaciones por Categoría', subtitle: '' },
+  '/': { title: 'Departamentos', subtitle: '' },
   '/categories': { title: 'Navegador de Ubicaciones', subtitle: 'Ubicaciones registradas en la categoría' },
   '/locations': { title: 'Ficha de Ubicación', subtitle: 'Detalle de equipos, materiales y trabajos' },
   '/actions': { title: 'Gestión de Trabajos', subtitle: 'Registro y seguimiento de trabajos' },
@@ -77,8 +77,8 @@ export function Layout() {
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           <p className="px-3 pb-2 text-[10px] font-semibold tracking-[2px] text-sidebar-fg uppercase">Menú</p>
           {GENERAL_ITEMS.map(({ to, icon: Icon, label }) => {
-            const isUbicaciones = to === '/'
-            const active = isUbicaciones
+            const isDepartamentos = to === '/'
+            const active = isDepartamentos
               ? (location.pathname === '/' || location.pathname.startsWith('/categories/') || location.pathname.startsWith('/locations/'))
               : (location.pathname === to || location.pathname.startsWith(to + '/'))
 
