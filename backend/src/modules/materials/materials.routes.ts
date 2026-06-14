@@ -12,6 +12,13 @@ export async function materialsRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
+    const locationId = parsed.data.locationId
+    if (locationId) {
+      const loc = await app.db.location.findFirst({ where: { id: locationId, deletedAt: null } })
+      if (loc && loc.parentId === null) {
+        return reply.status(400).send({ error: { code: 'ROOT_LOCATION_CANNOT_HAVE_MATERIALS', message: 'No se pueden asociar materiales directamente a una ubicación raíz.' } })
+      }
+    }
     const data = await createMaterial(app.db, parsed.data)
     return reply.status(201).send({ data })
   })

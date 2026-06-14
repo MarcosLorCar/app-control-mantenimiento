@@ -14,6 +14,7 @@ export const UpdateMaterialTypeSchema = z.object({
   description: z.string().optional(),
   icon: z.string().optional(),
   customAttributes: z.unknown().optional(),
+  categoryIds: z.array(z.number().int().positive()).optional(),
 })
 
 export const CreateFixedPropertySchema = z.object({
