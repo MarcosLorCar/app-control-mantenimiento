@@ -1,16 +1,19 @@
 import { useState, useEffect, Fragment } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight, ChevronDown, Camera, Calendar, MapPin } from 'lucide-react'
-import { useLocation, useDeleteLocation, useLocations, useUploadLocationImage, useDeleteLocationImage } from '../../hooks/useLocations'
+import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight, ChevronDown, Camera, Calendar, MapPin, Image } from 'lucide-react'
+import { useLocation, useDeleteLocation, useLocations, useUploadLocationImage, useDeleteLocationImage, useLocationGallery, useDeleteLocationPhoto } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
 import { MaterialForm } from '../../components/forms/MaterialForm'
-import type { Location, Material } from '../../api/types'
+import { LocationPhotoUploadModal } from '../../components/forms/LocationPhotoUploadModal'
+import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
+import { Modal } from '../../components/ui/Modal'
+import type { Location, Material, LocationPhoto } from '../../api/types'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 import { getCategoryIcon } from '../../utils/categoryIcons'
-import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
 import { PhotoUploadModal } from '../../components/forms/PhotoUploadModal'
+
 
 
 function formatDate(iso: string) {
@@ -28,6 +31,11 @@ export function LocationDetail() {
   const uploadImageMutation = useUploadLocationImage()
   const deleteImageMutation = useDeleteLocationImage()
 
+  // Calculate root ID safely at hook level
+  const pathIds = loc?.path ? loc.path.split('/').filter(Boolean).map(Number) : []
+  const rootId = pathIds[0] || locationId
+  const rootLocation = allLocs.find(l => l.id === rootId) || loc
+
   const [showEdit, setShowEdit] = useState(false)
   const [showAddChild, setShowAddChild] = useState(false)
   const [showAddMaterial, setShowAddMaterial] = useState(false)
@@ -35,6 +43,16 @@ export function LocationDetail() {
   const [expandedChildIds, setExpandedChildIds] = useState<Set<number>>(new Set())
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showGalleryModal, setShowGalleryModal] = useState(false)
+  const [showGalleryUploadModal, setShowGalleryUploadModal] = useState(false)
+  const [previewGalleryPhoto, setPreviewGalleryPhoto] = useState<LocationPhoto | null>(null)
+  
+  const { data: galleryPhotos = [] } = useLocationGallery(rootId)
+  const deleteGalleryPhotoMut = useDeleteLocationPhoto()
+
+  const handleDeleteGalleryPhoto = async (photoId: number) => {
+    deleteGalleryPhotoMut.mutate({ locationId: rootId, photoId })
+  }
 
   const handleDeleteImage = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -85,12 +103,10 @@ export function LocationDetail() {
   if (error || !loc) return <p className="text-error text-sm py-20 text-center">Ubicación no encontrada.</p>
 
   // Build breadcrumbs
-  const pathIds = loc.path.split('/').filter(Boolean).map(Number)
   const breadcrumbs = pathIds.map(pid => {
     const found = allLocs.find(l => l.id === pid)
     return found || { id: pid, name: pid === locationId ? loc.name : `Cargando...`, infraTypeId: loc.infraTypeId }
   })
-  const rootId = pathIds[0] || locationId
 
   return (
     <div className="space-y-6">
@@ -200,6 +216,12 @@ export function LocationDetail() {
               <Zap className="w-3.5 h-3.5" /> Registrar Trabajo
             </button>
           </RoleGuard>
+          <button
+            onClick={() => setShowGalleryModal(true)}
+            className="flex items-center gap-1.5 border border-app-border px-3.5 py-2 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
+          >
+            <Image className="w-3.5 h-3.5 text-primary" /> Galería
+          </button>
           <RoleGuard require="write">
             <button
               onClick={() => setShowAddMaterial(true)}
@@ -813,6 +835,85 @@ export function LocationDetail() {
           onUpload={handleUploadImage}
           isPending={uploadImageMutation.isPending}
         />
+      )}
+
+      {showGalleryUploadModal && (
+        <LocationPhotoUploadModal
+          locationId={locationId}
+          onClose={() => setShowGalleryUploadModal(false)}
+        />
+      )}
+
+      {previewGalleryPhoto && (
+        <ImagePreviewModal
+          src={previewGalleryPhoto.url}
+          alt={loc?.name}
+          description={previewGalleryPhoto.description}
+          date={previewGalleryPhoto.takenAt}
+          actionId={previewGalleryPhoto.actionId}
+          onDelete={() => {
+            handleDeleteGalleryPhoto(previewGalleryPhoto.id)
+            setPreviewGalleryPhoto(null)
+          }}
+          onClose={() => setPreviewGalleryPhoto(null)}
+        />
+      )}
+
+      {showGalleryModal && (
+        <Modal title={`Galería de Fotos - ${rootLocation?.name || 'Cargando...'}`} onClose={() => setShowGalleryModal(false)} size="2xl">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center sticky -top-4 z-10 bg-card pb-3 pt-5 border-b border-app-border/40 -mx-5 px-5 -mt-4 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)]">
+              <span className="text-xs text-muted">
+                {galleryPhotos.length} {galleryPhotos.length === 1 ? 'foto asociada' : 'fotos asociadas'}
+              </span>
+              <RoleGuard require="write">
+                <button
+                  onClick={() => setShowGalleryUploadModal(true)}
+                  className="flex items-center gap-1.5 bg-primary text-primary-fg px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[var(--primary-hover)] transition-all shadow-sm active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Añadir Foto
+                </button>
+              </RoleGuard>
+            </div>
+
+            {galleryPhotos.length === 0 ? (
+              <div className="p-12 flex flex-col items-center justify-center text-center text-muted text-xs italic bg-app-bg/40 rounded-lg border border-dashed border-app-border min-h-[200px]">
+                <span>Sin fotos en la galería de esta infraestructura.</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-2">
+                {galleryPhotos.map((photo) => (
+                  <div
+                    key={photo.id}
+                    onClick={() => setPreviewGalleryPhoto(photo)}
+                    className="relative group aspect-square rounded-lg overflow-hidden border border-app-border bg-app-bg/50 cursor-pointer shadow-sm hover:border-primary transition-all"
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.description || 'Foto'}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2 pointer-events-none">
+                      <span className="text-[10px] text-white font-mono leading-none">
+                        {new Date(photo.takenAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t border-app-border/40">
+              <button
+                type="button"
+                onClick={() => setShowGalleryModal(false)}
+                className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   )

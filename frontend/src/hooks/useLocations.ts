@@ -7,6 +7,9 @@ import {
   deleteLocation,
   uploadLocationImage,
   deleteLocationImage,
+  getLocationGallery,
+  uploadLocationPhoto,
+  deleteLocationPhoto,
 } from '../api/locations'
 
 export const locationKeys = {
@@ -21,6 +24,7 @@ export const locationKeys = {
   ] as const,
   details: () => [...locationKeys.all, 'detail'] as const,
   detail: (id: number) => [...locationKeys.details(), id] as const,
+  gallery: (id: number) => [...locationKeys.detail(id), 'gallery'] as const,
 }
 
 export function useLocations(parentId?: number | null, infraTypeId?: number) {
@@ -100,6 +104,34 @@ export function useDeleteLocationImage() {
       if (data.parentId) {
         qc.invalidateQueries({ queryKey: locationKeys.detail(data.parentId) })
       }
+    },
+  })
+}
+
+export function useLocationGallery(id: number) {
+  return useQuery({
+    queryKey: locationKeys.gallery(id),
+    queryFn: () => getLocationGallery(id),
+  })
+}
+
+export function useUploadLocationPhoto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, file, date, description }: { id: number; file: File; date?: string; description?: string }) =>
+      uploadLocationPhoto(id, file, date, description),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: locationKeys.all })
+    },
+  })
+}
+
+export function useDeleteLocationPhoto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ locationId, photoId }: { locationId: number; photoId: number }) => deleteLocationPhoto(photoId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: locationKeys.all })
     },
   })
 }

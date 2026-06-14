@@ -1,5 +1,5 @@
 import { apiFetch, API_BASE } from './client'
-import type { Location, LocationDetail } from './types'
+import type { Location, LocationDetail, LocationPhoto } from './types'
 
 type ApiData<T> = { data: T }
 
@@ -70,6 +70,27 @@ export function deleteLocationImage(id: number): Promise<Location> {
   return apiFetch<ApiData<Location>>(`${API_BASE}/locations/${id}/image`, {
     method: 'DELETE',
   }).then(r => r.data)
+}
+
+export function getLocationGallery(id: number): Promise<LocationPhoto[]> {
+  return apiFetch<ApiData<LocationPhoto[]>>(`${API_BASE}/locations/${id}/gallery`).then(r => r.data)
+}
+
+export function uploadLocationPhoto(id: number, file: File, date?: string, description?: string): Promise<LocationPhoto> {
+  const formData = new FormData()
+  if (date) formData.append('takenAt', date)
+  if (description) formData.append('description', description)
+  formData.append('file', file)
+  return apiFetch<ApiData<LocationPhoto>>(`${API_BASE}/locations/${id}/gallery`, {
+    method: 'POST',
+    body: formData,
+  }).then(r => r.data)
+}
+
+export function deleteLocationPhoto(photoId: number): Promise<void> {
+  return apiFetch(`${API_BASE}/locations/gallery/${photoId}`, {
+    method: 'DELETE',
+  }).then(() => undefined)
 }
 
 

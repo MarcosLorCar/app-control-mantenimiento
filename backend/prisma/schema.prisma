@@ -84,6 +84,7 @@ model Location {
   // Target links
   materials   Material[]
   actions     Action[]
+  photos      LocationPhoto[]
 
   @@index([parentId])
   @@index([path])
@@ -164,6 +165,7 @@ model Action {
 
   performedBy Int
   performer   User    @relation(fields: [performedBy], references: [id])
+  photos      LocationPhoto[]
 
   @@index([locationId])
   @@index([performedBy])
@@ -196,5 +198,23 @@ model SystemSetting {
   value String
 
   @@map("system_settings")
+}
+
+model LocationPhoto {
+  id          Int       @id @default(autoincrement())
+  url         String
+  description String?
+  takenAt     DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+
+  locationId  Int
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  actionId    Int?
+  action      Action?   @relation(fields: [actionId], references: [id], onDelete: SetNull)
+
+  @@index([locationId])
+  @@index([actionId])
+  @@map("location_photos")
 }
 

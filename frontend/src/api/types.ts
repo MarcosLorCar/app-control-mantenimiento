@@ -133,3 +133,19 @@ export interface SystemSetting {
   value: string
 }
 
+export interface LocationPhoto {
+  id: number
+  url: string
+  description: string | null
+  takenAt: string
+  createdAt: string
+  locationId: number
+  actionId: number | null
+  action?: {
+    id: number
+    title: string
+    performedAt: string
+  } | null
+}
+
+

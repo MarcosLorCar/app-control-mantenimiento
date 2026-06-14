@@ -63,3 +63,13 @@ export function listMaterialActions(materialId: number): Promise<Action[]> {
 export function listLocationActions(locationId: number): Promise<Action[]> {
   return apiFetch<ApiData<Action[]>>(`${API_BASE}/locations/${locationId}/actions`).then(r => r.data)
 }
+
+export function uploadActionPhoto(actionId: number, file: File): Promise<any> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiFetch<ApiData<any>>(`${API_BASE}/actions/${actionId}/image`, {
+    method: 'POST',
+    body: formData,
+  }).then(r => r.data)
+}
+

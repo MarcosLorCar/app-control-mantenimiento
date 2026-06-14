@@ -115,8 +115,8 @@ export async function locationsRoutes(app: FastifyInstance) {
 
     try {
       await sharp(buffer)
-        .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 80 })
+        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
         .toFile(targetPath)
     } catch (err: any) {
       return reply.status(400).send({
@@ -165,6 +165,122 @@ export async function locationsRoutes(app: FastifyInstance) {
 
     const data = await getLocationDetail(app.db, id)
     return reply.send({ data })
+  })
+
+  // Get gallery for a location and all its descendants recursively
+  app.get('/:id/gallery', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const id = Number((req.params as { id: string }).id)
+    const current = await app.db.location.findFirst({ where: { id, deletedAt: null } })
+    if (!current) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Ubicación no encontrada' } })
+    }
+
+    const locations = await app.db.location.findMany({
+      where: {
+        path: { startsWith: current.path },
+        deletedAt: null,
+      },
+      select: { id: true }
+    })
+    const locationIds = locations.map(l => l.id)
+
+    const photos = await app.db.locationPhoto.findMany({
+      where: {
+        locationId: { in: locationIds }
+      },
+      include: {
+        action: {
+          select: {
+            id: true,
+            title: true,
+            performedAt: true,
+          }
+        }
+      },
+      orderBy: {
+        takenAt: 'desc'
+      }
+    })
+
+    return reply.send({ data: photos })
+  })
+
+  // Upload photo to location gallery
+  app.post('/:id/gallery', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const id = Number((req.params as { id: string }).id)
+    const existing = await app.db.location.findFirst({ where: { id, deletedAt: null } })
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Ubicación no encontrada' } })
+    }
+
+    const fileData = await req.file()
+    if (!fileData) {
+      return reply.status(400).send({ error: { code: 'MISSING_FILE', message: 'No se recibió ningún archivo' } })
+    }
+
+    const description = (fileData.fields?.description as any)?.value || null
+    const takenAtVal = (fileData.fields?.takenAt as any)?.value
+    const takenAt = takenAtVal ? new Date(takenAtVal) : new Date()
+
+    const buffer = await fileData.toBuffer()
+    const filename = `gallery_${id}_${Date.now()}.webp`
+    const uploadDir = path.join(process.cwd(), 'uploads')
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true })
+    }
+
+    const targetPath = path.join(uploadDir, filename)
+
+    try {
+      await sharp(buffer)
+        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toFile(targetPath)
+    } catch (err: any) {
+      return reply.status(400).send({
+        error: {
+          code: 'INVALID_IMAGE',
+          message: 'El archivo subido no es una imagen válida o está dañado.'
+        }
+      })
+    }
+
+    const imageUrl = `/uploads/${filename}`
+
+    const photo = await app.db.locationPhoto.create({
+      data: {
+        url: imageUrl,
+        description,
+        takenAt,
+        locationId: id,
+      }
+    })
+
+    return reply.status(201).send({ data: photo })
+  })
+
+  // Delete photo from gallery
+  app.delete('/gallery/:photoId', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const photoId = Number((req.params as { photoId: string }).photoId)
+    const photo = await app.db.locationPhoto.findFirst({ where: { id: photoId } })
+    if (!photo) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Foto no encontrada' } })
+    }
+
+    const filename = path.basename(photo.url)
+    const filePath = path.join(process.cwd(), 'uploads', filename)
+    try {
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath)
+      }
+    } catch (err) {
+      app.log.error(err)
+    }
+
+    await app.db.locationPhoto.delete({ where: { id: photoId } })
+
+    return reply.status(204).send()
   })
 }
 

@@ -23,11 +23,12 @@ interface Props {
   longitude: number | null
   onChange: (lat: number, lng: number) => void
   defaultCenter?: [number, number]
+  className?: string
 }
 
 const MADRID_COORDS: [number, number] = [40.416775, -3.703790]
 
-export function LocationMap({ latitude, longitude, onChange, defaultCenter }: Props) {
+export function LocationMap({ latitude, longitude, onChange, defaultCenter, className }: Props) {
   const fallbackCenter = defaultCenter || MADRID_COORDS
   const [position, setPosition] = useState<[number, number]>(
     latitude && longitude ? [latitude, longitude] : fallbackCenter
@@ -103,7 +104,7 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter }: Pr
           </span>
         )}
       </div>
-      <div className="h-[200px] w-full rounded-lg border border-app-border overflow-hidden relative z-10">
+      <div className={`w-full rounded-lg border border-app-border overflow-hidden relative z-10 ${className || 'h-[300px] sm:h-[380px]'}`}>
         <MapContainer
           center={position}
           zoom={15}

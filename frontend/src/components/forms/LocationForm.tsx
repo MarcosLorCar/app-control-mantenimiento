@@ -4,6 +4,7 @@ import { useCreateLocation, useUpdateLocation } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { useSystemSettings } from '../../hooks/useSystemSettings'
 import { LocationMap } from '../ui/LocationMap'
+import { MapPin } from 'lucide-react'
 import type { Location } from '../../api/types'
 
 
@@ -36,6 +37,9 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
   )
   const [latitude, setLatitude] = useState<number | null>(existing?.latitude ?? null)
   const [longitude, setLongitude] = useState<number | null>(existing?.longitude ?? null)
+  const [showMapModal, setShowMapModal] = useState(false)
+  const [tempLat, setTempLat] = useState<number | null>(null)
+  const [tempLng, setTempLng] = useState<number | null>(null)
 
   const createLoc = useCreateLocation()
   const updateLoc = useUpdateLocation()
@@ -159,16 +163,27 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
         </div>
 
         {hasGeolocation && (
-          <div className="border border-app-border rounded-lg p-2 bg-card/30">
-            <LocationMap
-              latitude={latitude}
-              longitude={longitude}
-              defaultCenter={defaultCenterCoords}
-              onChange={(lat, lng) => {
-                setLatitude(lat)
-                setLongitude(lng)
+          <div className="flex flex-col gap-2 p-3 bg-app-bg/50 border border-app-border rounded-lg">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-fg-secondary font-medium">Ubicación GPS:</span>
+              <span className="font-mono text-muted text-[11px]">
+                {latitude !== null && longitude !== null
+                  ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+                  : 'Sin seleccionar'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setTempLat(latitude ?? defaultCenterCoords[0])
+                setTempLng(longitude ?? defaultCenterCoords[1])
+                setShowMapModal(true)
               }}
-            />
+              className="w-full py-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              {latitude !== null && longitude !== null ? 'Modificar en el mapa' : 'Seleccionar en el mapa'}
+            </button>
           </div>
         )}
 
@@ -191,6 +206,45 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
           </button>
         </div>
       </form>
+
+      {showMapModal && (
+        <Modal title="Seleccionar Ubicación" onClose={() => setShowMapModal(false)} size="2xl">
+          <div className="space-y-4 flex flex-col h-full flex-1">
+            <div className="border border-app-border rounded-lg overflow-hidden flex-1">
+              <LocationMap
+                latitude={tempLat}
+                longitude={tempLng}
+                defaultCenter={defaultCenterCoords}
+                onChange={(lat, lng) => {
+                  setTempLat(lat)
+                  setTempLng(lng)
+                }}
+                className="h-[60vh] min-h-[320px]"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowMapModal(false)}
+                className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLatitude(tempLat)
+                  setLongitude(tempLng)
+                  setShowMapModal(false)
+                }}
+                className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] transition-colors font-semibold"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </Modal>
   )
 }
