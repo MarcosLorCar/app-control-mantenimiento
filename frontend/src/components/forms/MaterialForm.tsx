@@ -31,6 +31,7 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
   // Inline custom attributes states
   const [customAttrs, setCustomAttrs] = useState<{ code: string; name: string; type: string }[]>([])
   const [newAttrName, setNewAttrName] = useState('')
+  const [newAttrType, setNewAttrType] = useState<'STRING' | 'NUMBER'>('STRING')
 
   const createMaterialMut = useCreateMaterial()
   const createMaterialTypeMut = useCreateMaterialType()
@@ -117,8 +118,9 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
       setError('Ya existe una propiedad con ese nombre o código.')
       return
     }
-    setCustomAttrs(prev => [...prev, { code, name: newAttrName.trim(), type: 'STRING' }])
+    setCustomAttrs(prev => [...prev, { code, name: newAttrName.trim(), type: newAttrType }])
     setNewAttrName('')
+    setNewAttrType('STRING')
     setError('')
   }
 
@@ -187,7 +189,7 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
 
   return (
     <Modal title="Añadir Material a la Ubicación" onClose={onClose}>
-      <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-[75vh] overflow-y-auto pr-3">
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">
             Nombre del Material <span className="text-error">*</span>
@@ -287,7 +289,7 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
                         }
                         handleAttrChange(attr.code, parsedVal)
                       }}
-                      placeholder={`Ej: ${attr.name}`}
+                      placeholder={`Valor para ${attr.name}`}
                       className={inputCls}
                     />
                   </div>
@@ -312,7 +314,7 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
                         }
                         handleAttrChange(prop.code, parsedVal)
                       }}
-                      placeholder={`Ej: ${prop.name}`}
+                      placeholder={`Valor para ${prop.name}`}
                       className={inputCls}
                     />
                   </div>
@@ -321,23 +323,42 @@ export function MaterialForm({ locationId, onClose, onSuccess }: Props) {
             </div>
 
             {/* 3. Inline custom attribute adder */}
-            <div className="pt-2 border-t border-dashed border-app-border/40 space-y-1.5">
-              <label className="block text-[10px] font-semibold text-fg-secondary">Añadir Campo/Propiedad Técnica (Inline)</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newAttrName}
-                  onChange={e => setNewAttrName(e.target.value)}
-                  placeholder="Ej: Potencia (W), Marca, Modelo..."
-                  className="flex-1 border border-app-border rounded-lg px-3 py-1 bg-card text-xs text-fg focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCustomAttr}
-                  className="px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Añadir
-                </button>
+            <div className="pt-3.5 border-t border-app-border/45 space-y-3">
+              <span className="block text-[11px] font-bold text-fg-secondary uppercase tracking-wider">Añadir Propiedad Técnica Personalizada</span>
+              <div className="bg-app-bg/65 p-3 rounded-lg border border-app-border/75 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-muted mb-1">Nombre (ej: Potencia)</label>
+                    <input
+                      type="text"
+                      value={newAttrName}
+                      onChange={e => setNewAttrName(e.target.value)}
+                      placeholder="Ej: Marca, Modelo, Rango..."
+                      className="w-full border border-app-border rounded-lg px-2.5 py-1.5 bg-card text-xs text-fg focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-muted mb-1">Tipo de Dato</label>
+                    <select
+                      value={newAttrType}
+                      onChange={e => setNewAttrType(e.target.value as any)}
+                      className="w-full border border-app-border rounded-lg px-2.5 py-1.5 bg-card text-xs text-fg focus:outline-none"
+                    >
+                      <option value="STRING">Texto (STRING)</option>
+                      <option value="NUMBER">Número (NUMBER)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    onClick={handleAddCustomAttr}
+                    disabled={!newAttrName.trim()}
+                    className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Añadir Propiedad
+                  </button>
+                </div>
               </div>
             </div>
           </div>

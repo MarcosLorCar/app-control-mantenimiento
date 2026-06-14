@@ -303,7 +303,7 @@ export function ActionForm({ action, locationId, onClose }: Props) {
   return (
     <Modal title={isEdit ? 'Editar Información del Trabajo' : 'Registrar Trabajo / Mantenimiento'} onClose={onClose}>
       <form onSubmit={handleSubmit} className="flex flex-col max-h-[75vh]">
-        <div className="flex-1 overflow-y-auto pr-1 pb-4 space-y-4">
+        <div className="flex-1 overflow-y-auto pr-3 pb-4 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-fg-secondary mb-1">
               Título / Nombre de Tarea <span className="text-error">*</span>
@@ -384,7 +384,7 @@ export function ActionForm({ action, locationId, onClose }: Props) {
                         >
                           <div className="flex-1 min-w-0 pr-2">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`font-bold text-xs ${isRemoved ? 'line-through text-muted' : 'text-fg'}`}>
+                              <span className={`font-bold text-xs break-words whitespace-normal ${isRemoved ? 'line-through text-muted' : 'text-fg'}`}>
                                 {mat.name}
                               </span>
                               <span className="text-[9px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-app-bg border border-app-border text-muted shrink-0">
@@ -502,7 +502,7 @@ export function ActionForm({ action, locationId, onClose }: Props) {
           onClose={() => setShowSubModal(false)}
         >
           <div className="flex flex-col max-h-[70vh]">
-            <div className="flex-1 overflow-y-auto pr-1 pb-4 space-y-4">
+            <div className="flex-1 overflow-y-auto pr-3 pb-4 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-fg-secondary mb-1">
                   Nombre del Material <span className="text-error">*</span>

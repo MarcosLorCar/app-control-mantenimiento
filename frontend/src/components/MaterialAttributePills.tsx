@@ -24,10 +24,16 @@ export function MaterialAttributePills({ material }: { material: { attributes?: 
         let displayVal = String(val)
         if (typeof val === 'boolean') {
           displayVal = val ? 'Sí' : 'No'
-        } else if (key === 'purchase_date' && typeof val === 'string') {
-          // Format date briefly
+        } else if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/.test(val)) {
+          // Format date as DD/MM/YYYY
           try {
-            displayVal = new Date(val).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })
+            const dateStr = val.split('T')[0]
+            const parts = dateStr.split('-')
+            if (parts.length === 3) {
+              displayVal = `${parts[2]}/${parts[1]}/${parts[0]}`
+            } else {
+              displayVal = new Date(val).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
+            }
           } catch {
             displayVal = val
           }

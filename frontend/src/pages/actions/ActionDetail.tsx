@@ -21,7 +21,7 @@ export function ActionDetail() {
   const deleteMut = useDeleteAction()
 
   const [showEdit, setShowEdit] = useState(false)
-  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
+  const [editingMaterial, setEditingMaterial] = useState<{ material: any; readOnly: boolean; title?: string } | null>(null)
 
   if (isLoading) return <p className="text-muted text-sm py-20 text-center">Cargando detalles del trabajo...</p>
   if (error || !action) return <p className="text-error text-sm py-20 text-center">Trabajo no encontrado.</p>
@@ -143,8 +143,8 @@ export function ActionDetail() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-sm text-fg truncate">
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <h3 className="font-bold text-sm text-fg break-words">
                               {m.name}
                             </h3>
                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 ${
@@ -175,12 +175,56 @@ export function ActionDetail() {
                       </div>
 
                       {/* Clickable details action */}
-                      <button
-                        onClick={() => setEditingMaterial(m)}
-                        className={`text-[11px] font-semibold hover:underline shrink-0 self-center ${btnColorCls}`}
-                      >
-                        Detalles
-                      </button>
+                      <div className="flex flex-col sm:flex-row gap-2 shrink-0 self-center">
+                        {am.snapshot ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const prevMat = {
+                                  ...m,
+                                  name: (am.snapshot as any).name ?? m.name,
+                                  description: (am.snapshot as any).description ?? m.description,
+                                  attributes: (am.snapshot as any).attributes ?? {},
+                                }
+                                setEditingMaterial({
+                                  material: prevMat,
+                                  readOnly: true,
+                                  title: `Detalles Previos (Antes del Trabajo) - ${prevMat.name}`
+                                })
+                              }}
+                              className="text-[10px] bg-muted/20 hover:bg-muted/30 px-2 py-1 rounded text-fg border border-app-border font-semibold transition-colors"
+                            >
+                              Previos
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingMaterial({
+                                  material: m,
+                                  readOnly: true,
+                                  title: `Detalles Actuales (Resultado) - ${m.name}`
+                                })
+                              }}
+                              className={`text-[10px] px-2 py-1 rounded border border-current font-semibold transition-colors ${btnColorCls}`}
+                            >
+                              Actuales
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setEditingMaterial({
+                              material: m,
+                              readOnly: true,
+                              title: `Detalles - ${m.name}`
+                            })}
+                            className={`text-[11px] font-semibold hover:underline ${btnColorCls}`}
+                          >
+                            Detalles
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -270,7 +314,9 @@ export function ActionDetail() {
 
       {editingMaterial && (
         <MaterialEditAttributesModal
-          material={editingMaterial}
+          material={editingMaterial.material}
+          readOnly={editingMaterial.readOnly}
+          titleOverride={editingMaterial.title}
           onClose={() => setEditingMaterial(null)}
         />
       )}

@@ -78,8 +78,7 @@ export interface MaterialType {
   createdAt: string
   updatedAt: string
   deletedAt: string | null
-  infraTypeId?: number | null
-  infraType?: InfrastructureType | null
+  categories: { id: number; name: string }[]
   customAttributes?: any
 }
 
@@ -122,6 +121,7 @@ export interface Action {
     materialId: number
     operation: 'INSTALL' | 'UNINSTALL' | 'UPDATE'
     material: Material
+    snapshot?: any
   }[]
   location: { id: number; name: string; path: string; parentId: number | null; latitude: number | null; longitude: number | null } | null
   performer: { id: number; fullName: string; email: string }

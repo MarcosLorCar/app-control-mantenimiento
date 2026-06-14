@@ -11,17 +11,24 @@ import type { Material } from '../../api/types'
 interface Props {
   material: Material
   onClose: () => void
+  readOnly?: boolean
+  titleOverride?: string
 }
 
-export function MaterialEditAttributesModal({ material, onClose }: Props) {
+export function MaterialEditAttributesModal({ material, onClose, readOnly, titleOverride }: Props) {
   const { data: fixedProperties = [], isLoading } = useFixedProperties()
 
   return (
-    <Modal title={`Detalles de Material - ${material.name}`} onClose={onClose}>
+    <Modal title={titleOverride ?? `Detalles de Material - ${material.name}`} onClose={onClose}>
       {isLoading ? (
         <div className="text-center py-8 text-muted text-sm">Cargando especificaciones...</div>
       ) : (
-        <MaterialEditAttributesForm fixedProperties={fixedProperties} material={material} onClose={onClose} />
+        <MaterialEditAttributesForm
+          fixedProperties={fixedProperties}
+          material={material}
+          onClose={onClose}
+          readOnly={readOnly}
+        />
       )}
     </Modal>
   )
@@ -31,10 +38,12 @@ function MaterialEditAttributesForm({
   fixedProperties,
   material,
   onClose,
+  readOnly = false,
 }: {
   fixedProperties: any[]
   material: Material
   onClose: () => void
+  readOnly?: boolean
 }) {
   const qc = useQueryClient()
   const updateMaterialMut = useUpdateMaterial()
@@ -45,19 +54,53 @@ function MaterialEditAttributesForm({
   const [description, setDescription] = useState(material.description ?? '')
   const [attributes, setAttributes] = useState<Record<string, any>>(() => ({ ...material.attributes }))
   const [customAttrs, setCustomAttrs] = useState<{ code: string; name: string; type: string }[]>(() => {
+    let typeAttrs: { code: string; name: string; type: string }[] = []
     if (material.type && material.type.customAttributes) {
       try {
         const attrs = typeof material.type.customAttributes === 'string'
           ? JSON.parse(material.type.customAttributes)
           : material.type.customAttributes
-        return Array.isArray(attrs) ? attrs : []
+        if (Array.isArray(attrs)) {
+          typeAttrs = [...attrs]
+        }
       } catch {
-        return []
+        // ignore
       }
     }
-    return []
+
+    const existingAttrKeys = typeAttrs.map(a => a.code)
+    const fixedKeys = fixedProperties.map(p => p.code)
+
+    const extraAttrs: { code: string; name: string; type: string }[] = []
+    if (material.attributes) {
+      Object.entries(material.attributes).forEach(([key, val]) => {
+        if (!existingAttrKeys.includes(key) && !fixedKeys.includes(key)) {
+          let detectedType = 'STRING'
+          if (typeof val === 'number') {
+            detectedType = 'NUMBER'
+          } else if (typeof val === 'boolean') {
+            detectedType = 'BOOLEAN'
+          } else if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}/.test(val)) {
+            detectedType = 'DATE'
+          }
+
+          const readableName = key
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase())
+
+          extraAttrs.push({
+            code: key,
+            name: readableName,
+            type: detectedType
+          })
+        }
+      })
+    }
+
+    return [...typeAttrs, ...extraAttrs]
   })
   const [newAttrName, setNewAttrName] = useState('')
+  const [newAttrType, setNewAttrType] = useState<'STRING' | 'NUMBER'>('STRING')
 
   const handleAttrChange = (code: string, val: any) => {
     setAttributes(prev => ({ ...prev, [code]: val }))
@@ -70,12 +113,13 @@ function MaterialEditAttributesForm({
       setError('Ya existe una propiedad con ese nombre o código.')
       return
     }
-    setCustomAttrs(prev => [...prev, { code, name: newAttrName.trim(), type: 'STRING' }])
+    setCustomAttrs(prev => [...prev, { code, name: newAttrName.trim(), type: newAttrType }])
     setNewAttrName('')
+    setNewAttrType('STRING')
     setError('')
   }
 
-  const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
+  const inputCls = `w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors ${readOnly ? 'bg-app-bg/40 cursor-not-allowed opacity-90' : ''}`
 
   function handleDelete() {
     if (!confirm('¿Seguro que deseas eliminar este material permanentemente?')) return
@@ -92,9 +136,24 @@ function MaterialEditAttributesForm({
     setError('')
 
     try {
-      const oldAttrs = material.type.customAttributes || []
-      const oldLength = Array.isArray(oldAttrs) ? oldAttrs.length : 0
-      if (customAttrs.length > oldLength) {
+      let oldAttrsParsed: any[] = []
+      if (material.type && material.type.customAttributes) {
+        try {
+          oldAttrsParsed = typeof material.type.customAttributes === 'string'
+            ? JSON.parse(material.type.customAttributes)
+            : material.type.customAttributes
+        } catch {
+          // ignore
+        }
+      }
+      if (!Array.isArray(oldAttrsParsed)) {
+        oldAttrsParsed = []
+      }
+
+      const oldAttrsStr = JSON.stringify(oldAttrsParsed)
+      const newAttrsStr = JSON.stringify(customAttrs)
+
+      if (oldAttrsStr !== newAttrsStr) {
         await updateMaterialTypeMut.mutateAsync({
           id: material.typeId,
           body: { customAttributes: customAttrs }
@@ -128,7 +187,7 @@ function MaterialEditAttributesForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col max-h-[70vh]">
-      <div className="flex-1 overflow-y-auto pr-1 pb-4 space-y-4">
+      <div className="flex-1 overflow-y-auto pr-3 pb-4 space-y-4">
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre</label>
           <input
@@ -155,6 +214,7 @@ function MaterialEditAttributesForm({
             rows={3}
             value={description}
             onChange={e => setDescription(e.target.value)}
+            disabled={readOnly}
             placeholder="Especifica las características técnicas aquí (ej: 12W, 1000 lm, 220V)..."
             className={inputCls}
           />
@@ -179,6 +239,7 @@ function MaterialEditAttributesForm({
                   <input
                     type={attr.type === 'NUMBER' ? 'number' : attr.type === 'DATE' ? 'date' : 'text'}
                     value={attr.type === 'NUMBER' && value === '' ? '' : value}
+                    disabled={readOnly}
                     onChange={e => {
                       let parsedVal: any = e.target.value
                       if (attr.type === 'NUMBER') {
@@ -209,6 +270,7 @@ function MaterialEditAttributesForm({
                     <input
                       type="date"
                       value={value ? value.slice(0, 10) : ''}
+                      disabled={readOnly}
                       onChange={e => handleAttrChange(prop.code, e.target.value)}
                       className={inputCls}
                     />
@@ -223,6 +285,7 @@ function MaterialEditAttributesForm({
                     <input
                       type="number"
                       value={value}
+                      disabled={readOnly}
                       onChange={e => handleAttrChange(prop.code, e.target.value === '' ? undefined : Number(e.target.value))}
                       className={inputCls}
                     />
@@ -237,8 +300,9 @@ function MaterialEditAttributesForm({
                       type="checkbox"
                       id={`prop-${prop.code}`}
                       checked={!!value}
+                      disabled={readOnly}
                       onChange={e => handleAttrChange(prop.code, e.target.checked)}
-                      className="rounded border-app-border text-primary focus:ring-primary/40"
+                      className="rounded border-app-border text-primary focus:ring-primary/40 disabled:opacity-60 disabled:cursor-not-allowed"
                     />
                     <label htmlFor={`prop-${prop.code}`} className="text-xs font-semibold text-fg-secondary">
                       {prop.name} (Global)
@@ -253,6 +317,7 @@ function MaterialEditAttributesForm({
                   <input
                     type="text"
                     value={value}
+                    disabled={readOnly}
                     onChange={e => handleAttrChange(prop.code, e.target.value)}
                     className={inputCls}
                     placeholder={`Valor para ${prop.name}`}
@@ -262,57 +327,90 @@ function MaterialEditAttributesForm({
             })}
 
             {/* 3. Inline custom attribute adder */}
-            <div className="pt-2 border-t border-dashed border-app-border/40 space-y-1.5">
-              <label className="block text-[10px] font-semibold text-fg-secondary">Añadir Campo/Propiedad Técnica (Inline)</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newAttrName}
-                  onChange={e => setNewAttrName(e.target.value)}
-                  placeholder="Ej: Potencia (W), Marca, Modelo..."
-                  className="flex-1 border border-app-border rounded-lg px-3 py-1 bg-card text-xs text-fg focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCustomAttr}
-                  className="px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Añadir
-                </button>
+            {!readOnly && (
+              <div className="pt-3.5 border-t border-app-border/40 space-y-3">
+                <span className="block text-[11px] font-bold text-fg-secondary uppercase tracking-wider">Añadir Propiedad Técnica Personalizada</span>
+                <div className="bg-app-bg/60 p-3 rounded-lg border border-app-border/80 space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-muted mb-1">Nombre (ej: Potencia)</label>
+                      <input
+                        type="text"
+                        value={newAttrName}
+                        onChange={e => setNewAttrName(e.target.value)}
+                        placeholder="Ej: Marca, Modelo, Rango..."
+                        className="w-full border border-app-border rounded-lg px-2.5 py-1.5 bg-card text-xs text-fg focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-muted mb-1">Tipo de Dato</label>
+                      <select
+                        value={newAttrType}
+                        onChange={e => setNewAttrType(e.target.value as any)}
+                        className="w-full border border-app-border rounded-lg px-2.5 py-1.5 bg-card text-xs text-fg focus:outline-none"
+                      >
+                        <option value="STRING">Texto (STRING)</option>
+                        <option value="NUMBER">Número (NUMBER)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={handleAddCustomAttr}
+                      disabled={!newAttrName.trim()}
+                      className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Añadir Propiedad
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         {error && <p className="text-error text-sm">{error}</p>}
       </div>
 
-      <div className="flex justify-between items-center gap-3 pt-3 border-t border-app-border/40 bg-card shrink-0 w-full">
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleteMaterialMut.isPending}
-          className="px-4 py-2 text-sm text-red-600 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-semibold"
-        >
-          {deleteMaterialMut.isPending ? 'Eliminando...' : 'Eliminar'}
-        </button>
-        <div className="flex gap-3">
+      {readOnly ? (
+        <div className="flex justify-end pt-3 border-t border-app-border/40 bg-card shrink-0 w-full">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors"
+            className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] transition-colors font-semibold"
           >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={updateMaterialMut.isPending}
-            className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg disabled:opacity-50 transition-colors"
-          >
-            {updateMaterialMut.isPending ? 'Guardando...' : 'Guardar'}
+            Cerrar
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="flex justify-between items-center gap-3 pt-3 border-t border-app-border/40 bg-card shrink-0 w-full">
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleteMaterialMut.isPending}
+            className="px-4 py-2 text-sm text-red-600 border border-red-200 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors font-semibold"
+          >
+            {deleteMaterialMut.isPending ? 'Eliminando...' : 'Eliminar'}
+          </button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={updateMaterialMut.isPending}
+              className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg disabled:opacity-50 transition-colors"
+            >
+              {updateMaterialMut.isPending ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

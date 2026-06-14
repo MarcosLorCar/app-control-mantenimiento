@@ -126,9 +126,25 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
     for (const item of materials) {
       const targetLocationId = item.locationId !== undefined ? item.locationId : locationId
 
+      if (item.operation === 'INSTALL' && targetLocationId) {
+        const loc = await db.location.findFirst({ where: { id: targetLocationId, deletedAt: null } })
+        if (loc && loc.parentId === null) {
+          throw Object.assign(new Error('No se pueden instalar materiales directamente en una ubicación raíz.'), {
+            code: 'VALIDATION_ERROR'
+          })
+        }
+      }
+
       if (item.operation === 'UNINSTALL') {
         if (!item.materialId) continue
         
+        const existing = await db.material.findUnique({ where: { id: item.materialId } })
+        const snapshot = existing ? {
+          name: existing.name,
+          description: existing.description,
+          attributes: existing.attributes,
+        } : null
+
         // Remove location pointer (retains data but no longer "physically" installed)
         await db.material.update({
           where: { id: item.materialId },
@@ -139,7 +155,8 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
           data: {
             actionId: action.id,
             materialId: item.materialId,
-            operation: 'UNINSTALL'
+            operation: 'UNINSTALL',
+            snapshot: snapshot ? (snapshot as any) : undefined
           }
         })
       } else if (item.operation === 'INSTALL') {
@@ -147,9 +164,25 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
 
         if (materialId) {
           // If installing existing material
+          const existing = await db.material.findUnique({ where: { id: materialId } })
+          const snapshot = existing ? {
+            name: existing.name,
+            description: existing.description,
+            attributes: existing.attributes,
+          } : null
+
           await db.material.update({
             where: { id: materialId },
             data: { locationId: targetLocationId }
+          })
+
+          await db.actionMaterial.create({
+            data: {
+              actionId: action.id,
+              materialId: materialId,
+              operation: 'INSTALL',
+              snapshot: snapshot ? (snapshot as any) : undefined
+            }
           })
         } else {
           // If creating and installing new material
@@ -169,17 +202,25 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
             }
           })
           materialId = newMat.id
-        }
 
-        await db.actionMaterial.create({
-          data: {
-            actionId: action.id,
-            materialId: materialId,
-            operation: 'INSTALL'
-          }
-        })
+          await db.actionMaterial.create({
+            data: {
+              actionId: action.id,
+              materialId: materialId,
+              operation: 'INSTALL',
+              snapshot: undefined
+            }
+          })
+        }
       } else if (item.operation === 'UPDATE') {
         if (!item.materialId) continue
+
+        const existing = await db.material.findUnique({ where: { id: item.materialId } })
+        const snapshot = existing ? {
+          name: existing.name,
+          description: existing.description,
+          attributes: existing.attributes,
+        } : null
 
         const updateData: any = {}
         if (item.name !== undefined) updateData.name = item.name
@@ -197,7 +238,8 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
           data: {
             actionId: action.id,
             materialId: item.materialId,
-            operation: 'UPDATE'
+            operation: 'UPDATE',
+            snapshot: snapshot ? (snapshot as any) : undefined
           }
         })
       }
