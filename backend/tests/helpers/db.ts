@@ -20,6 +20,8 @@ export async function clearDb(db: PrismaClient = testDb) {
   await db.role.deleteMany()
 }
 
+let cachedHash: string | null = null
+
 export async function seedTestData(db: PrismaClient = testDb) {
   const managerRole = await db.role.create({
     data: { name: 'admin', canWrite: true, canManage: true },
@@ -31,7 +33,10 @@ export async function seedTestData(db: PrismaClient = testDb) {
     data: { name: 'viewer', canWrite: false, canManage: false },
   })
 
-  const hash = await bcrypt.hash('password123', 10)
+  if (!cachedHash) {
+    cachedHash = await bcrypt.hash('password123', 10)
+  }
+  const hash = cachedHash
   const manager = await db.user.create({
     data: {
       email: 'manager@test.com',

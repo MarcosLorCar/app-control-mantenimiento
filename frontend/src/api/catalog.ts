@@ -64,12 +64,18 @@ export function createMaterialType(body: {
 
 export function updateMaterialType(
   id: number,
-  body: { name?: string; description?: string; icon?: string | null; customAttributes?: any },
+  body: { name?: string; description?: string; icon?: string | null; customAttributes?: any; categoryIds?: number[] },
 ): Promise<MaterialType> {
   return apiFetch<ApiData<MaterialType>>(`${API_BASE}/material-types/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
   }).then(r => r.data)
+}
+
+export function deleteMaterialType(id: number): Promise<void> {
+  return apiFetch(`${API_BASE}/material-types/${id}`, {
+    method: 'DELETE',
+  }).then(() => undefined)
 }
 
 // ==================== GLOBAL FIXED PROPERTIES ====================

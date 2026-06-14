@@ -8,6 +8,8 @@ import {
   MapPin,
   Landmark,
   Folder,
+  Trophy,
+  Dumbbell,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -21,6 +23,8 @@ export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
   MapPin,
   Landmark,
   Folder,
+  Trophy,
+  Dumbbell,
 }
 
 export const CATEGORY_ICON_OPTIONS = [
@@ -33,6 +37,8 @@ export const CATEGORY_ICON_OPTIONS = [
   { name: 'MapPin', label: 'Ubicación' },
   { name: 'Landmark', label: 'Monumento' },
   { name: 'Folder', label: 'Carpeta' },
+  { name: 'Trophy', label: 'Pista Deportiva / Trofeo' },
+  { name: 'Dumbbell', label: 'Gimnasio / Deporte' },
 ] as const
 
 export function getCategoryIcon(iconName: string | null | undefined): LucideIcon {

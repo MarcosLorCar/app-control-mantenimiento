@@ -7,6 +7,9 @@ import {
 } from '../../hooks/useCatalog'
 import { useAuth } from '../../hooks/useAuth'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
+import { CategoryEditModal } from '../../components/forms/CategoryEditModal'
+import { MaterialTypeEditModal } from '../../components/forms/MaterialTypeEditModal'
+
 
 const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
 
@@ -32,6 +35,13 @@ export function Catalog() {
   // MaterialType form state
   const [mtName, setMtName] = useState('')
   const [mtError, setMtError] = useState('')
+  
+  // Category edit state
+  const [editingCat, setEditingCat] = useState<any | null>(null)
+
+  // MaterialType properties edit state
+  const [editingPropertiesMt, setEditingPropertiesMt] = useState<any | null>(null)
+
 
   // FixedProperty form state
   const [fpName, setFpName] = useState('')
@@ -68,6 +78,8 @@ export function Catalog() {
       }
     )
   }
+
+
 
   function handleAddFixedProp(e: React.FormEvent) {
     e.preventDefault()
@@ -109,16 +121,27 @@ export function Catalog() {
         {/* Tipos de infraestructura */}
         <div className="bg-card rounded-xl border border-app-border p-5 h-fit">
           <h2 className="text-[15px] font-semibold text-fg mb-4">Tipos de infraestructura</h2>
-          <ul className="divide-y divide-app-border mb-4 max-h-[260px] overflow-y-auto pr-1">
+          <ul className="divide-y divide-app-border mb-4 max-h-[260px] overflow-y-auto pr-3">
             {infraTypes.length === 0 && (
               <li className="py-2 text-sm text-muted">Sin tipos definidos</li>
             )}
             {infraTypes.map(it => {
               const CatIcon = getCategoryIcon(it.icon)
               return (
-                <li key={it.id} className="py-2.5 flex items-center gap-2">
-                  <CatIcon className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-sm text-fg truncate">{it.name}</span>
+                <li key={it.id} className="py-2.5 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 truncate min-w-0">
+                    <CatIcon className="w-4 h-4 text-primary shrink-0" />
+                    <span className="text-sm text-fg truncate">{it.name}</span>
+                  </div>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingCat(it)}
+                      className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg shrink-0 font-bold transition-all active:scale-95 touch-manipulation min-h-[36px] flex items-center justify-center"
+                    >
+                      Editar
+                    </button>
+                  )}
                 </li>
               )
             })}
@@ -175,15 +198,39 @@ export function Catalog() {
         {/* Tipos de material */}
         <div className="bg-card rounded-xl border border-app-border p-5 h-fit">
           <h2 className="text-[15px] font-semibold text-fg mb-4">Tipos de material</h2>
-          <ul className="divide-y divide-app-border mb-4 max-h-[300px] overflow-y-auto pr-1">
+          <ul className="divide-y divide-app-border mb-4 max-h-[350px] overflow-y-auto pr-3">
             {materialTypes.length === 0 && (
               <li className="py-2 text-sm text-muted">Sin tipos definidos</li>
             )}
             {materialTypes.map(mt => (
-              <li key={mt.id} className="py-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-sm font-semibold text-fg truncate">{mt.name}</span>
-                  <span className="text-[10px] font-mono text-muted shrink-0">({mt.code})</span>
+              <li key={mt.id} className="py-3.5 flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 truncate min-w-0">
+                    <span className="text-sm font-semibold text-fg truncate">{mt.name}</span>
+                  </div>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingPropertiesMt(mt)}
+                      className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-2 rounded-lg shrink-0 font-bold transition-all active:scale-95 touch-manipulation min-h-[36px] flex items-center justify-center"
+                    >
+                      Editar
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-1 mt-0.5">
+                  {mt.categories.length === 0 ? (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/20 text-muted font-medium border border-app-border/20">
+                      Global (Todas)
+                    </span>
+                  ) : (
+                    mt.categories.map(cat => (
+                      <span key={cat.id} className="text-[9px] px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/15 font-medium">
+                        {cat.name}
+                      </span>
+                    ))
+                  )}
                 </div>
               </li>
             ))}
@@ -215,7 +262,7 @@ export function Catalog() {
         {/* Propiedades Fijas Globales */}
         <div className="bg-card rounded-xl border border-app-border p-5 h-fit">
           <h2 className="text-[15px] font-semibold text-fg mb-4">Propiedades Fijas de Materiales</h2>
-          <ul className="divide-y divide-app-border mb-4 max-h-[300px] overflow-y-auto pr-1">
+          <ul className="divide-y divide-app-border mb-4 max-h-[300px] overflow-y-auto pr-3">
             {fixedProperties.length === 0 && (
               <li className="py-2 text-sm text-muted">Sin propiedades registradas</li>
             )}
@@ -298,6 +345,20 @@ export function Catalog() {
         </div>
 
       </div>
+
+      {editingCat && (
+        <CategoryEditModal
+          category={editingCat}
+          onClose={() => setEditingCat(null)}
+        />
+      )}
+
+      {editingPropertiesMt && (
+        <MaterialTypeEditModal
+          materialType={editingPropertiesMt}
+          onClose={() => setEditingPropertiesMt(null)}
+        />
+      )}
     </div>
   )
 }

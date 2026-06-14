@@ -4,7 +4,7 @@ import {
   CreateFixedPropertySchema
 } from './materials.schema'
 import {
-  listMaterialTypes, createMaterialType, updateMaterialType,
+  listMaterialTypes, createMaterialType, updateMaterialType, deleteMaterialType,
   listFixedProperties, createFixedProperty, deleteFixedProperty
 } from './catalog.service'
 
@@ -27,18 +27,25 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
           { code: parsed.data.code },
           { name: { equals: parsed.data.name, mode: 'insensitive' } }
         ]
+      },
+      include: {
+        categories: true
       }
     })
 
     if (existing) {
-      const shouldSync = parsed.data.infraTypeId && existing.infraTypeId !== parsed.data.infraTypeId && existing.infraTypeId !== null
+      if (existing.code === parsed.data.code && existing.name.toLowerCase() !== parsed.data.name.toLowerCase()) {
+        return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'El código de tipo de material ya existe' } })
+      }
+
+      const shouldSync = parsed.data.infraTypeId && !existing.categories.some(c => c.id === parsed.data.infraTypeId)
       const shouldRestore = existing.deletedAt !== null
 
       if (shouldSync || shouldRestore) {
         const updated = await app.db.materialType.update({
           where: { id: existing.id },
           data: {
-            infraTypeId: shouldSync ? null : existing.infraTypeId,
+            categories: shouldSync ? { connect: { id: parsed.data.infraTypeId! } } : undefined,
             deletedAt: shouldRestore ? null : undefined,
           },
           select: {
@@ -47,8 +54,8 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
             name: true,
             description: true,
             icon: true,
-            infraTypeId: true,
             customAttributes: true,
+            categories: { select: { id: true, name: true } }
           }
         })
         return reply.status(200).send({ data: updated })
@@ -72,6 +79,16 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
     }
     const data = await updateMaterialType(app.db, id, parsed.data)
     return reply.send({ data })
+  })
+
+  app.delete('/material-types/:id', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    const id = Number((req.params as any).id)
+    const existing = await app.db.materialType.findFirst({ where: { id, deletedAt: null } })
+    if (!existing) {
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Tipo de material no encontrado' } })
+    }
+    await deleteMaterialType(app.db, id)
+    return reply.status(204).send()
   })
 
   // Global Fixed Properties

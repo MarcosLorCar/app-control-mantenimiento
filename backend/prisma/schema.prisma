@@ -102,8 +102,7 @@ model MaterialType {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
-  infraTypeId      Int?      // <--- Belongs to Category
-  infraType        InfrastructureType? @relation(fields: [infraTypeId], references: [id])
+  categories       InfrastructureType[]
   customAttributes Json      @default("[]") // <--- Technical attributes per material type
 
   materials  Material[]
@@ -182,6 +181,7 @@ model ActionMaterial {
   actionId    Int
   materialId  Int
   operation   MaterialOperation
+  snapshot    Json?
 
   action      Action   @relation(fields: [actionId], references: [id], onDelete: Cascade)
   material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)

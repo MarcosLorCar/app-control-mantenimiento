@@ -1,5 +1,6 @@
 import { buildApp } from '../../src/app'
 import { FastifyInstance } from 'fastify'
+import { JwtPayload } from '@control-actions/shared'
 
 export async function buildTestApp(): Promise<FastifyInstance> {
   return buildApp({
@@ -9,33 +10,53 @@ export async function buildTestApp(): Promise<FastifyInstance> {
 }
 
 export async function getManagerToken(app: FastifyInstance): Promise<string> {
-  const res = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email: 'manager@test.com', password: 'password123' },
+  const user = await app.db.user.findFirst({
+    where: { email: 'manager@test.com', deletedAt: null },
+    include: { role: true }
   })
-  return JSON.parse(res.body).data.accessToken
+  if (!user) throw new Error('Test manager user not found')
+  const payload: JwtPayload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role.name,
+    can_write: user.role.canWrite,
+    can_manage: user.role.canManage,
+  }
+  return app.jwt.sign(payload, { expiresIn: '15m' })
 }
 
 export async function getEditorToken(app: FastifyInstance): Promise<string> {
-  const res = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email: 'editor@test.com', password: 'password123' },
+  const user = await app.db.user.findFirst({
+    where: { email: 'editor@test.com', deletedAt: null },
+    include: { role: true }
   })
-  return JSON.parse(res.body).data.accessToken
+  if (!user) throw new Error('Test editor user not found')
+  const payload: JwtPayload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role.name,
+    can_write: user.role.canWrite,
+    can_manage: user.role.canManage,
+  }
+  return app.jwt.sign(payload, { expiresIn: '15m' })
 }
 
 export async function getViewerToken(app: FastifyInstance): Promise<string> {
-  const res = await app.inject({
-    method: 'POST',
-    url: '/api/v1/auth/login',
-    payload: { email: 'viewer@test.com', password: 'password123' },
+  const user = await app.db.user.findFirst({
+    where: { email: 'viewer@test.com', deletedAt: null },
+    include: { role: true }
   })
-  return JSON.parse(res.body).data.accessToken
+  if (!user) throw new Error('Test viewer user not found')
+  const payload: JwtPayload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role.name,
+    can_write: user.role.canWrite,
+    can_manage: user.role.canManage,
+  }
+  return app.jwt.sign(payload, { expiresIn: '15m' })
 }
 
-// TODO: remove aliases after tasks 3-8 migrate all test files to manager/editor/viewer naming
 // Backwards-compat aliases
 export const getAdminToken = getManagerToken
 export const getReaderToken = getViewerToken

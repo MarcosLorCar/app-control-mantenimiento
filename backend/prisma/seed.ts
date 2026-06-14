@@ -83,7 +83,7 @@ async function main() {
       code: 'bomba',
       name: 'Bomba Hidráulica',
       description: 'Bombas de recirculación, succión o caudal de agua',
-      infraTypeId: fuentesCat.id,
+      categories: { connect: { id: fuentesCat.id } },
       customAttributes: [
         { code: 'marca', name: 'Marca', type: 'STRING' },
         { code: 'modelo', name: 'Modelo', type: 'STRING' },
@@ -99,7 +99,7 @@ async function main() {
       code: 'motor',
       name: 'Motor Eléctrico',
       description: 'Motores eléctricos trifásicos o monofásicos de accionamiento',
-      infraTypeId: fuentesCat.id,
+      categories: { connect: { id: fuentesCat.id } },
       customAttributes: [
         { code: 'marca', name: 'Marca', type: 'STRING' },
         { code: 'modelo', name: 'Modelo', type: 'STRING' },
@@ -110,37 +110,37 @@ async function main() {
     },
   })
   const mtAlumbrado = await prisma.materialType.create({
-    data: { code: 'alumbrado', name: 'Alumbrado / Proyector', description: 'Focos subacuáticos e iluminación ornamental', infraTypeId: fuentesCat.id },
+    data: { code: 'alumbrado', name: 'Alumbrado / Proyector', description: 'Focos subacuáticos e iluminación ornamental', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtSondaNivel = await prisma.materialType.create({
-    data: { code: 'sonda_nivel', name: 'Sonda de Nivel', description: 'Sondas conductivas de nivel de agua', infraTypeId: fuentesCat.id },
+    data: { code: 'sonda_nivel', name: 'Sonda de Nivel', description: 'Sondas conductivas de nivel de agua', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtBoyaNivel = await prisma.materialType.create({
-    data: { code: 'boya_nivel', name: 'Boya de Nivel', description: 'Interruptor de flotador mecánico de nivel', infraTypeId: fuentesCat.id },
+    data: { code: 'boya_nivel', name: 'Boya de Nivel', description: 'Interruptor de flotador mecánico de nivel', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtMagnetotermico = await prisma.materialType.create({
-    data: { code: 'magnetotermico', name: 'Interruptor Magnetotérmico', description: 'Interruptores de protección eléctrica contra sobrecargas y cortocircuitos', infraTypeId: fuentesCat.id },
+    data: { code: 'magnetotermico', name: 'Interruptor Magnetotérmico', description: 'Interruptores de protección eléctrica contra sobrecargas y cortocircuitos', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtDiferencial = await prisma.materialType.create({
-    data: { code: 'diferencial', name: 'Interruptor Diferencial', description: 'Dispositivos de protección contra derivaciones y contactos directos', infraTypeId: fuentesCat.id },
+    data: { code: 'diferencial', name: 'Interruptor Diferencial', description: 'Dispositivos de protección contra derivaciones y contactos directos', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtSeccionador = await prisma.materialType.create({
-    data: { code: 'seccionador', name: 'Interruptor de Maniobra / Seccionador', description: 'Interruptor general rotativo de corte y maniobra en carga', infraTypeId: fuentesCat.id },
+    data: { code: 'seccionador', name: 'Interruptor de Maniobra / Seccionador', description: 'Interruptor general rotativo de corte y maniobra en carga', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtContactor = await prisma.materialType.create({
-    data: { code: 'contactor', name: 'Contactor', description: 'Contactor de potencia para arranque y control de cargas', infraTypeId: fuentesCat.id },
+    data: { code: 'contactor', name: 'Contactor', description: 'Contactor de potencia para arranque y control de cargas', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtRelojProgramador = await prisma.materialType.create({
-    data: { code: 'reloj_programador', name: 'Reloj Programador', description: 'Interruptor horario analógico o digital para programaciones temporales', infraTypeId: fuentesCat.id },
+    data: { code: 'reloj_programador', name: 'Reloj Programador', description: 'Interruptor horario analógico o digital para programaciones temporales', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtSelector = await prisma.materialType.create({
-    data: { code: 'selector', name: 'Selector de Posición', description: 'Selectores giratorios manuales de modo (Manual/Off/Automático)', infraTypeId: fuentesCat.id },
+    data: { code: 'selector', name: 'Selector de Posición', description: 'Selectores giratorios manuales de modo (Manual/Off/Automático)', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtReleControl = await prisma.materialType.create({
-    data: { code: 'rele_control', name: 'Relé de Control', description: 'Relés electrónicos auxiliares (control de nivel, sondas, etc.)', infraTypeId: fuentesCat.id },
+    data: { code: 'rele_control', name: 'Relé de Control', description: 'Relés electrónicos auxiliares (control de nivel, sondas, etc.)', categories: { connect: { id: fuentesCat.id } } },
   })
   const mtTransformador = await prisma.materialType.create({
-    data: { code: 'transformador', name: 'Transformador', description: 'Transformadores de aislamiento y seguridad de tensión', infraTypeId: fuentesCat.id },
+    data: { code: 'transformador', name: 'Transformador', description: 'Transformadores de aislamiento y seguridad de tensión', categories: { connect: { id: fuentesCat.id } } },
   })
 
   // --- UBICACIONES (Locations Hierarchy) ---

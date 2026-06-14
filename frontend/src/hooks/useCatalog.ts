@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listInfrastructureTypes, createInfrastructureType, updateInfrastructureType, deleteInfrastructureType,
   listRoles,
-  listMaterialTypes, createMaterialType, updateMaterialType,
+  listMaterialTypes, createMaterialType, updateMaterialType, deleteMaterialType as apiDeleteMaterialType,
   listFixedProperties, createFixedProperty, deleteFixedProperty,
 } from '../api/catalog'
 
@@ -60,6 +60,14 @@ export function useUpdateMaterialType() {
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: any }) =>
       updateMaterialType(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'material-types'] }),
+  })
+}
+
+export function useDeleteMaterialType() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: apiDeleteMaterialType,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'material-types'] }),
   })
 }
