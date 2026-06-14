@@ -8,12 +8,14 @@
 ## Core entities
 
 - `roles` → `users`
-- `infrastructures` → `dependencies` (arbol) → `structures`
-- `material_types` → `material_categories`
-- `materials` ubicados en infrastructure/dependency/structure
-- `action_types` → `actions` (sobre un `material_id`)
+- `infrastructure_types` → `locations` (recursive tree using `parentId` and `path`)
+- `material_types` (includes custom attributes spec in JSON)
+- `materials` located at a specific `location_id`
+- `actions` (performed at a `location_id`)
+- `action_materials` (link between actions and materials with snapshot auditing)
+- `location_photos` (photos of locations linked optionally to actions)
 
 ## Notes
 
-- `users` e `infrastructures` tienen `deleted_at` para soft delete (aunque el API puede usar hard delete en `DELETE`).
-- `actions` es registro de auditoria; no tiene soft delete.
+- `users`, `locations`, `infrastructure_types`, and `material_types` have a `deleted_at` field for soft delete support.
+- `actions` is an immutable audit log; it does not have soft delete.

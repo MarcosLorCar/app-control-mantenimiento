@@ -10,11 +10,24 @@ npm install
 
 ## Run (dev)
 
-En terminales separadas:
+Arranca todo el stack en paralelo con un único comando:
 
 ```bash
-npm run dev --workspace=backend
-npm run dev --workspace=@control-actions/frontend
+# Levanta la base de datos, corre migraciones e inicia servidores
+./dev.sh
+
+# O si la DB ya está levantada, corre concurrentemente los dev servers:
+npm run dev
+```
+
+O en terminales independientes:
+
+```bash
+# Terminal 1: Backend
+npm run dev:backend
+
+# Terminal 2: Frontend
+npm run dev:frontend
 ```
 
 ## Database

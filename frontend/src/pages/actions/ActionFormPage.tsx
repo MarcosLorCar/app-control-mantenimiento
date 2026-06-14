@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useCreateAction } from '../../hooks/useActions'
 import { useLocations, locationKeys } from '../../hooks/useLocations'
 import { useQueryClient } from '@tanstack/react-query'
 import { RecursiveMaterialModal, MaterialChange } from '../../components/forms/RecursiveMaterialModal'
-import { ClipboardList, AlertCircle, Pencil, ChevronLeft, Package, Check } from 'lucide-react'
+import { ClipboardList, AlertCircle, Pencil, ChevronLeft, Package, Check, Camera, UploadCloud } from 'lucide-react'
+import { uploadActionPhoto } from '../../api/actions'
 
 export function ActionFormPage() {
   const navigate = useNavigate()
@@ -21,6 +22,73 @@ export function ActionFormPage() {
   // Staged material changes state
   const [stagedChanges, setStagedChanges] = useState<MaterialChange[]>([])
   const [showMaterialModal, setShowMaterialModal] = useState(false)
+
+  // Photo states & refs
+  interface PhotoItem {
+    file: File
+    previewUrl: string
+  }
+  const [selectedPhotos, setSelectedPhotos] = useState<PhotoItem[]>([])
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const archiveInputRef = useRef<HTMLInputElement>(null)
+
+  // Detect mobile OS
+  useEffect(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
+    const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+    const isIPad = navigator.maxTouchPoints > 2 && /Macintosh/.test(navigator.userAgent)
+    setIsMobile(isMobileOS || isIPad)
+  }, [])
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      selectedPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
+    }
+  }, [])
+
+  // Add photos utility
+  const addPhotos = (files: File[]) => {
+    const newItems = files
+      .filter(f => f.type.startsWith('image/'))
+      .map(f => ({
+        file: f,
+        previewUrl: URL.createObjectURL(f)
+      }))
+    setSelectedPhotos(prev => [...prev, ...newItems])
+  }
+
+  // Remove photo utility
+  const removePhoto = (index: number) => {
+    setSelectedPhotos(prev => {
+      const next = [...prev]
+      URL.revokeObjectURL(next[index].previewUrl)
+      next.splice(index, 1)
+      return next
+    })
+  }
+
+  // Drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const selected = Array.from(e.dataTransfer.files || [])
+    addPhotos(selected)
+  }
 
   // Queries
   const { data: locations = [], isLoading: loadingLocations } = useLocations(undefined)
@@ -40,7 +108,7 @@ export function ActionFormPage() {
     }
   }, [searchParams])
 
-  const isPending = createActionMut.isPending
+  const isPending = createActionMut.isPending || isUploadingPhoto
   const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
 
   function handleSubmit(e: React.FormEvent) {
@@ -77,8 +145,20 @@ export function ActionFormPage() {
         materials: formattedMaterials
       },
       {
-        onSuccess: () => {
+        onSuccess: async (data) => {
           qc.invalidateQueries({ queryKey: locationKeys.all })
+          if (selectedPhotos.length > 0) {
+            setIsUploadingPhoto(true)
+            try {
+              await Promise.all(
+                selectedPhotos.map(p => uploadActionPhoto(data.id, p.file))
+              )
+            } catch (err) {
+              console.error('Error uploading action images:', err)
+            } finally {
+              setIsUploadingPhoto(false)
+            }
+          }
           // Redirect to location detail or actions list
           navigate(`/locations/${selectedLocationId}`)
         },
@@ -200,6 +280,122 @@ export function ActionFormPage() {
           />
         </div>
 
+        {/* Adjuntar Foto */}
+        <div>
+          {/* Hidden Inputs */}
+          <input
+            type="file"
+            ref={cameraInputRef}
+            accept="image/*"
+            capture="environment"
+            onChange={e => {
+              const selected = Array.from(e.target.files || [])
+              addPhotos(selected)
+            }}
+            className="hidden"
+          />
+          <input
+            type="file"
+            ref={archiveInputRef}
+            accept="image/*"
+            multiple
+            onChange={e => {
+              const selected = Array.from(e.target.files || [])
+              addPhotos(selected)
+            }}
+            className="hidden"
+          />
+
+          <label className="block text-xs font-bold uppercase tracking-wider text-fg-secondary mb-1.5">
+            Adjuntar Fotos del Trabajo (Opcional)
+          </label>
+          
+          {selectedPhotos.length === 0 ? (
+            !isMobile ? (
+              <div 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => archiveInputRef.current?.click()}
+                className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer group ${
+                  isDragOver
+                    ? 'border-primary bg-primary/5 scale-[1.01]'
+                    : 'border-app-border bg-app-bg/10 hover:bg-app-bg/25 hover:border-primary/50'
+                }`}
+              >
+                <UploadCloud className="w-8 h-8 text-muted mb-2 group-hover:text-primary transition-colors" />
+                <p className="text-xs font-semibold text-fg mb-0.5">Haz clic para seleccionar o arrastra fotos</p>
+                <p className="text-[10px] text-muted">Formatos aceptados: PNG, JPG, WEBP</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-app-border rounded-xl p-6 bg-app-bg/10 text-center gap-3">
+                <div className="text-center space-y-0.5">
+                  <UploadCloud className="w-8 h-8 text-muted mx-auto mb-1.5" />
+                  <p className="text-xs font-semibold text-fg">Fotos del Trabajo (Opcional)</p>
+                  <p className="text-[10px] text-muted">Sube una o varias fotos del mantenimiento realizado</p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-2.5 w-full justify-center">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-fg hover:bg-[var(--primary-hover)] rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95 shadow-sm"
+                  >
+                    <Camera className="w-3.5 h-3.5" /> Hacer Foto (Cámara)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => archiveInputRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 border border-app-border bg-card hover:bg-app-bg text-fg-secondary hover:text-fg rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95 shadow-sm"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5" /> Seleccionar Archivo(s)
+                  </button>
+                </div>
+              </div>
+            )
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-app-bg/10 border border-app-border rounded-xl">
+                {selectedPhotos.map((item, index) => (
+                  <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-app-border bg-card">
+                    <img
+                      src={item.previewUrl}
+                      alt="Vista previa"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="px-2.5 py-1 rounded-md bg-error hover:bg-red-600 text-white text-[10px] font-bold transition-all active:scale-95 shadow-sm"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex items-center justify-center gap-1 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm"
+                >
+                  <Camera className="w-3.5 h-3.5" /> Hacer Otra Foto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => archiveInputRef.current?.click()}
+                  className="flex items-center justify-center gap-1 px-3 py-1.5 border border-app-border bg-card hover:bg-app-bg text-fg-secondary hover:text-fg rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" /> Añadir Archivo(s)
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Recursive Materials Editor Button replacing card */}
         {selectedLocationId > 0 && (
           <div className="space-y-3">
@@ -269,7 +465,7 @@ export function ActionFormPage() {
             disabled={isPending}
             className="px-5 py-2.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors font-bold shadow-sm"
           >
-            {isPending ? 'Registrando...' : 'Registrar Trabajo'}
+            {isPending ? (isUploadingPhoto ? 'Subiendo foto...' : 'Registrando...') : 'Registrar Trabajo'}
           </button>
         </div>
       </form>

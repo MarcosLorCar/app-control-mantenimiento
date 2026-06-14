@@ -77,7 +77,7 @@ export async function actionsRoutes(app: FastifyInstance) {
   })
 
   // Upload photo for action
-  app.post('/:id/image', { preHandler: [app.requireWrite] }, async (req, reply) => {
+  app.post('/actions/:id/image', { preHandler: [app.requireWrite] }, async (req, reply) => {
     const id = Number((req.params as { id: string }).id)
     const action = await app.db.action.findFirst({ where: { id } })
     if (!action) {
@@ -93,7 +93,7 @@ export async function actionsRoutes(app: FastifyInstance) {
     }
 
     const buffer = await fileData.toBuffer()
-    const filename = `action_${id}_${Date.now()}.webp`
+    const filename = `action_${id}_${Date.now()}_${Math.floor(Math.random() * 1000)}.webp`
     const uploadDir = path.join(process.cwd(), 'uploads')
 
     if (!fs.existsSync(uploadDir)) {

@@ -9,21 +9,21 @@
 
 - `auth`: login/refresh/logout
 - `users`: CRUD (admin/manage)
-- `catalog`: roles, action-types, infrastructure-types, material-types, material-categories
-- `infrastructures`: CRUD
-- `actions`: CRUD acciones
-- `materials`: CRUD materiales
+- `catalog`: roles, infrastructure-types
+- `locations`: CRUD (unified recursive location tree)
+- `actions`: CRUD trabajos
+- `materials`: CRUD materiales e inventarios
 
 ## Routes (representative)
-
-> Nota: el listado exacto vive en `docs/plan1-backend-resumen.md`.
 
 - `GET /api/v1/health`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/users` (manage)
-- `GET /api/v1/infrastructures` (token)
-- `POST /api/v1/infrastructures` (write)
+- `GET /api/v1/locations` (token)
+- `POST /api/v1/locations` (write)
+- `GET /api/v1/actions` (token)
+- `GET /api/v1/materials` (token)
 
 ## Testing
 

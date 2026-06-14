@@ -1,14 +1,15 @@
 # Stage 1: Build the React application
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 
 # Copy package files for dependency resolution
 COPY package*.json ./
 COPY frontend/package*.json ./frontend/
 COPY shared/package*.json ./shared/
+COPY backend/package*.json ./backend/
 
-# Install dependencies
-RUN npm ci && npm install @rollup/rollup-linux-x64-musl
+# Install dependencies for frontend and shared
+RUN npm ci --workspace=@control-actions/frontend --workspace=@control-actions/shared && npm install @rollup/rollup-linux-x64-gnu
 
 # Copy the source code
 COPY shared/ ./shared/

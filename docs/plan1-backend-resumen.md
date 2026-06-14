@@ -1,5 +1,8 @@
 # Plan 1 — Backend API: Resumen de implementación
 
+> [!NOTE]
+> Este documento representa un resumen histórico de la implementación inicial. Con posterioridad a este plan, el modelo jerárquico de 3 niveles (`infrastructures`, `dependencies`, `structures`) fue consolidado en un modelo de árbol recursivo unificado (**Locations**). Para la estructura final, consulta [schema.prisma](file:///c:/Users/Marcos/Documents/Dev/app-control-mantenimiento/backend/prisma/schema.prisma) y [location_hierarchy_redesign.md](file:///c:/Users/Marcos/Documents/Dev/app-control-mantenimiento/docs/location_hierarchy_redesign.md).
+
 **Estado:** Completado · 28/28 tests · 0 errores TypeScript  
 **Commits:** Tasks 5–10 (Tasks 1–4 ya existían al inicio de la sesión de desarrollo)
 

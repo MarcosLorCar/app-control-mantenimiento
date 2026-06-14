@@ -1,6 +1,6 @@
-# control-actions
+# INFRAGEST (control-actions)
 
-Sistema de gestión de infraestructuras y acciones operativas.
+Sistema de gestión de infraestructuras y acciones operativas (Departamentos, Trabajos, Materiales).
 
 Stack: React 18 + Vite + TypeScript + Tailwind (frontend) · Fastify + Prisma + PostgreSQL (backend)
 
@@ -9,7 +9,7 @@ Stack: React 18 + Vite + TypeScript + Tailwind (frontend) · Fastify + Prisma + 
 ## Requisitos previos
 
 - Node.js 20+
-- PostgreSQL corriendo en `localhost:5432`
+- PostgreSQL corriendo (puedes usar el docker-compose de la raíz)
 - Base de datos y variables de entorno configuradas (ver `backend/.env`)
 
 ---
@@ -24,41 +24,42 @@ npm install
 
 ---
 
-## Levantar el frontend (dev)
+## Levantar el stack de desarrollo
+
+### Opción A: Script automático (Levanta DB + Backend + Frontend)
+Si utilizas un entorno Unix o Git Bash, puedes ejecutar el script preparado para arrancar la base de datos de Docker, correr migraciones e iniciar los servidores:
 
 ```bash
-npm run dev --workspace=@control-actions/frontend
+./dev.sh
+```
+
+### Opción B: Ejecutar la aplicación concurrentemente (DB externa o ya levantada)
+Si ya tienes la base de datos corriendo, arranca todo el stack en paralelo desde la raíz:
+
+```bash
+npm run dev
 ```
 
 Abre: [http://localhost:5173](http://localhost:5173)
 
-El frontend hace proxy de `/api` hacia `localhost:3000` (backend). Necesita el backend corriendo para funcionar.
-
 ---
 
-## Levantar el backend (dev)
+## Levantar por separado (Opcional)
 
+Si necesitas ejecutar los servicios en terminales independientes:
+
+### Backend (dev)
 ```bash
-npm run dev --workspace=backend
+npm run dev:backend
 ```
-
 API disponible en: [http://localhost:3000/api/v1](http://localhost:3000/api/v1)
-
 Health check: `GET /api/v1/health`
 
----
-
-## Stack completo (frontend + backend en paralelo)
-
-Desde dos terminales:
-
+### Frontend (dev)
 ```bash
-# Terminal 1
-npm run dev --workspace=backend
-
-# Terminal 2
-npm run dev --workspace=@control-actions/frontend
+npm run dev:frontend
 ```
+Abre: [http://localhost:5173](http://localhost:5173) (El frontend hace proxy de `/api` hacia `localhost:3000`).
 
 ---
 

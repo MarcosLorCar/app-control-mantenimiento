@@ -18,7 +18,7 @@ An application to control maintenance operations (actions, materials, infrastruc
 ## 2. Directory Structure & Key Files
 
 - **Backend**:
-  - [schema.prisma](file:///c:/Users/Marcos/Documents/Dev/app-control-mantenimiento/backend/prisma/schema.prisma): Database models (Location, Action, Material, User, Role, Status, ActionType).
+  - [schema.prisma](file:///c:/Users/Marcos/Documents/Dev/app-control-mantenimiento/backend/prisma/schema.prisma): Database models (Role, User, InfrastructureType, Location, MaterialType, FixedProperty, Material, Action, ActionMaterial, SystemSetting, LocationPhoto).
   - [src/modules/locations/](file:///c:/Users/Marcos/Documents/Dev/app-control-mantenimiento/backend/src/modules/locations/): Location CRUD API, routing, schemas, and services.
   - [src/modules/actions/](file:///c:/Users/Marcos/Documents/Dev/app-control-mantenimiento/backend/src/modules/actions/): Maintenance actions.
   - [src/modules/materials/](file:///c:/Users/Marcos/Documents/Dev/app-control-mantenimiento/backend/src/modules/materials/): Materials used in actions.
@@ -37,11 +37,13 @@ An application to control maintenance operations (actions, materials, infrastruc
   - `id`: Int (Autoincrement, Primary Key)
   - `name`: String
   - `description`: String?
-  - `categoryId`: Int? (Foreign Key to Category)
+  - `path`: String (Materialized path for tree hierarchy resolution)
+  - `infraTypeId`: Int (Foreign Key to InfrastructureType / Category)
   - `parentId`: Int? (Self-referential relation for nested locations)
   - `latitude`: Float?
   - `longitude`: Float?
-  - `isActive`: Boolean
+  - `image`: String? (Path to location photo)
+  - `deletedAt`: DateTime? (Soft delete)
 
 ---
 

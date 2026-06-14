@@ -851,6 +851,7 @@ export function LocationDetail() {
           description={previewGalleryPhoto.description}
           date={previewGalleryPhoto.takenAt}
           actionId={previewGalleryPhoto.actionId}
+          action={previewGalleryPhoto.action}
           onDelete={() => {
             handleDeleteGalleryPhoto(previewGalleryPhoto.id)
             setPreviewGalleryPhoto(null)

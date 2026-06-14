@@ -60,9 +60,9 @@ Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL ·
 
 | # | Task | Estado |
 |---|------|--------|
-| 1 | Dockerfile multi-stage del backend | ⬜ pendiente |
-| 2 | Configuración Nginx (TLS + proxy /api + SPA estático) | ⬜ pendiente |
-| 3 | docker-compose.prod.yml + .env.prod.example | ⬜ pendiente |
+| 1 | Dockerfile multi-stage del backend | ✅ completado |
+| 2 | Configuración Nginx (TLS + proxy /api + SPA estático) | ✅ completado |
+| 3 | docker-compose.prod.yml + .env.prod.example | ✅ completado |
 | 4 | Configuración inicial del VPS (Docker, SSH, Certbot) | ⬜ pendiente |
-| 5 | Pipeline CI/CD con GitHub Actions | ⬜ pendiente |
+| 5 | Pipeline CI/CD con GitHub Actions | ✅ completado |
 | 6 | Backup automático de BD + verificación final | ⬜ pendiente |

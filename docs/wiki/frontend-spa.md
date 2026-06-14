@@ -14,8 +14,8 @@
 ## Pages
 
 - Login
-- Dashboard
-- Infraestructuras
-- Acciones
-- Materiales
-- Admin (usuarios y catalogos)
+- Departamentos (Navegador de Ubicaciones / Ficha de Ubicación)
+- Trabajos (Acciones / Mantenimiento)
+- Materiales (Inventario)
+- Usuarios (Administración)
+- Configuración (Catálogos y propiedades)

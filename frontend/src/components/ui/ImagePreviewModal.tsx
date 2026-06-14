@@ -11,6 +11,10 @@ interface Props {
   description?: string | null
   date?: string
   actionId?: number | null
+  action?: {
+    id: number
+    title: string
+  } | null
   onDelete?: () => void
 }
 
@@ -21,6 +25,7 @@ export function ImagePreviewModal({
   description,
   date,
   actionId,
+  action,
   onDelete
 }: Props) {
   const [scale, setScale] = useState(1)
@@ -180,7 +185,7 @@ export function ImagePreviewModal({
         </div>
 
         {/* Metadata info */}
-        {(date || description) && (
+        {(date || description || actionId) && (
           <div className="p-3 bg-app-bg/50 border border-app-border rounded-lg space-y-2 text-xs text-fg-secondary">
             {description && (
               <p className="flex items-start gap-1.5 leading-relaxed">
@@ -192,6 +197,12 @@ export function ImagePreviewModal({
               <p className="flex items-center gap-1.5 text-muted">
                 <Calendar className="w-3.5 h-3.5 text-muted shrink-0" />
                 <span>Capturada el: <strong>{new Date(date).toLocaleDateString()}</strong></span>
+              </p>
+            )}
+            {actionId && (
+              <p className="flex items-center gap-1.5 text-muted">
+                <ExternalLink className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>Asociada al trabajo: <Link to={`/actions/${actionId}`} className="text-primary hover:underline font-semibold">{action?.title || 'Ver detalles del trabajo'}</Link></span>
               </p>
             )}
           </div>

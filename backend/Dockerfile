@@ -7,9 +7,10 @@ WORKDIR /app
 COPY package*.json ./
 COPY backend/package*.json ./backend/
 COPY shared/package*.json ./shared/
+COPY frontend/package*.json ./frontend/
 
 # Install all dependencies (including devDependencies for compilation)
-RUN npm ci
+RUN npm ci --workspace=@control-actions/backend --workspace=@control-actions/shared
 
 # Copy the source code
 COPY shared/ ./shared/
@@ -31,9 +32,10 @@ WORKDIR /app
 COPY package*.json ./
 COPY backend/package*.json ./backend/
 COPY shared/package*.json ./shared/
+COPY frontend/package*.json ./frontend/
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --workspace=@control-actions/backend --workspace=@control-actions/shared
 
 # Copy generated prisma client and built code
 COPY --from=builder /app/backend/dist ./backend/dist
