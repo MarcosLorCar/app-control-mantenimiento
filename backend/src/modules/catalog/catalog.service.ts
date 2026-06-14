@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import type {
   CreateInfrastructureTypeInput, UpdateInfrastructureTypeInput,
-  CreateActionTypeInput, UpdateActionTypeInput,
 } from './catalog.schema'
 
 const INFRA_TYPE_SELECT = {
@@ -32,30 +31,25 @@ export function softDeleteInfrastructureType(db: PrismaClient, id: number) {
   return db.infrastructureType.update({ where: { id }, data: { deletedAt: new Date() } })
 }
 
-const ACTION_TYPE_SELECT = {
-  id: true, code: true, name: true, description: true, icon: true, color: true, deletedAt: true,
-}
-
 export function listRoles(db: PrismaClient) {
   return db.role.findMany({ orderBy: { name: 'asc' } })
 }
 
-export function listActionTypes(db: PrismaClient) {
-  return db.actionType.findMany({
-    where: { deletedAt: null },
-    select: ACTION_TYPE_SELECT,
-    orderBy: { name: 'asc' },
+export function listSystemSettings(db: PrismaClient) {
+  return db.systemSetting.findMany({
+    orderBy: { key: 'asc' },
   })
 }
 
-export function getActionType(db: PrismaClient, id: number) {
-  return db.actionType.findFirst({ where: { id, deletedAt: null }, select: ACTION_TYPE_SELECT })
+export async function updateSystemSettings(db: PrismaClient, data: Record<string, string>) {
+  const promises = Object.entries(data).map(([key, value]) =>
+    db.systemSetting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    })
+  )
+  await Promise.all(promises)
+  return listSystemSettings(db)
 }
 
-export function createActionType(db: PrismaClient, data: CreateActionTypeInput) {
-  return db.actionType.create({ data, select: ACTION_TYPE_SELECT })
-}
-
-export function updateActionType(db: PrismaClient, id: number, data: UpdateActionTypeInput) {
-  return db.actionType.update({ where: { id, deletedAt: null }, data, select: ACTION_TYPE_SELECT })
-}

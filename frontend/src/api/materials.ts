@@ -12,16 +12,13 @@ export function getMaterial(id: number): Promise<Material> {
 }
 
 export function createMaterial(body: {
-  code: string
   name: string
   typeId: number
   attributes?: Record<string, unknown>
   description?: string
-  serialNumber?: string
   installedAt?: string
-  structureId?: number
-  dependencyId?: number
-  infrastructureId?: number
+  locationId: number
+  actionId?: number
 }): Promise<Material> {
   return apiFetch<ApiData<Material>>(`${API_BASE}/materials`, {
     method: 'POST',
@@ -31,7 +28,7 @@ export function createMaterial(body: {
 
 export function updateMaterial(
   id: number,
-  body: { name?: string; description?: string; serialNumber?: string; attributes?: Record<string, unknown> },
+  body: { name?: string; description?: string | null; attributes?: Record<string, unknown> },
 ): Promise<Material> {
   return apiFetch<ApiData<Material>>(`${API_BASE}/materials/${id}`, {
     method: 'PATCH',
@@ -43,14 +40,6 @@ export function deleteMaterial(id: number): Promise<void> {
   return apiFetch(`${API_BASE}/materials/${id}`, { method: 'DELETE' }).then(() => undefined)
 }
 
-export function listMaterialsByInfra(infraId: number): Promise<Material[]> {
-  return apiFetch<ApiData<Material[]>>(`${API_BASE}/infrastructures/${infraId}/materials`).then(r => r.data)
-}
-
-export function listMaterialsByDependency(depId: number): Promise<Material[]> {
-  return apiFetch<ApiData<Material[]>>(`${API_BASE}/dependencies/${depId}/materials`).then(r => r.data)
-}
-
-export function listMaterialsByStructure(structId: number): Promise<Material[]> {
-  return apiFetch<ApiData<Material[]>>(`${API_BASE}/structures/${structId}/materials`).then(r => r.data)
+export function listMaterialsByLocation(locationId: number): Promise<Material[]> {
+  return apiFetch<ApiData<Material[]>>(`${API_BASE}/locations/${locationId}/materials`).then(r => r.data)
 }

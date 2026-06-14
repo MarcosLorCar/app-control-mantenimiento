@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
@@ -5,14 +6,14 @@ const prisma = new PrismaClient()
 
 async function main() {
   // Borrar en orden seguro (FK constraints)
+  await prisma.systemSetting.deleteMany()
+  await prisma.actionMaterial.deleteMany()
   await prisma.action.deleteMany()
   await prisma.material.deleteMany()
-  await prisma.structure.deleteMany()
-  await prisma.dependency.deleteMany()
-  await prisma.infrastructure.deleteMany()
-  await prisma.materialCategory.deleteMany()
+  await prisma.location.deleteMany()
+  await prisma.fixedProperty.deleteMany()
   await prisma.materialType.deleteMany()
-  await prisma.actionType.deleteMany()
+  await prisma.infrastructureType.deleteMany()
   await prisma.user.deleteMany()
   await prisma.role.deleteMany()
 
@@ -33,7 +34,7 @@ async function main() {
     data: {
       email: 'admin@example.com',
       passwordHash: hash,
-      fullName: 'Admin',
+      fullName: 'Admin Mantenimiento',
       roleId: managerRole.id,
       mustChangePassword: false,
     },
@@ -44,48 +45,50 @@ async function main() {
     data: {
       email: 'editor@example.com',
       passwordHash: editorHash,
-      fullName: 'Editor',
+      fullName: 'Técnico Operario',
       roleId: editorRole.id,
       mustChangePassword: false,
     },
   })
 
-  // Tipos de acción
-  await prisma.actionType.create({
-    data: { code: 'inspection', name: 'Inspección', icon: 'search', color: '#3B82F6' },
+  // Propiedades Fijas Globales (Fixed Properties)
+  await prisma.fixedProperty.create({
+    data: { code: 'serial_number', name: 'Número de Serie', type: 'STRING' },
   })
-  await prisma.actionType.create({
-    data: { code: 'repair', name: 'Reparación', icon: 'wrench', color: '#F59E0B' },
+  await prisma.fixedProperty.create({
+    data: { code: 'purchase_date', name: 'Fecha de Compra', type: 'DATE' },
+  })
+  await prisma.fixedProperty.create({
+    data: { code: 'warranty_period', name: 'Garantía (Meses)', type: 'NUMBER' },
+  })
+  await prisma.fixedProperty.create({
+    data: { code: 'supplier', name: 'Proveedor', type: 'STRING' },
   })
 
-  // Tipos de material
-  await prisma.materialType.create({
-    data: {
-      code: 'led_bulb',
-      name: 'Bombilla LED',
-      description: 'Bombilla LED de uso general',
-      categories: {
-        create: [
-          {
-            code: 'power_w',
-            name: 'Potencia (W)',
-            dataType: 'NUMBER',
-            unit: 'W',
-            required: true,
-            sortOrder: 1,
-            enumValues: [],
-          },
-          {
-            code: 'manufacturer',
-            name: 'Fabricante',
-            dataType: 'STRING',
-            required: false,
-            sortOrder: 2,
-            enumValues: [],
-          },
-        ],
-      },
-    },
+  // Categorías de infraestructura (Infrastructure Types)
+  await prisma.infrastructureType.create({
+    data: { name: 'Centros Sociales', description: 'Centros sociales y comunitarios', icon: 'Users' },
+  })
+  await prisma.infrastructureType.create({
+    data: { name: 'Fuentes', description: 'Fuentes ornamentales y de agua', icon: 'Droplet' },
+  })
+  await prisma.infrastructureType.create({
+    data: { name: 'Pistas Deportivas', description: 'Instalaciones y pistas deportivas públicas', icon: 'Activity' },
+  })
+  await prisma.infrastructureType.create({
+    data: { name: 'Dependencias Municipales', description: 'Edificios públicos y dependencias del ayuntamiento', icon: 'Building2' },
+  })
+  await prisma.infrastructureType.create({
+    data: { name: 'Colegios', description: 'Centros educativos y colegios públicos', icon: 'GraduationCap' },
+  })
+
+  // Configuración del sistema
+  await prisma.systemSetting.createMany({
+    data: [
+      { key: 'default_latitude', value: '38.9863' },
+      { key: 'default_longitude', value: '-3.9291' },
+      { key: 'default_location_name', value: 'Ciudad Real' },
+    ]
   })
 
   console.log('Seed completado.')

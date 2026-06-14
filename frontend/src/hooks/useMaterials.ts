@@ -1,15 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listMaterials, getMaterial, createMaterial, updateMaterial, deleteMaterial,
-  listMaterialsByInfra, listMaterialsByDependency, listMaterialsByStructure,
+  listMaterialsByLocation,
 } from '../api/materials'
+import { locationKeys } from './useLocations'
 
 export const materialKeys = {
   all: ['materials'] as const,
   detail: (id: number) => ['materials', id] as const,
-  byInfra: (infraId: number) => ['infrastructures', infraId, 'materials'] as const,
-  byDependency: (depId: number) => ['dependencies', depId, 'materials'] as const,
-  byStructure: (structId: number) => ['structures', structId, 'materials'] as const,
+  byLocation: (locId: number) => ['locations', locId, 'materials'] as const,
 }
 
 export function useMaterials() {
@@ -20,27 +19,11 @@ export function useMaterial(id: number) {
   return useQuery({ queryKey: materialKeys.detail(id), queryFn: () => getMaterial(id) })
 }
 
-export function useMaterialsByInfra(infraId: number) {
+export function useMaterialsByLocation(locationId: number) {
   return useQuery({
-    queryKey: materialKeys.byInfra(infraId),
-    queryFn: () => listMaterialsByInfra(infraId),
-    enabled: infraId > 0,
-  })
-}
-
-export function useMaterialsByDependency(depId: number) {
-  return useQuery({
-    queryKey: materialKeys.byDependency(depId),
-    queryFn: () => listMaterialsByDependency(depId),
-    enabled: depId > 0,
-  })
-}
-
-export function useMaterialsByStructure(structId: number) {
-  return useQuery({
-    queryKey: materialKeys.byStructure(structId),
-    queryFn: () => listMaterialsByStructure(structId),
-    enabled: structId > 0,
+    queryKey: materialKeys.byLocation(locationId),
+    queryFn: () => listMaterialsByLocation(locationId),
+    enabled: locationId > 0,
   })
 }
 
@@ -48,7 +31,13 @@ export function useCreateMaterial() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: createMaterial,
-    onSuccess: () => qc.invalidateQueries({ queryKey: materialKeys.all }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: materialKeys.all })
+      if (data.locationId) {
+        qc.invalidateQueries({ queryKey: materialKeys.byLocation(data.locationId) })
+        qc.invalidateQueries({ queryKey: locationKeys.detail(data.locationId) })
+      }
+    },
   })
 }
 
@@ -57,9 +46,13 @@ export function useUpdateMaterial() {
   return useMutation({
     mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateMaterial>[1] }) =>
       updateMaterial(id, body),
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       qc.invalidateQueries({ queryKey: materialKeys.all })
       qc.invalidateQueries({ queryKey: materialKeys.detail(variables.id) })
+      if (data.locationId) {
+        qc.invalidateQueries({ queryKey: materialKeys.byLocation(data.locationId) })
+        qc.invalidateQueries({ queryKey: locationKeys.detail(data.locationId) })
+      }
     },
   })
 }
@@ -68,6 +61,9 @@ export function useDeleteMaterial() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: deleteMaterial,
-    onSuccess: () => qc.invalidateQueries({ queryKey: materialKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: materialKeys.all })
+      qc.invalidateQueries({ queryKey: locationKeys.all })
+    },
   })
 }

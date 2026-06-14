@@ -32,61 +32,41 @@ export interface InfrastructureType {
   deletedAt: string | null
 }
 
-export interface Infrastructure {
+export interface Location {
   id: number
-  code: string | null
   name: string
   description: string | null
-  infraTypeId: number | null
-  infraType: { id: number; name: string; icon: string | null; color: string | null } | null
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
-}
-
-export interface Dependency {
-  id: number
-  code: string
-  name: string
-  description: string | null
-  infrastructureId: number
+  latitude: number | null
+  longitude: number | null
+  image: string | null
+  path: string
   parentId: number | null
+  infraTypeId: number
+  infraType: { id: number; name: string; icon: string | null; color: string | null }
   createdAt: string
   updatedAt: string
   deletedAt: string | null
+  _count?: {
+    children: number
+    materials: number
+    actions: number
+  }
 }
 
-export interface DependencyWithChildren extends Dependency {
-  children: Dependency[]
-  structures: Structure[]
-}
-
-export interface Structure {
-  id: number
-  code: string
-  name: string
-  description: string | null
-  infrastructureId: number | null
-  dependencyId: number | null
-  createdAt: string
-  updatedAt: string
+export interface LocationDetail extends Location {
+  children: Location[]
+  materials: Material[]
+  actions: Action[]
+  descendantMaterials: Material[]
 }
 
 // ==================== MATERIAL CATALOG ====================
 
-export type MaterialCategoryDataType = 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE' | 'ENUM'
-
-export interface MaterialCategory {
+export interface FixedProperty {
   id: number
   code: string
   name: string
-  description: string | null
-  dataType: MaterialCategoryDataType
-  unit: string | null
-  required: boolean
-  sortOrder: number
-  enumValues: string[]
-  materialTypeId: number
+  type: 'STRING' | 'DATE' | 'NUMBER' | 'BOOLEAN'
 }
 
 export interface MaterialType {
@@ -95,38 +75,35 @@ export interface MaterialType {
   name: string
   description: string | null
   icon: string | null
+  createdAt: string
+  updatedAt: string
   deletedAt: string | null
+  categories: { id: number; name: string }[]
+  customAttributes?: any
 }
 
 export interface Material {
   id: number
-  code: string
   name: string
   description: string | null
-  serialNumber: string | null
   installedAt: string | null
-  attributes: Record<string, unknown>
+  attributes: Record<string, any>
   typeId: number
-  type: { id: number; code: string; name: string; icon: string | null }
-  infrastructureId: number | null
-  dependencyId: number | null
-  structureId: number | null
+  type: {
+    id: number
+    code: string
+    name: string
+    icon: string | null
+    customAttributes?: any
+  }
+  locationId: number | null
+  location: { id: number; name: string; path: string } | null
   createdAt: string
   updatedAt: string
   deletedAt: string | null
 }
 
 // ==================== ACTIONS ====================
-
-export interface ActionType {
-  id: number
-  code: string
-  name: string
-  description: string | null
-  icon: string | null
-  color: string | null
-  deletedAt: string | null
-}
 
 export interface Action {
   id: number
@@ -135,10 +112,40 @@ export interface Action {
   performedAt: string
   createdAt: string
   updatedAt: string
-  typeId: number
-  materialId: number
+  locationId: number | null
+  latitude?: number | null
+  longitude?: number | null
   performedBy: number
-  type: { id: number; code: string; name: string; icon: string | null; color: string | null }
-  material: { id: number; code: string; name: string; typeId: number }
+  materials: {
+    actionId: number
+    materialId: number
+    operation: 'INSTALL' | 'UNINSTALL' | 'UPDATE'
+    material: Material
+    snapshot?: any
+  }[]
+  location: { id: number; name: string; path: string; parentId: number | null; latitude: number | null; longitude: number | null } | null
   performer: { id: number; fullName: string; email: string }
 }
+
+export interface SystemSetting {
+  id: number
+  key: string
+  value: string
+}
+
+export interface LocationPhoto {
+  id: number
+  url: string
+  description: string | null
+  takenAt: string
+  createdAt: string
+  locationId: number
+  actionId: number | null
+  action?: {
+    id: number
+    title: string
+    performedAt: string
+  } | null
+}
+
+

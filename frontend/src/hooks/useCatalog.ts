@@ -2,9 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   listInfrastructureTypes, createInfrastructureType, updateInfrastructureType, deleteInfrastructureType,
   listRoles,
-  listActionTypes, createActionType, updateActionType,
-  listMaterialTypes, createMaterialType, updateMaterialType,
-  listMaterialCategories, createMaterialCategory, updateMaterialCategory, deleteMaterialCategory,
+  listMaterialTypes, createMaterialType, updateMaterialType, deleteMaterialType as apiDeleteMaterialType,
+  listFixedProperties, createFixedProperty, deleteFixedProperty,
 } from '../api/catalog'
 
 export function useInfrastructureTypes() {
@@ -40,35 +39,10 @@ export function useRoles() {
   return useQuery({ queryKey: ['catalog', 'roles'], queryFn: listRoles, staleTime: Infinity })
 }
 
-export function useActionTypes() {
+export function useMaterialTypes(infraTypeId?: number | null) {
   return useQuery({
-    queryKey: ['catalog', 'action-types'],
-    queryFn: listActionTypes,
-    staleTime: Infinity,
-  })
-}
-
-export function useCreateActionType() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: createActionType,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'action-types'] }),
-  })
-}
-
-export function useUpdateActionType() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateActionType>[1] }) =>
-      updateActionType(id, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'action-types'] }),
-  })
-}
-
-export function useMaterialTypes() {
-  return useQuery({
-    queryKey: ['catalog', 'material-types'],
-    queryFn: listMaterialTypes,
+    queryKey: ['catalog', 'material-types', infraTypeId ?? 'all'],
+    queryFn: () => listMaterialTypes(infraTypeId),
     staleTime: Infinity,
   })
 }
@@ -84,45 +58,41 @@ export function useCreateMaterialType() {
 export function useUpdateMaterialType() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateMaterialType>[1] }) =>
+    mutationFn: ({ id, body }: { id: number; body: any }) =>
       updateMaterialType(id, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'material-types'] }),
   })
 }
 
-export function useMaterialCategories(materialTypeId: number) {
+export function useDeleteMaterialType() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: apiDeleteMaterialType,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'material-types'] }),
+  })
+}
+
+// Global Fixed Properties Hooks
+export function useFixedProperties() {
   return useQuery({
-    queryKey: ['catalog', 'material-types', materialTypeId, 'categories'],
-    queryFn: () => listMaterialCategories(materialTypeId),
-    enabled: materialTypeId > 0,
+    queryKey: ['catalog', 'fixed-properties'],
+    queryFn: listFixedProperties,
+    staleTime: Infinity,
   })
 }
 
-export function useCreateMaterialCategory(materialTypeId: number) {
+export function useCreateFixedProperty() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: Parameters<typeof createMaterialCategory>[1]) =>
-      createMaterialCategory(materialTypeId, body),
-    onSuccess: () =>
-      qc.invalidateQueries({
-        queryKey: ['catalog', 'material-types', materialTypeId, 'categories'],
-      }),
+    mutationFn: createFixedProperty,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'fixed-properties'] }),
   })
 }
 
-export function useUpdateMaterialCategory() {
+export function useDeleteFixedProperty() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, body }: { id: number; body: Parameters<typeof updateMaterialCategory>[1] }) =>
-      updateMaterialCategory(id, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'material-types'] }),
-  })
-}
-
-export function useDeleteMaterialCategory() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: deleteMaterialCategory,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'material-types'] }),
+    mutationFn: deleteFixedProperty,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['catalog', 'fixed-properties'] }),
   })
 }

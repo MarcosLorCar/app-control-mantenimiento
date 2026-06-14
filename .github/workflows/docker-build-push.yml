@@ -1,0 +1,69 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: javierloro
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine Docker tags
+        id: meta
+        run: |
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          # Replace unsafe characters (slashes, etc.) with dashes, and lowercase it
+          SAFE_BRANCH=$(echo "${BRANCH_NAME}" | sed 's/[^a-zA-Z0-9._-]/-/g' | tr '[:upper:]' '[:lower:]')
+          
+          if [ "${SAFE_BRANCH}" = "main" ]; then
+            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build and push Backend Image
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.backend_tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build and push Frontend Image
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.frontend_tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,27 +1,31 @@
 import { PrismaClient } from '@prisma/client'
 import type { CreateMaterialInput, UpdateMaterialInput } from './materials.schema'
-import { validateAttributes } from './catalog.service'
 
 const MATERIAL_SELECT = {
   id: true,
-  code: true,
   name: true,
   description: true,
-  serialNumber: true,
   installedAt: true,
   attributes: true,
   typeId: true,
-  type: { select: { id: true, code: true, name: true, icon: true } },
-  infrastructureId: true,
-  dependencyId: true,
-  structureId: true,
+  type: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      icon: true,
+      customAttributes: true
+    }
+  },
+  locationId: true,
+  location: { select: { id: true, name: true, path: true } },
   createdAt: true,
   updatedAt: true,
 }
 
 export function listMaterials(
   db: PrismaClient,
-  filters?: { infrastructureId?: number; dependencyId?: number; structureId?: number },
+  filters?: { locationId?: number },
 ) {
   return db.material.findMany({
     where: { deletedAt: null, ...filters },
@@ -38,33 +42,21 @@ export function getMaterial(db: PrismaClient, id: number) {
 }
 
 export async function createMaterial(db: PrismaClient, data: CreateMaterialInput) {
-  const errors = await validateAttributes(db, data.typeId, data.attributes as Record<string, unknown>)
-  if (errors.length > 0) {
-    const err = Object.assign(new Error('Atributos inválidos'), {
-      code: 'INVALID_ATTRIBUTES',
-      errors,
-    })
-    throw err
-  }
-
-  const existing = await db.material.findFirst({
-    where: { code: data.code, deletedAt: null },
-  })
-  if (existing) {
-    const err = Object.assign(new Error('Código de material ya existe'), {
-      code: 'DUPLICATE_CODE',
-    })
-    throw err
-  }
-
-  const { infrastructureId, dependencyId, structureId, installedAt, ...rest } = data
+  const { locationId, installedAt, actionId, ...rest } = data
   return db.material.create({
     data: {
-      ...(rest as any),
-      infrastructureId: infrastructureId ?? null,
-      dependencyId: dependencyId ?? null,
-      structureId: structureId ?? null,
+      name: rest.name,
+      description: rest.description,
+      attributes: (rest.attributes || {}) as any,
+      typeId: rest.typeId,
+      locationId,
       installedAt: installedAt ? new Date(installedAt) : undefined,
+      actions: actionId ? {
+        create: {
+          actionId: actionId,
+          operation: 'INSTALL'
+        }
+      } : undefined,
     },
     select: MATERIAL_SELECT,
   })

@@ -17,20 +17,11 @@ export const UpdateInfrastructureTypeSchema = z.object({
 export type CreateInfrastructureTypeInput = z.infer<typeof CreateInfrastructureTypeSchema>
 export type UpdateInfrastructureTypeInput = z.infer<typeof UpdateInfrastructureTypeSchema>
 
-export const CreateActionTypeSchema = z.object({
-  code: z.string().min(1).max(50),
-  name: z.string().min(1).max(255),
-  description: z.string().optional(),
-  icon: z.string().optional(),
-  color: z.string().optional(),
+export const UpdateSystemSettingsSchema = z.object({
+  default_latitude: z.string().min(1),
+  default_longitude: z.string().min(1),
+  default_location_name: z.string().min(1),
 })
 
-export const UpdateActionTypeSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
-  icon: z.string().optional(),
-  color: z.string().optional(),
-})
+export type UpdateSystemSettingsInput = z.infer<typeof UpdateSystemSettingsSchema>
 
-export type CreateActionTypeInput = z.infer<typeof CreateActionTypeSchema>
-export type UpdateActionTypeInput = z.infer<typeof UpdateActionTypeSchema>

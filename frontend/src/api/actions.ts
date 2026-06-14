@@ -13,10 +13,28 @@ export function getAction(id: number): Promise<Action> {
 
 export function createAction(body: {
   title: string
-  typeId: number
-  materialId: number
-  description?: string
+  locationId?: number | null
+  latitude?: number | null
+  longitude?: number | null
+  description?: string | null
   performedAt?: string
+  newLocation?: {
+    name: string
+    type?: string | null
+    parentId?: number | null
+    latitude?: number | null
+    longitude?: number | null
+    infraTypeId?: number | null
+  } | null
+  materials?: {
+    materialId?: number
+    name?: string
+    typeId?: number
+    description?: string | null
+    attributes?: Record<string, any>
+    locationId?: number | null
+    operation: 'INSTALL' | 'UNINSTALL' | 'UPDATE'
+  }[]
 }): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions`, {
     method: 'POST',
@@ -26,7 +44,7 @@ export function createAction(body: {
 
 export function updateAction(
   id: number,
-  body: { title?: string; description?: string; performedAt?: string },
+  body: { title?: string; description?: string | null; performedAt?: string },
 ): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${id}`, {
     method: 'PATCH',
@@ -41,3 +59,17 @@ export function deleteAction(id: number): Promise<void> {
 export function listMaterialActions(materialId: number): Promise<Action[]> {
   return apiFetch<ApiData<Action[]>>(`${API_BASE}/materials/${materialId}/actions`).then(r => r.data)
 }
+
+export function listLocationActions(locationId: number): Promise<Action[]> {
+  return apiFetch<ApiData<Action[]>>(`${API_BASE}/locations/${locationId}/actions`).then(r => r.data)
+}
+
+export function uploadActionPhoto(actionId: number, file: File): Promise<any> {
+  const formData = new FormData()
+  formData.append('file', file)
+  return apiFetch<ApiData<any>>(`${API_BASE}/actions/${actionId}/image`, {
+    method: 'POST',
+    body: formData,
+  }).then(r => r.data)
+}
+

@@ -51,11 +51,11 @@ describe('Material Catalog', () => {
       expect(res.json().data).toMatchObject({ code: 'valve', name: 'Válvula' })
     })
 
-    it('returns 403 for editor', async () => {
+    it('returns 403 for viewer', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/material-types',
-        headers: { authorization: `Bearer ${editorToken}` },
+        headers: { authorization: `Bearer ${viewerToken}` },
         payload: { code: 'valve', name: 'Válvula' },
       })
       expect(res.statusCode).toBe(403)
@@ -84,120 +84,22 @@ describe('Material Catalog', () => {
       expect(res.json().data.name).toBe('Bombilla LED Actualizada')
     })
 
-    it('returns 403 for editor', async () => {
+    it('allows editor to update material type (requireWrite)', async () => {
       const res = await app.inject({
         method: 'PATCH',
         url: `/api/v1/material-types/${seed.materialType.id}`,
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { name: 'X' },
-      })
-      expect(res.statusCode).toBe(403)
-    })
-  })
-
-  describe('GET /api/v1/material-types/:id/categories', () => {
-    it('returns categories for a material type', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: `/api/v1/material-types/${seed.materialType.id}/categories`,
-        headers: { authorization: `Bearer ${viewerToken}` },
+        payload: { name: 'Bombilla LED Editor' },
       })
       expect(res.statusCode).toBe(200)
-      const body = res.json()
-      expect(body.data).toBeInstanceOf(Array)
-      expect(body.data[0]).toMatchObject({ code: 'power_w', dataType: 'NUMBER', required: true })
     })
 
-    it('returns 404 for unknown material type', async () => {
-      const res = await app.inject({
-        method: 'GET',
-        url: '/api/v1/material-types/99999/categories',
-        headers: { authorization: `Bearer ${viewerToken}` },
-      })
-      expect(res.statusCode).toBe(404)
-    })
-  })
-
-  describe('POST /api/v1/material-types/:id/categories', () => {
-    it('creates category (requireManage)', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: `/api/v1/material-types/${seed.materialType.id}/categories`,
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: {
-          code: 'voltage_v',
-          name: 'Voltaje (V)',
-          dataType: 'NUMBER',
-          unit: 'V',
-          required: false,
-          sortOrder: 2,
-          enumValues: [],
-        },
-      })
-      expect(res.statusCode).toBe(201)
-      expect(res.json().data).toMatchObject({ code: 'voltage_v', dataType: 'NUMBER' })
-    })
-
-    it('rejects duplicate category code in same type', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: `/api/v1/material-types/${seed.materialType.id}/categories`,
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: { code: 'power_w', name: 'Dup', dataType: 'NUMBER', enumValues: [] },
-      })
-      expect(res.statusCode).toBe(409)
-    })
-
-    it('returns 403 for editor', async () => {
-      const res = await app.inject({
-        method: 'POST',
-        url: `/api/v1/material-types/${seed.materialType.id}/categories`,
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: { code: 'x', name: 'X', dataType: 'STRING', enumValues: [] },
-      })
-      expect(res.statusCode).toBe(403)
-    })
-  })
-
-  describe('PATCH /api/v1/categories/:id', () => {
-    it('updates category name (requireManage)', async () => {
-      const cat = await testDb.materialCategory.findFirst({
-        where: { materialTypeId: seed.materialType.id },
-      })
+    it('returns 403 for viewer', async () => {
       const res = await app.inject({
         method: 'PATCH',
-        url: `/api/v1/categories/${cat!.id}`,
-        headers: { authorization: `Bearer ${managerToken}` },
-        payload: { name: 'Potencia Actualizada' },
-      })
-      expect(res.statusCode).toBe(200)
-      expect(res.json().data.name).toBe('Potencia Actualizada')
-    })
-  })
-
-  describe('DELETE /api/v1/categories/:id', () => {
-    it('deletes category (requireManage)', async () => {
-      const cat = await testDb.materialCategory.findFirst({
-        where: { materialTypeId: seed.materialType.id },
-      })
-      const res = await app.inject({
-        method: 'DELETE',
-        url: `/api/v1/categories/${cat!.id}`,
-        headers: { authorization: `Bearer ${managerToken}` },
-      })
-      expect(res.statusCode).toBe(204)
-      const check = await testDb.materialCategory.findUnique({ where: { id: cat!.id } })
-      expect(check).toBeNull()
-    })
-
-    it('returns 403 for editor', async () => {
-      const cat = await testDb.materialCategory.findFirst({
-        where: { materialTypeId: seed.materialType.id },
-      })
-      const res = await app.inject({
-        method: 'DELETE',
-        url: `/api/v1/categories/${cat!.id}`,
-        headers: { authorization: `Bearer ${editorToken}` },
+        url: `/api/v1/material-types/${seed.materialType.id}`,
+        headers: { authorization: `Bearer ${viewerToken}` },
+        payload: { name: 'X' },
       })
       expect(res.statusCode).toBe(403)
     })

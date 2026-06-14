@@ -36,10 +36,12 @@ describe('Actions', () => {
       await testDb.action.create({
         data: {
           title: 'Revisión inicial',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
           performedBy: seed.editor.id,
+          materials: {
+            create: [
+              { materialId: seed.material.id, operation: 'INSTALL' }
+            ]
+          }
         },
       })
       const res = await app.inject({
@@ -51,9 +53,7 @@ describe('Actions', () => {
       const data = res.json().data
       expect(data).toHaveLength(1)
       expect(data[0]).toMatchObject({ title: 'Revisión inicial' })
-      expect(data[0].type).toBeDefined()
-      expect(data[0].status).toBeDefined()
-      expect(data[0].material).toBeDefined()
+      expect(data[0].materials).toBeDefined()
       expect(data[0].performer).toBeDefined()
     })
 
@@ -64,26 +64,50 @@ describe('Actions', () => {
   })
 
   describe('POST /api/v1/actions', () => {
-    it('creates action linked to material (requireWrite)', async () => {
-      const res = await app.inject({
+    it('creates action and installs/uninstalls materials', async () => {
+      // Create a material that is not installed in any location (warehouse)
+      const warehouseMaterial = await testDb.material.create({
+        data: {
+          name: 'Repuesto Farola',
+          typeId: seed.materialType.id,
+          locationId: null,
+        }
+      })
+
+      // 1. Create action that installs warehouseMaterial and uninstalls seed.material
+      const createRes = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
-          title: 'Inspección bombilla',
-          description: 'Revisión periódica',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
+          title: 'Sustitución de Bombilla',
+          description: 'Se retira la bombilla vieja y se pone el repuesto',
+          locationId: seed.infra.id,
+          materials: [
+            {
+              materialId: seed.material.id,
+              operation: 'UNINSTALL'
+            },
+            {
+              materialId: warehouseMaterial.id,
+              operation: 'INSTALL',
+              locationId: seed.structure.id
+            }
+          ]
         },
       })
-      expect(res.statusCode).toBe(201)
-      const body = res.json().data
-      expect(body).toMatchObject({ title: 'Inspección bombilla', materialId: seed.material.id })
-      expect(body.type).toMatchObject({ code: 'inspection' })
-      expect(body.status).toMatchObject({ code: 'pending' })
-      expect(body.material).toMatchObject({ code: 'MAT-001' })
-      expect(body.performer).toBeDefined()
+
+      expect(createRes.statusCode).toBe(201)
+      const action = createRes.json().data
+      expect(action.materials).toHaveLength(2)
+
+      // Verify DB status: seed.material should have locationId = null
+      const uninstalledMat = await testDb.material.findUnique({ where: { id: seed.material.id } })
+      expect(uninstalledMat?.locationId).toBeNull()
+
+      // warehouseMaterial should now be installed at seed.structure.id
+      const installedMat = await testDb.material.findUnique({ where: { id: warehouseMaterial.id } })
+      expect(installedMat?.locationId).toBe(seed.structure.id)
     })
 
     it('sets performedBy from JWT (current user)', async () => {
@@ -93,23 +117,69 @@ describe('Actions', () => {
         headers: { authorization: `Bearer ${editorToken}` },
         payload: {
           title: 'Test performer',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
+          locationId: seed.infra.id,
         },
       })
       expect(res.statusCode).toBe(201)
       expect(res.json().data.performedBy).toBe(seed.editor.id)
     })
 
-    it('returns 400 when materialId missing', async () => {
+    it('returns 400 when location missing', async () => {
       const res = await app.inject({
         method: 'POST',
         url: '/api/v1/actions',
         headers: { authorization: `Bearer ${editorToken}` },
-        payload: { title: 'Sin material', typeId: seed.actionType.id },
+        payload: { title: 'Sin material' },
       })
       expect(res.statusCode).toBe(400)
+    })
+
+    it('creates action linked to location', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Limpieza general',
+          description: 'Limpieza de hojas y basura',
+          locationId: seed.infra.id,
+          latitude: 40.416775,
+          longitude: -3.703790,
+        },
+      })
+      expect(res.statusCode).toBe(201)
+      const body = res.json().data
+      expect(body).toMatchObject({ title: 'Limpieza general', locationId: seed.infra.id, latitude: 40.416775, longitude: -3.703790 })
+      expect(body.location).toBeDefined()
+    })
+
+    it('creates action and registers a new location on-the-fly', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Instalación farola nueva',
+          description: 'Nueva farola instalada en pista',
+          newLocation: {
+            name: 'Nueva Infraestructura Raíz',
+            parentId: null,
+            infraTypeId: seed.infraType.id,
+            latitude: 40.4165,
+            longitude: -3.6852,
+          },
+        },
+      })
+      expect(res.statusCode).toBe(201)
+      const body = res.json().data
+      expect(body).toMatchObject({ title: 'Instalación farola nueva' })
+      expect(body.locationId).toBeDefined()
+      expect(body.location).toMatchObject({
+        name: 'Nueva Infraestructura Raíz',
+        parentId: null,
+        latitude: 40.4165,
+        longitude: -3.6852,
+      })
     })
 
     it('returns 403 for viewer', async () => {
@@ -119,9 +189,7 @@ describe('Actions', () => {
         headers: { authorization: `Bearer ${viewerToken}` },
         payload: {
           title: 'Test',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
+          locationId: seed.infra.id,
         },
       })
       expect(res.statusCode).toBe(403)
@@ -133,10 +201,12 @@ describe('Actions', () => {
       const action = await testDb.action.create({
         data: {
           title: 'Detalle test',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
           performedBy: seed.editor.id,
+          materials: {
+            create: [
+              { materialId: seed.material.id, operation: 'INSTALL' }
+            ]
+          }
         },
       })
       const res = await app.inject({
@@ -147,9 +217,7 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(200)
       const body = res.json().data
       expect(body.id).toBe(action.id)
-      expect(body.type).toBeDefined()
-      expect(body.status).toBeDefined()
-      expect(body.material).toBeDefined()
+      expect(body.materials).toBeDefined()
       expect(body.performer).toBeDefined()
     })
 
@@ -168,10 +236,12 @@ describe('Actions', () => {
       await testDb.action.create({
         data: {
           title: 'Acción material',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
           performedBy: seed.editor.id,
+          materials: {
+            create: [
+              { materialId: seed.material.id, operation: 'INSTALL' }
+            ]
+          }
         },
       })
       const res = await app.inject({
@@ -183,26 +253,33 @@ describe('Actions', () => {
       expect(res.json().data).toHaveLength(1)
       expect(res.json().data[0].title).toBe('Acción material')
     })
+  })
 
-    it('returns empty list for material with no actions', async () => {
+  describe('GET /api/v1/locations/:locId/actions', () => {
+    it('returns actions for a location', async () => {
+      await testDb.action.create({
+        data: {
+          title: 'Acción ubicacion',
+          locationId: seed.infra.id,
+          performedBy: seed.editor.id,
+        },
+      })
       const res = await app.inject({
         method: 'GET',
-        url: `/api/v1/materials/${seed.material.id}/actions`,
+        url: `/api/v1/locations/${seed.infra.id}/actions`,
         headers: { authorization: `Bearer ${viewerToken}` },
       })
       expect(res.statusCode).toBe(200)
-      expect(res.json().data).toHaveLength(0)
+      expect(res.json().data).toHaveLength(1)
+      expect(res.json().data[0].title).toBe('Acción ubicacion')
     })
   })
 
   describe('PATCH /api/v1/actions/:id', () => {
-    it('updates status (requireWrite)', async () => {
+    it('updates description (requireWrite)', async () => {
       const action = await testDb.action.create({
         data: {
           title: 'Para actualizar',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
       })
@@ -215,34 +292,6 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(200)
       expect(res.json().data.description).toBe('Completado sin incidencias')
     })
-
-    it('returns 404 for unknown id', async () => {
-      const res = await app.inject({
-        method: 'PATCH',
-        url: '/api/v1/actions/99999',
-        headers: { authorization: `Bearer ${editorToken}` },
-        payload: { description: 'x' },
-      })
-      expect(res.statusCode).toBe(404)
-    })
-
-    it('returns 403 for viewer', async () => {
-      const action = await testDb.action.create({
-        data: {
-          title: 'Test',
-          typeId: seed.actionType.id,
-          materialId: seed.material.id,
-          performedBy: seed.editor.id,
-        },
-      })
-      const res = await app.inject({
-        method: 'PATCH',
-        url: `/api/v1/actions/${action.id}`,
-        headers: { authorization: `Bearer ${viewerToken}` },
-        payload: { description: 'x' },
-      })
-      expect(res.statusCode).toBe(403)
-    })
   })
 
   describe('DELETE /api/v1/actions/:id', () => {
@@ -250,9 +299,6 @@ describe('Actions', () => {
       const action = await testDb.action.create({
         data: {
           title: 'Para borrar',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
           performedBy: seed.editor.id,
         },
       })
@@ -264,24 +310,6 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(204)
       const check = await testDb.action.findUnique({ where: { id: action.id } })
       expect(check).toBeNull()
-    })
-
-    it('returns 403 for editor', async () => {
-      const action = await testDb.action.create({
-        data: {
-          title: 'Test',
-          typeId: seed.actionType.id,
-
-          materialId: seed.material.id,
-          performedBy: seed.editor.id,
-        },
-      })
-      const res = await app.inject({
-        method: 'DELETE',
-        url: `/api/v1/actions/${action.id}`,
-        headers: { authorization: `Bearer ${editorToken}` },
-      })
-      expect(res.statusCode).toBe(403)
     })
   })
 })

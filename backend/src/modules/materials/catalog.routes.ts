@@ -1,34 +1,73 @@
 import type { FastifyInstance } from 'fastify'
 import {
   CreateMaterialTypeSchema, UpdateMaterialTypeSchema,
-  CreateMaterialCategorySchema, UpdateMaterialCategorySchema,
+  CreateFixedPropertySchema
 } from './materials.schema'
 import {
-  listMaterialTypes, createMaterialType, updateMaterialType,
-  listCategories, createCategory, updateCategory, deleteCategory,
+  listMaterialTypes, createMaterialType, updateMaterialType, deleteMaterialType,
+  listFixedProperties, createFixedProperty, deleteFixedProperty
 } from './catalog.service'
 
 export async function materialCatalogRoutes(app: FastifyInstance) {
+  // Material Types Catalog
   app.get('/material-types', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    return reply.send({ data: await listMaterialTypes(app.db) })
+    const query = req.query as { infraTypeId?: string }
+    const infraTypeId = query.infraTypeId ? Number(query.infraTypeId) : undefined
+    return reply.send({ data: await listMaterialTypes(app.db, infraTypeId) })
   })
 
-  app.post('/material-types', { preHandler: [app.requireManage] }, async (req, reply) => {
+  app.post('/material-types', { preHandler: [app.requireWrite] }, async (req, reply) => {
     const parsed = CreateMaterialTypeSchema.safeParse(req.body)
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
     const existing = await app.db.materialType.findFirst({
-      where: { code: parsed.data.code, deletedAt: null },
+      where: {
+        OR: [
+          { code: parsed.data.code },
+          { name: { equals: parsed.data.name, mode: 'insensitive' } }
+        ]
+      },
+      include: {
+        categories: true
+      }
     })
+
     if (existing) {
-      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de tipo ya existe' } })
+      if (existing.code === parsed.data.code && existing.name.toLowerCase() !== parsed.data.name.toLowerCase()) {
+        return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'El código de tipo de material ya existe' } })
+      }
+
+      const shouldSync = parsed.data.infraTypeId && !existing.categories.some(c => c.id === parsed.data.infraTypeId)
+      const shouldRestore = existing.deletedAt !== null
+
+      if (shouldSync || shouldRestore) {
+        const updated = await app.db.materialType.update({
+          where: { id: existing.id },
+          data: {
+            categories: shouldSync ? { connect: { id: parsed.data.infraTypeId! } } : undefined,
+            deletedAt: shouldRestore ? null : undefined,
+          },
+          select: {
+            id: true,
+            code: true,
+            name: true,
+            description: true,
+            icon: true,
+            customAttributes: true,
+            categories: { select: { id: true, name: true } }
+          }
+        })
+        return reply.status(200).send({ data: updated })
+      }
+      return reply.status(200).send({ data: existing })
     }
+
     const data = await createMaterialType(app.db, parsed.data)
     return reply.status(201).send({ data })
   })
 
-  app.patch('/material-types/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+  app.patch('/material-types/:id', { preHandler: [app.requireWrite] }, async (req, reply) => {
     const id = Number((req.params as any).id)
     const existing = await app.db.materialType.findFirst({ where: { id, deletedAt: null } })
     if (!existing) {
@@ -42,52 +81,43 @@ export async function materialCatalogRoutes(app: FastifyInstance) {
     return reply.send({ data })
   })
 
-  app.get('/material-types/:id/categories', { preHandler: [app.verifyToken] }, async (req, reply) => {
+  app.delete('/material-types/:id', { preHandler: [app.requireWrite] }, async (req, reply) => {
     const id = Number((req.params as any).id)
-    const type = await app.db.materialType.findFirst({ where: { id, deletedAt: null } })
-    if (!type) {
+    const existing = await app.db.materialType.findFirst({ where: { id, deletedAt: null } })
+    if (!existing) {
       return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Tipo de material no encontrado' } })
     }
-    return reply.send({ data: await listCategories(app.db, id) })
+    await deleteMaterialType(app.db, id)
+    return reply.status(204).send()
   })
 
-  app.post('/material-types/:id/categories', { preHandler: [app.requireManage] }, async (req, reply) => {
-    const materialTypeId = Number((req.params as any).id)
-    const parsed = CreateMaterialCategorySchema.safeParse(req.body)
+  // Global Fixed Properties
+  app.get('/fixed-properties', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: await listFixedProperties(app.db) })
+  })
+
+  app.post('/fixed-properties', { preHandler: [app.requireManage] }, async (req, reply) => {
+    const parsed = CreateFixedPropertySchema.safeParse(req.body)
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
-    const existing = await app.db.materialCategory.findUnique({
-      where: { materialTypeId_code: { materialTypeId, code: parsed.data.code } },
+    const existing = await app.db.fixedProperty.findUnique({
+      where: { code: parsed.data.code }
     })
     if (existing) {
-      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de categoría ya existe en este tipo' } })
+      return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: 'Código de propiedad ya existe' } })
     }
-    const data = await createCategory(app.db, materialTypeId, parsed.data)
+    const data = await createFixedProperty(app.db, parsed.data)
     return reply.status(201).send({ data })
   })
 
-  app.patch('/categories/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
+  app.delete('/fixed-properties/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
     const id = Number((req.params as any).id)
-    const existing = await app.db.materialCategory.findUnique({ where: { id } })
+    const existing = await app.db.fixedProperty.findUnique({ where: { id } })
     if (!existing) {
-      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Categoría no encontrada' } })
+      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Propiedad no encontrada' } })
     }
-    const parsed = UpdateMaterialCategorySchema.safeParse(req.body)
-    if (!parsed.success) {
-      return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
-    }
-    const data = await updateCategory(app.db, id, parsed.data)
-    return reply.send({ data })
-  })
-
-  app.delete('/categories/:id', { preHandler: [app.requireManage] }, async (req, reply) => {
-    const id = Number((req.params as any).id)
-    const existing = await app.db.materialCategory.findUnique({ where: { id } })
-    if (!existing) {
-      return reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'Categoría no encontrada' } })
-    }
-    await deleteCategory(app.db, id)
+    await deleteFixedProperty(app.db, id)
     return reply.status(204).send()
   })
 }

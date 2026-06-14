@@ -19,7 +19,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   const { skipAuth, ...fetchOptions } = options
 
   const headers: Record<string, string> = {
-    ...(fetchOptions.body != null ? { 'Content-Type': 'application/json' } : {}),
+    ...(fetchOptions.body != null && !(fetchOptions.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
     ...(fetchOptions.headers as Record<string, string>),
   }
 
@@ -44,6 +44,13 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   }
 
   if (!res.ok) throw await res.json()
+
+  // 204 No Content or empty body — don't try to parse JSON
+  const contentType = res.headers.get('content-type') ?? ''
+  const contentLength = res.headers.get('content-length')
+  if (res.status === 204 || contentLength === '0' || !contentType.includes('application/json')) {
+    return undefined as T
+  }
 
   return res.json() as Promise<T>
 }

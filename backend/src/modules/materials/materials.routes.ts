@@ -12,18 +12,15 @@ export async function materialsRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } })
     }
-    try {
-      const data = await createMaterial(app.db, parsed.data)
-      return reply.status(201).send({ data })
-    } catch (err: any) {
-      if (err.code === 'INVALID_ATTRIBUTES') {
-        return reply.status(422).send({ error: { code: 'INVALID_ATTRIBUTES', message: err.message, details: err.errors } })
+    const locationId = parsed.data.locationId
+    if (locationId) {
+      const loc = await app.db.location.findFirst({ where: { id: locationId, deletedAt: null } })
+      if (loc && loc.parentId === null) {
+        return reply.status(400).send({ error: { code: 'ROOT_LOCATION_CANNOT_HAVE_MATERIALS', message: 'No se pueden asociar materiales directamente a una ubicación raíz.' } })
       }
-      if (err.code === 'DUPLICATE_CODE') {
-        return reply.status(409).send({ error: { code: 'DUPLICATE_CODE', message: err.message } })
-      }
-      throw err
     }
+    const data = await createMaterial(app.db, parsed.data)
+    return reply.status(201).send({ data })
   })
 
   app.get('/materials/:id', { preHandler: [app.verifyToken] }, async (req, reply) => {
@@ -60,18 +57,8 @@ export async function materialsRoutes(app: FastifyInstance) {
   })
 
   // Materials filtered by location
-  app.get('/infrastructures/:infraId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const infrastructureId = Number((req.params as any).infraId)
-    return reply.send({ data: await listMaterials(app.db, { infrastructureId }) })
-  })
-
-  app.get('/dependencies/:depId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const dependencyId = Number((req.params as any).depId)
-    return reply.send({ data: await listMaterials(app.db, { dependencyId }) })
-  })
-
-  app.get('/structures/:structId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
-    const structureId = Number((req.params as any).structId)
-    return reply.send({ data: await listMaterials(app.db, { structureId }) })
+  app.get('/locations/:locId/materials', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    const locationId = Number((req.params as any).locId)
+    return reply.send({ data: await listMaterials(app.db, { locationId }) })
   })
 }

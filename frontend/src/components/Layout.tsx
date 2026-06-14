@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, ClipboardList, Warehouse, Package,
+  ClipboardList, Warehouse, Package,
   Users, Settings, LogOut, Bell, Menu,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
 const GENERAL_ITEMS = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/actions', icon: ClipboardList, label: 'Acciones', end: false },
-  { to: '/infrastructures', icon: Warehouse, label: 'Infraestructuras', end: false },
-  { to: '/materials', icon: Package, label: 'Materiales', end: false },
+  { to: '/', icon: Warehouse, label: 'Departamentos' },
+  { to: '/actions', icon: ClipboardList, label: 'Trabajos' },
+  { to: '/materials', icon: Package, label: 'Materiales' },
 ]
 
 const ADMIN_ITEMS = [
@@ -19,12 +18,14 @@ const ADMIN_ITEMS = [
 ]
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
-  '/': { title: 'Panel de Control', subtitle: 'Resumen general del sistema' },
-  '/actions': { title: 'Gestión de Acciones', subtitle: 'Registro y seguimiento de acciones' },
-  '/infrastructures': { title: 'Infraestructuras', subtitle: 'Gestión y estado de infraestructuras' },
-  '/materials': { title: 'Materiales Consumidos', subtitle: 'Registro de materiales usados por acción' },
+  '/': { title: 'Departamentos', subtitle: '' },
+  '/categories': { title: 'Navegador de Ubicaciones', subtitle: 'Ubicaciones registradas en la categoría' },
+  '/locations': { title: 'Ficha de Ubicación', subtitle: 'Detalle de equipos, materiales y trabajos' },
+  '/actions': { title: 'Gestión de Trabajos', subtitle: 'Registro y seguimiento de trabajos' },
+  '/actions/new': { title: 'Registrar Trabajo / Mantenimiento', subtitle: 'Registra una intervención en una infraestructura principal' },
+  '/materials': { title: 'Inventario de Materiales', subtitle: 'Listado completo de materiales en el sistema' },
   '/admin': { title: 'Usuarios', subtitle: 'Gestión de usuarios del sistema' },
-  '/admin/catalog': { title: 'Configuración', subtitle: 'Tipos de acciones y roles' },
+  '/admin/catalog': { title: 'Configuración del Catálogo', subtitle: 'Gestión de categorías y propiedades del sistema' },
 }
 
 export function Layout() {
@@ -48,7 +49,7 @@ export function Layout() {
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? '?'
 
   return (
-    <div className="flex h-screen bg-app-bg">
+    <div className="flex h-[100dvh] bg-app-bg text-fg">
       {/* Overlay móvil */}
       {sidebarOpen && (
         <div
@@ -75,23 +76,29 @@ export function Layout() {
         {/* Nav general */}
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           <p className="px-3 pb-2 text-[10px] font-semibold tracking-[2px] text-sidebar-fg uppercase">Menú</p>
-          {GENERAL_ITEMS.map(({ to, icon: Icon, label, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
-                  isActive
-                    ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
-                    : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
-                }`
-              }
-            >
-              <Icon className="w-[18px] h-[18px] shrink-0" />
-              {label}
-            </NavLink>
-          ))}
+          {GENERAL_ITEMS.map(({ to, icon: Icon, label }) => {
+            const isDepartamentos = to === '/'
+            const active = isDepartamentos
+              ? (location.pathname === '/' || location.pathname.startsWith('/categories/') || location.pathname.startsWith('/locations/'))
+              : (location.pathname === to || location.pathname.startsWith(to + '/'))
+
+            return (
+              <NavLink
+                key={to}
+                to={to}
+                className={
+                  `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
+                    active
+                      ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
+                      : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
+                  }`
+                }
+              >
+                <Icon className="w-[18px] h-[18px] shrink-0" />
+                {label}
+              </NavLink>
+            )
+          })}
         </nav>
 
         {/* Sección admin — pegada al fondo */}
@@ -141,9 +148,9 @@ export function Layout() {
       </aside>
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Topbar */}
-        <header className="h-16 bg-card flex items-center justify-between px-7 shrink-0"
+        <header className="min-h-[4.5rem] bg-card flex items-center justify-between px-7 py-4 shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3">
             <button
@@ -154,21 +161,22 @@ export function Layout() {
               <Menu className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-[20px] font-bold text-fg leading-tight">{pageInfo.title}</h1>
+              <h1 className="text-[20px] font-bold text-fg leading-snug">{pageInfo.title}</h1>
               {pageInfo.subtitle && (
-                <p className="text-[13px] text-muted leading-tight">{pageInfo.subtitle}</p>
+                <p className="text-[13px] text-muted leading-snug mt-0.5">{pageInfo.subtitle}</p>
               )}
             </div>
           </div>
           <button
-            className="w-9 h-9 rounded-lg border border-app-border flex items-center justify-center text-muted hover:text-fg transition-colors"
+            className="w-9 h-9 rounded-lg border border-app-border flex items-center justify-center text-muted hover:text-fg transition-colors shrink-0"
             title="Notificaciones"
           >
             <Bell className="w-[18px] h-[18px]" />
           </button>
         </header>
 
-        <main className="flex-1 overflow-auto p-5 md:p-8">
+
+        <main className="flex-1 p-5 md:p-8">
           <Outlet />
         </main>
       </div>
