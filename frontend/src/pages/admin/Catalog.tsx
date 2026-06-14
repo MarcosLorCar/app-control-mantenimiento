@@ -38,14 +38,15 @@ export function Catalog() {
   const [cfgLocName, setCfgLocName] = useState('')
   const [cfgError, setCfgError] = useState('')
   const [cfgSuccess, setCfgSuccess] = useState('')
+  const [isEditingSettings, setIsEditingSettings] = useState(false)
 
   useEffect(() => {
-    if (settings.length > 0) {
+    if (settings.length > 0 && !isEditingSettings) {
       setCfgLat(defaultLat)
       setCfgLng(defaultLng)
       setCfgLocName(defaultLocName)
     }
-  }, [settings, defaultLat, defaultLng, defaultLocName])
+  }, [settings, defaultLat, defaultLng, defaultLocName, isEditingSettings])
 
   function handleSaveSettings(e: React.FormEvent) {
     e.preventDefault()
@@ -71,6 +72,7 @@ export function Catalog() {
       {
         onSuccess: () => {
           setCfgSuccess('Configuración guardada correctamente.')
+          setIsEditingSettings(false)
           setTimeout(() => setCfgSuccess(''), 3000)
         },
         onError: (err: any) => {
@@ -405,56 +407,100 @@ export function Catalog() {
         {/* Configuración del Sistema (Geolocalización) */}
         <div className="bg-card rounded-xl border border-app-border p-5 h-fit col-span-1 md:col-span-2 xl:col-span-1">
           <h2 className="text-[15px] font-semibold text-fg mb-4">Configuración de Geolocalización</h2>
-          <form onSubmit={handleSaveSettings} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-fg-secondary mb-1">Municipio / Ciudad por defecto</label>
-              <input
-                type="text"
-                value={cfgLocName}
-                onChange={e => setCfgLocName(e.target.value)}
-                placeholder="Ej: Ciudad Real"
-                className={inputCls}
-                disabled={!canManage}
-                required
-              />
+          {!isEditingSettings ? (
+            <div className="space-y-4">
+              <div className="border border-app-border/40 p-4 rounded-lg bg-app-bg/30 space-y-3">
+                <div>
+                  <span className="block text-[10px] uppercase tracking-wider text-muted font-bold">Municipio / Ciudad</span>
+                  <span className="text-sm font-semibold text-fg">{defaultLocName || 'Sin definir'}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wider text-muted font-bold">Latitud</span>
+                    <span className="text-xs font-mono text-fg">{defaultLat || 'Sin definir'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase tracking-wider text-muted font-bold">Longitud</span>
+                    <span className="text-xs font-mono text-fg">{defaultLng || 'Sin definir'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {cfgSuccess && <p className="text-emerald-500 text-xs font-semibold">{cfgSuccess}</p>}
+
+              {canManage && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCfgLat(defaultLat)
+                      setCfgLng(defaultLng)
+                      setCfgLocName(defaultLocName)
+                      setIsEditingSettings(true)
+                    }}
+                    className="px-3.5 py-2 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-all active:scale-95 touch-manipulation min-h-[36px] flex items-center justify-center shadow-sm"
+                  >
+                    Modificar Configuración
+                  </button>
+                </div>
+              )}
             </div>
-            {/* Map selection tool */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-fg-secondary">
-                Ubicación central por defecto <span className="text-muted">(Arrastra o haz clic en el mapa)</span>
-              </label>
-              <div className="border border-app-border rounded-lg overflow-hidden bg-card/30">
-                <LocationMap
-                  latitude={cfgLat ? Number(cfgLat) : 38.9863}
-                  longitude={cfgLng ? Number(cfgLng) : -3.9291}
-                  defaultCenter={[38.9863, -3.9291]}
-                  onChange={(lat, lng) => {
-                    setCfgLat(lat.toString())
-                    setCfgLng(lng.toString())
-                  }}
+          ) : (
+            <form onSubmit={handleSaveSettings} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-fg-secondary mb-1">Municipio / Ciudad por defecto</label>
+                <input
+                  type="text"
+                  value={cfgLocName}
+                  onChange={e => setCfgLocName(e.target.value)}
+                  placeholder="Ej: Ciudad Real"
+                  className={inputCls}
+                  required
                 />
               </div>
-              <div className="flex gap-3 text-[10px] text-muted font-mono bg-app-bg/60 p-2 rounded border border-app-border/40 justify-center">
-                <span>Lat: {Number(cfgLat || '38.9863').toFixed(6)}</span>
-                <span>Lon: {Number(cfgLng || '-3.9291').toFixed(6)}</span>
+
+              {/* Map selection tool */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-fg-secondary">
+                  Ubicación central por defecto <span className="text-muted">(Arrastra o haz clic en el mapa)</span>
+                </label>
+                <div className="border border-app-border rounded-lg overflow-hidden bg-card/30">
+                  <LocationMap
+                    latitude={cfgLat ? Number(cfgLat) : 38.9863}
+                    longitude={cfgLng ? Number(cfgLng) : -3.9291}
+                    defaultCenter={[38.9863, -3.9291]}
+                    onChange={(lat, lng) => {
+                      setCfgLat(lat.toString())
+                      setCfgLng(lng.toString())
+                    }}
+                  />
+                </div>
+                <div className="flex gap-3 text-[10px] text-muted font-mono bg-app-bg/60 p-2 rounded border border-app-border/40 justify-center">
+                  <span>Lat: {Number(cfgLat || '38.9863').toFixed(6)}</span>
+                  <span>Lon: {Number(cfgLng || '-3.9291').toFixed(6)}</span>
+                </div>
               </div>
-            </div>
 
-            {cfgError && <p className="text-error text-xs">{cfgError}</p>}
-            {cfgSuccess && <p className="text-emerald-500 text-xs font-semibold">{cfgSuccess}</p>}
+              {cfgError && <p className="text-error text-xs">{cfgError}</p>}
 
-            {canManage && (
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingSettings(false)}
+                  className="px-3.5 py-2 text-xs font-semibold text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors"
+                >
+                  Cancelar
+                </button>
                 <button
                   type="submit"
                   disabled={updateSettings.isPending}
-                  className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
+                  className="px-3.5 py-2 text-xs font-semibold text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors shadow-sm"
                 >
-                  {updateSettings.isPending ? 'Guardando...' : 'Guardar Configuración'}
+                  {updateSettings.isPending ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>
-            )}
-          </form>
+            </form>
+          )}
         </div>
 
       </div>
