@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { FastifyInstance } from 'fastify'
 import { buildTestApp } from './helpers/app'
 import { clearDb, seedTestData, testDb } from './helpers/db'
-import { JwtPayload } from '@control-actions/shared'
+import { JwtPayload } from '@infragest/shared'
 
 let app: FastifyInstance
 

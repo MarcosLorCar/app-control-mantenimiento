@@ -1,5 +1,5 @@
 {
-  "name": "@control-actions/shared",
+  "name": "@infragest/shared",
   "version": "1.0.0",
   "main": "src/types.ts",
   "scripts": {}
