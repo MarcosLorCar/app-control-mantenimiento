@@ -78,6 +78,34 @@ cd backend && npx prisma db seed
 
 ---
 
+## Google OAuth (opcional)
+
+El botón de Google solo aparece en el login si el servidor tiene las credenciales configuradas.
+
+### 1. Crear credenciales en Google Cloud Console
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → APIs & Services → Credentials → **Create OAuth 2.0 Client ID** (tipo: Web application)
+2. Añadir URI de redirección autorizado:
+   - Dev: `http://localhost:3000/api/v1/auth/google/callback`
+   - Prod: `https://tudominio.com/api/v1/auth/google/callback`
+
+### 2. Variables de entorno (`backend/.env`)
+
+```env
+GOOGLE_CLIENT_ID=<client id>
+GOOGLE_CLIENT_SECRET=<client secret>
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+FRONTEND_URL=https://localhost:5173   # en prod: https://tudominio.com
+```
+
+### Notas
+
+- Google OAuth **no crea usuarios** — el email debe existir previamente en el sistema.
+- Si el email no está registrado o el usuario está inactivo, redirige a `/login?error=not_registered`.
+- En dev local, Google permite redirect URIs con `http://localhost` sin necesidad de HTTPS.
+
+---
+
 ## Tests
 
 ```bash
