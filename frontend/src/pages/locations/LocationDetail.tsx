@@ -184,7 +184,13 @@ export function LocationDetail() {
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold text-fg leading-tight">{loc.name}</h1>
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap mt-0.5">
+                  {loc.formattedAddress && (
+                    <div className="text-xs text-muted mt-0.5 max-w-lg leading-relaxed flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>{loc.formattedAddress}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 flex-wrap mt-1">
                     {loc.infraType && (
                       <p className="text-[11px] font-mono uppercase text-primary tracking-wider">{loc.infraType.name}</p>
                     )}

@@ -71,11 +71,36 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
     setShowMapSelector(true)
   }
 
-  function handleConfirmMap() {
+  async function handleConfirmMap() {
     if (tempLat !== null && tempLng !== null) {
       setLatitude(tempLat)
       setLongitude(tempLng)
+      
+      // Default to coordinate string fallback in case geocoding fails or is slow
       setFormattedAddress(`${tempLat.toFixed(5)}, ${tempLng.toFixed(5)}`)
+      setPlaceId(null)
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${tempLat}&lon=${tempLng}&format=json`,
+          {
+            headers: {
+              'User-Agent': 'InfraGest/1.0',
+            },
+          }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          if (data.display_name) {
+            setFormattedAddress(data.display_name)
+          }
+          if (data.place_id) {
+            setPlaceId(String(data.place_id))
+          }
+        }
+      } catch (err) {
+        console.error('Error in reverse geocoding:', err)
+      }
     }
     setShowMapSelector(false)
   }
