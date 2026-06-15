@@ -1,4 +1,4 @@
-# INFRAGEST (control-actions)
+# INFRAGEST
 
 Sistema de gestión de infraestructuras y acciones operativas (Departamentos, Trabajos, Materiales).
 
@@ -122,7 +122,7 @@ FRONTEND_URL=https://tudominio.com
 npm test --workspace=backend
 
 # Frontend
-npm test --workspace=@control-actions/frontend
+npm test --workspace=@infragest/frontend
 ```
 
 ---
@@ -131,7 +131,7 @@ npm test --workspace=@control-actions/frontend
 
 ```bash
 # Frontend
-npm run build --workspace=@control-actions/frontend
+npm run build --workspace=@infragest/frontend
 
 # Backend
 npm run build:backend

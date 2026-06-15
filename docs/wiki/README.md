@@ -1,10 +1,10 @@
 <!--
-Wiki bundle for control-actions.
+Wiki bundle for InfraGest.
 This folder is meant to be published to Alexandrie ("mi wiki").
 Content is intentionally sanitized: no secrets, no real passwords.
 -->
 
-# control-actions (Wiki)
+# InfraGest (Wiki)
 
 ## Index
 
