@@ -34,7 +34,14 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     try {
       await request.jwtVerify()
     } catch {
-      reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Token inválido o expirado' } })
+      return reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Token inválido o expirado' } })
+    }
+    const payload = request.user as unknown as JwtPayload
+    if (payload.tv !== undefined) {
+      const user = await fastify.db.user.findUnique({ where: { id: payload.sub }, select: { tokenVersion: true } })
+      if (!user || user.tokenVersion !== payload.tv) {
+        return reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Token inválido o expirado' } })
+      }
     }
   })
 

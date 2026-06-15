@@ -4,7 +4,7 @@ import { FastifyInstance } from 'fastify'
 import { LoginBody } from './auth.schema'
 import { JwtPayload } from '@infragest/shared'
 
-export async function googleLoginService(db: PrismaClient, email: string): Promise<{ userId: number }> {
+export async function googleLoginService(db: PrismaClient, email: string): Promise<{ userId: number; tokenVersion: number }> {
   const user = await db.user.findFirst({
     where: { email, deletedAt: null },
   })
@@ -13,14 +13,14 @@ export async function googleLoginService(db: PrismaClient, email: string): Promi
     throw { statusCode: 401, code: 'NOT_REGISTERED', message: 'Cuenta no registrada en el sistema' }
   }
 
-  return { userId: user.id }
+  return { userId: user.id, tokenVersion: user.tokenVersion }
 }
 
 export async function loginService(
   db: PrismaClient,
   app: FastifyInstance,
   body: LoginBody
-): Promise<{ accessToken: string; userId: number }> {
+): Promise<{ accessToken: string; userId: number; tokenVersion: number }> {
   const user = await db.user.findFirst({
     where: { email: body.email, deletedAt: null },
     include: { role: true },
@@ -42,8 +42,9 @@ export async function loginService(
     can_write: user.role.canWrite,
     can_manage: user.role.canManage,
     must_change_password: user.mustChangePassword,
+    tv: user.tokenVersion,
   }
 
   const accessToken = app.jwt.sign(payload, { expiresIn: '15m' })
-  return { accessToken, userId: user.id }
+  return { accessToken, userId: user.id, tokenVersion: user.tokenVersion }
 }

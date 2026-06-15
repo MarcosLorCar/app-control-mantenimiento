@@ -44,7 +44,7 @@ export async function updateUser(db: PrismaClient, id: number, body: UpdateUserB
   await getUser(db, id) // lanza 404 si no existe
   const data: any = { ...body }
   if (body.email) {
-    const dup = await db.user.findFirst({ where: { email: body.email, NOT: { id } } })
+    const dup = await db.user.findFirst({ where: { email: body.email, deletedAt: null, NOT: { id } } })
     if (dup) throw { statusCode: 409, code: 'CONFLICT', message: 'El email ya está en uso' }
   }
   return db.user.update({ where: { id }, data, select: SAFE_SELECT })
@@ -60,6 +60,6 @@ export async function resetUserPassword(db: PrismaClient, userId: number) {
   if (!user) throw { statusCode: 404, code: 'NOT_FOUND', message: 'Usuario no encontrado' }
   const tempPassword = crypto.randomBytes(12).toString('hex')
   const passwordHash = await bcrypt.hash(tempPassword, 10)
-  await db.user.update({ where: { id: userId }, data: { passwordHash, mustChangePassword: true } })
+  await db.user.update({ where: { id: userId }, data: { passwordHash, mustChangePassword: true, tokenVersion: { increment: 1 } } })
   return { tempPassword }
 }
