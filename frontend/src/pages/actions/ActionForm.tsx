@@ -695,9 +695,9 @@ export function ActionForm({ action, locationId, onClose }: Props) {
       </form>
 
       {showMapModal && (
-        <Modal title="Seleccionar Ubicación" onClose={() => setShowMapModal(false)} size="2xl">
+        <Modal title="Seleccionar Ubicación" onClose={() => setShowMapModal(false)} size="full">
           <div className="space-y-4 flex flex-col h-full flex-1">
-            <div className="border border-app-border rounded-lg overflow-hidden flex-1">
+            <div className="flex-1 flex flex-col min-h-0">
               <LocationMap
                 latitude={tempLat}
                 longitude={tempLng}
@@ -705,7 +705,7 @@ export function ActionForm({ action, locationId, onClose }: Props) {
                   setTempLat(lat)
                   setTempLng(lng)
                 }}
-                className="h-[60vh] min-h-[320px]"
+                className="min-h-0"
               />
             </div>
             <div className="flex justify-end gap-3 pt-2 shrink-0">

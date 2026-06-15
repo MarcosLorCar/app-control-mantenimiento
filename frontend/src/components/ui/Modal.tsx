@@ -16,7 +16,7 @@ export function Modal({ title, onClose, children, size = 'md' }: ModalProps) {
     xl: 'max-w-2xl',
     '2xl': 'max-w-4xl',
     '3xl': 'max-w-6xl',
-    full: 'max-w-[calc(100vw-2rem)] sm:max-w-[95vw]',
+    full: 'max-w-[calc(100vw-2rem)] sm:max-w-[95vw] h-[calc(100vh-2rem)]',
   }
 
   return createPortal(

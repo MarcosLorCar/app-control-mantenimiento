@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
@@ -36,8 +36,16 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
   const [loadingGps, setLoadingGps] = useState(false)
   const isFirstLoad = useRef(true)
 
+  // Synchronize internal marker position when props change
   useEffect(() => {
-    if (!latitude || !longitude) {
+    if (latitude !== null && longitude !== null) {
+      setPosition([latitude, longitude])
+    }
+  }, [latitude, longitude])
+
+  // Geolocation on mount if no coordinates provided
+  useEffect(() => {
+    if (latitude === null || longitude === null) {
       if ('geolocation' in navigator) {
         setLoadingGps(true)
         navigator.geolocation.getCurrentPosition(
@@ -57,10 +65,50 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
         onChange(fallbackCenter[0], fallbackCenter[1])
       }
     }
-  }, [latitude, longitude, onChange, fallbackCenter])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function MapEvents() {
-    const map = useMapEvents({
+  function MapController() {
+    const map = useMap()
+    
+    useEffect(() => {
+      if (isFirstLoad.current) {
+        if (latitude !== null && longitude !== null) {
+          map.setView([latitude, longitude], 15)
+          isFirstLoad.current = false
+        } else if (position !== fallbackCenter) {
+          map.setView(position, 15)
+          isFirstLoad.current = false
+        }
+      }
+    }, [map])
+
+    // Fix: Invalidate map size to ensure correct rendering in modals and dynamic containers
+    useEffect(() => {
+      if (!map) return
+
+      // Invalidate size immediately
+      map.invalidateSize()
+
+      // Invalidate after a small delay to let transitions and container sizing settle
+      const timer = setTimeout(() => {
+        map.invalidateSize()
+      }, 200)
+
+      // Invalidate dynamically on any container size changes
+      const container = map.getContainer()
+      const resizeObserver = new ResizeObserver(() => {
+        map.invalidateSize()
+      })
+      resizeObserver.observe(container)
+
+      return () => {
+        clearTimeout(timer)
+        resizeObserver.disconnect()
+      }
+    }, [map])
+
+    // Listen for click events on the map to set coordinates
+    useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng
         setPosition([lat, lng])
@@ -68,15 +116,16 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
       },
     })
 
+    // Pan to new coordinate when updated externally
     useEffect(() => {
-      if (isFirstLoad.current && (latitude || longitude)) {
-        map.setView([latitude!, longitude!], 15)
-        isFirstLoad.current = false
-      } else if (isFirstLoad.current && position !== fallbackCenter) {
-        map.setView(position, 15)
-        isFirstLoad.current = false
+      if (latitude !== null && longitude !== null) {
+        const center = map.getCenter()
+        const dist = Math.sqrt(Math.pow(center.lat - latitude, 2) + Math.pow(center.lng - longitude, 2))
+        if (dist > 0.0001) {
+          map.panTo([latitude, longitude])
+        }
       }
-    }, [position, map])
+    }, [latitude, longitude, map])
 
     return null
   }
@@ -93,8 +142,8 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
   }
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex justify-between items-center">
+    <div className="space-y-1.5 h-full w-full flex flex-col flex-1">
+      <div className="flex justify-between items-center shrink-0">
         <label className="block text-xs font-semibold text-fg-secondary">
           Ubicación GPS <span className="text-muted">(Arrastra el marcador o haz clic en el mapa)</span>
         </label>
@@ -104,12 +153,12 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
           </span>
         )}
       </div>
-      <div className={`w-full rounded-lg border border-app-border overflow-hidden relative z-10 ${className || 'h-[300px] sm:h-[380px]'}`}>
+      <div className={`w-full rounded-lg border border-app-border overflow-hidden relative z-10 flex-1 ${className || 'h-[300px] sm:h-[380px]'}`}>
         <MapContainer
           center={position}
           zoom={15}
           scrollWheelZoom={true}
-          style={{ height: '100%', width: '100%' }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -120,10 +169,10 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
             eventHandlers={markerHandlers}
             position={position}
           />
-          <MapEvents />
+          <MapController />
         </MapContainer>
       </div>
-      <div className="flex gap-3 text-[11px] text-muted font-mono">
+      <div className="flex gap-3 text-[11px] text-muted font-mono shrink-0">
         <span>Lat: {position[0].toFixed(6)}</span>
         <span>Lon: {position[1].toFixed(6)}</span>
       </div>
