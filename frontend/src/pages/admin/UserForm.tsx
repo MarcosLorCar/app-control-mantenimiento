@@ -3,6 +3,64 @@ import { Modal } from '../../components/ui/Modal'
 import { useCreateUser } from '../../hooks/useUsers'
 import { useRoles } from '../../hooks/useCatalog'
 
+interface PasswordModalProps {
+  tempPassword: string
+  onClose: () => void
+}
+
+export function PasswordModal({ tempPassword, onClose }: PasswordModalProps) {
+  const [copied, setCopied] = useState(false)
+  const [confirmed, setConfirmed] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(tempPassword)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <Modal title="Contraseña temporal" onClose={onClose}>
+      <div className="space-y-4">
+        <p className="text-sm text-gray-700">
+          Contraseña temporal generada (solo visible ahora):
+        </p>
+        <div className="flex items-center gap-2">
+          <p className="flex-1 font-mono text-sm bg-gray-100 p-3 rounded select-all break-all">
+            {tempPassword}
+          </p>
+          <button
+            onClick={handleCopy}
+            className="shrink-0 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            {copied ? '¡Copiado!' : 'Copiar'}
+          </button>
+        </div>
+        <p className="text-xs text-gray-500">
+          El usuario deberá cambiarla al primer acceso.
+        </p>
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={e => setConfirmed(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+          />
+          <span className="text-sm text-gray-700">
+            He guardado la contraseña en un lugar seguro
+          </span>
+        </label>
+        <button
+          onClick={onClose}
+          disabled={!confirmed}
+          className="w-full px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Cerrar
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
 interface Props {
   onClose: () => void
 }
@@ -39,25 +97,7 @@ export function UserForm({ onClose }: Props) {
   const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
 
   if (tempPassword) {
-    return (
-      <Modal title="Usuario creado" onClose={onClose}>
-        <div className="space-y-4">
-          <p className="text-sm text-gray-700">
-            El usuario ha sido creado. Contraseña temporal (solo visible ahora):
-          </p>
-          <p className="font-mono text-sm bg-gray-100 p-3 rounded select-all break-all">{tempPassword}</p>
-          <p className="text-xs text-gray-500">
-            El usuario deberá cambiarla al primer acceso.
-          </p>
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)]"
-          >
-            Cerrar
-          </button>
-        </div>
-      </Modal>
-    )
+    return <PasswordModal tempPassword={tempPassword} onClose={onClose} />
   }
 
   return (

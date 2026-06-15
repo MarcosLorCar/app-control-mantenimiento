@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
 import { CreateUserSchema, UpdateUserSchema } from './users.schema'
-import { listUsers, getUser, createUser, updateUser, deleteUser } from './users.service'
+import { listUsers, getUser, createUser, updateUser, deleteUser, resetUserPassword } from './users.service'
 
 const usersRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/', { preHandler: fastify.requireManage }, async (_req, reply) => {
@@ -46,6 +46,16 @@ const usersRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       await deleteUser(fastify.db, Number(id))
       return reply.send({ data: { ok: true } })
+    } catch (err: any) {
+      return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
+    }
+  })
+
+  fastify.post('/:id/reset-password', { preHandler: fastify.requireManage }, async (request, reply) => {
+    const { id } = request.params as { id: string }
+    try {
+      const data = await resetUserPassword(fastify.db, Number(id))
+      return reply.send({ data })
     } catch (err: any) {
       return reply.code(err.statusCode ?? 500).send({ error: { code: err.code, message: err.message } })
     }
