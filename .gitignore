@@ -6,6 +6,14 @@ dist/
 *.log
 .worktrees/
 
+# AI
+.claude/
+.codegraph
+.gemini
+.mcp.json
+GEMINI.md
+CLAUDE.md
+
 # Uploaded files (user data, not source)
 backend/uploads/
 
