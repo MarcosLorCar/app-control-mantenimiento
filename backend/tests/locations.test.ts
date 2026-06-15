@@ -81,6 +81,25 @@ describe('Locations API', () => {
       expect(data.path).toBe(`/${seed.infra.id}/${seed.dep.id}/${data.id}/`)
     })
 
+    it('persists placeId and formattedAddress on create', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/locations',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          name: 'Sede Central',
+          infraTypeId: seed.infraType.id,
+          latitude: 40.416775,
+          longitude: -3.70379,
+          placeId: 'ChIJgTwKgJcpQg0RaSKMYcHeNsQ',
+          formattedAddress: 'Gran Vía, 1, 28013 Madrid, España',
+        },
+      })
+      expect(res.statusCode).toBe(201)
+      const data = res.json().data
+      expect(data.placeId).toBe('ChIJgTwKgJcpQg0RaSKMYcHeNsQ')
+      expect(data.formattedAddress).toBe('Gran Vía, 1, 28013 Madrid, España')
+    })
 
   })
 
@@ -120,6 +139,33 @@ describe('Locations API', () => {
       })
       expect(res.statusCode).toBe(200)
       expect(res.json().data.name).toBe('Ala A Renombrada')
+    })
+
+    it('round-trips placeId and formattedAddress via update', async () => {
+      const patch = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/locations/${seed.dep.id}`,
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          placeId: 'ChIJgTwKgJcpQg0RaSKMYcHeNsQ',
+          formattedAddress: 'Gran Vía, 1, 28013 Madrid, España',
+          latitude: 40.416775,
+          longitude: -3.70379,
+        },
+      })
+      expect(patch.statusCode).toBe(200)
+      expect(patch.json().data.placeId).toBe('ChIJgTwKgJcpQg0RaSKMYcHeNsQ')
+      expect(patch.json().data.formattedAddress).toBe('Gran Vía, 1, 28013 Madrid, España')
+
+      // Verify via GET
+      const get = await app.inject({
+        method: 'GET',
+        url: `/api/v1/locations/${seed.dep.id}`,
+        headers: { authorization: `Bearer ${editorToken}` },
+      })
+      expect(get.statusCode).toBe(200)
+      expect(get.json().data.placeId).toBe('ChIJgTwKgJcpQg0RaSKMYcHeNsQ')
+      expect(get.json().data.formattedAddress).toBe('Gran Vía, 1, 28013 Madrid, España')
     })
 
     it('reparents node and updates path of node and descendants', async () => {

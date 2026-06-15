@@ -5,6 +5,8 @@ export const CreateLocationSchema = z.object({
   description: z.string().nullable().optional(),
   latitude: z.number().nullable().optional(),
   longitude: z.number().nullable().optional(),
+  placeId: z.string().nullable().optional(),
+  formattedAddress: z.string().nullable().optional(),
   parentId: z.number().int().positive().nullable().optional(),
   infraTypeId: z.number().int().positive().nullable().optional(),
 }).refine(data => {
@@ -20,6 +22,8 @@ export const UpdateLocationSchema = z.object({
   description: z.string().nullable().optional(),
   latitude: z.number().nullable().optional(),
   longitude: z.number().nullable().optional(),
+  placeId: z.string().nullable().optional(),
+  formattedAddress: z.string().nullable().optional(),
   parentId: z.number().int().positive().nullable().optional(),
   infraTypeId: z.number().int().positive().nullable().optional(),
 })
