@@ -19,9 +19,14 @@ services:
     image: ghcr.io/javierloro/app-control-mantenimiento-backend:latest
     container_name: control-actions-backend-prod
     environment:
+      NODE_ENV: production
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/control_actions_prod?schema=public
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-}
+      FRONTEND_URL: ${FRONTEND_URL:-}
     volumes:
       - uploads_data:/app/backend/uploads
     depends_on:
