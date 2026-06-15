@@ -1,5 +1,5 @@
 {
-  "name": "@control-actions/frontend",
+  "name": "@infragest/frontend",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -19,7 +19,7 @@
     "react-router-dom": "^6.24.1"
   },
   "devDependencies": {
-    "@control-actions/shared": "*",
+    "@infragest/shared": "*",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",

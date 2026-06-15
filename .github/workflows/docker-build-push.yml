@@ -39,11 +39,11 @@ jobs:
           SAFE_BRANCH=$(echo "${BRANCH_NAME}" | sed 's/[^a-zA-Z0-9._-]/-/g' | tr '[:upper:]' '[:lower:]')
           
           if [ "${SAFE_BRANCH}" = "main" ]; then
-            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
           else
-            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/app-control-mantenimiento-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up Docker Buildx

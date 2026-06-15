@@ -1,6 +1,6 @@
 import { buildApp } from '../../src/app'
 import { FastifyInstance } from 'fastify'
-import { JwtPayload } from '@control-actions/shared'
+import { JwtPayload } from '@infragest/shared'
 
 export async function buildTestApp(): Promise<FastifyInstance> {
   return buildApp({

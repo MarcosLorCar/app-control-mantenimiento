@@ -1,4 +1,4 @@
-// control-actions — Database Schema (DBML)
+// infragest — Database Schema (DBML)
 // Fuente de verdad: backend/prisma/schema.prisma
 // Actualizado: 2026-06-14
 

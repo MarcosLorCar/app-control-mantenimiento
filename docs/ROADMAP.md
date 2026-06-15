@@ -1,4 +1,4 @@
-# Roadmap — control-actions
+# Roadmap — InfraGest
 
 Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL · Docker + Nginx
 

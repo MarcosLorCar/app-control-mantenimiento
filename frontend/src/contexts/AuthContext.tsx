@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { JwtPayload } from '@control-actions/shared'
+import { JwtPayload } from '@infragest/shared'
 import { login as apiLogin, logout as apiLogout, restoreSession } from '../api/auth'
 
 interface AuthContextValue {

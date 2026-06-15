@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { FastifyPluginAsync } from 'fastify'
 import { LoginBodySchema } from './auth.schema'
 import { loginService, googleLoginService } from './auth.service'
-import { JwtPayload } from '@control-actions/shared'
+import { JwtPayload } from '@infragest/shared'
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/providers', async (_request, reply) => {

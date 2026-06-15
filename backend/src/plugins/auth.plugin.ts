@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin'
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
-import { JwtPayload } from '@control-actions/shared'
+import { JwtPayload } from '@infragest/shared'
 
 declare module 'fastify' {
   interface FastifyInstance {

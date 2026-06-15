@@ -1,5 +1,5 @@
 import { apiFetch, setToken, API_BASE } from './client'
-import { JwtPayload } from '@control-actions/shared'
+import { JwtPayload } from '@infragest/shared'
 
 interface LoginResponse {
   data: { accessToken: string }

@@ -13,7 +13,7 @@
     "jsx": "react-jsx",
     "strict": true,
     "paths": {
-      "@control-actions/shared": ["../shared/src/types"]
+      "@infragest/shared": ["../shared/src/types"]
     }
   },
   "include": ["src"]

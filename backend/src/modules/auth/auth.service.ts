@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs'
 import { PrismaClient } from '@prisma/client'
 import { FastifyInstance } from 'fastify'
 import { LoginBody } from './auth.schema'
-import { JwtPayload } from '@control-actions/shared'
+import { JwtPayload } from '@infragest/shared'
 
 export async function googleLoginService(db: PrismaClient, email: string): Promise<{ userId: number }> {
   const user = await db.user.findFirst({

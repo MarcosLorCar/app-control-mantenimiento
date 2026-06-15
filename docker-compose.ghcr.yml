@@ -1,28 +1,28 @@
-name: app-control-mantenimiento
+name: infragest
 
 services:
   db:
     image: postgres:16-alpine
-    container_name: control-actions-db-prod
+    container_name: infragest-db-prod
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: control_actions_prod
+      POSTGRES_DB: infragest_prod
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d control_actions_prod"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d infragest_prod"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/javierloro/app-control-mantenimiento-backend:latest
-    container_name: control-actions-backend-prod
+    image: ghcr.io/javierloro/infragest-backend:latest
+    container_name: infragest-backend-prod
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/control_actions_prod?schema=public
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/infragest_prod?schema=public
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -37,8 +37,8 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/javierloro/app-control-mantenimiento-frontend:latest
-    container_name: control-actions-frontend-prod
+    image: ghcr.io/javierloro/infragest-frontend:latest
+    container_name: infragest-frontend-prod
     ports:
       - "8080:80"
     depends_on:
