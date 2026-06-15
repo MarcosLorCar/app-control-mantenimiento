@@ -35,3 +35,9 @@ export function updateUser(
 export function deleteUser(id: number): Promise<void> {
   return apiFetch(`${API_BASE}/users/${id}`, { method: 'DELETE' }).then(() => undefined)
 }
+
+export function resetUserPassword(id: number): Promise<{ tempPassword: string }> {
+  return apiFetch<ApiData<{ tempPassword: string }>>(`${API_BASE}/users/${id}/reset-password`, {
+    method: 'POST',
+  }).then(r => r.data)
+}

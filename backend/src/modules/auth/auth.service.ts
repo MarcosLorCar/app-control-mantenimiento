@@ -4,6 +4,18 @@ import { FastifyInstance } from 'fastify'
 import { LoginBody } from './auth.schema'
 import { JwtPayload } from '@control-actions/shared'
 
+export async function googleLoginService(db: PrismaClient, email: string): Promise<{ userId: number }> {
+  const user = await db.user.findFirst({
+    where: { email, deletedAt: null },
+  })
+
+  if (!user || !user.isActive) {
+    throw { statusCode: 401, code: 'NOT_REGISTERED', message: 'Cuenta no registrada en el sistema' }
+  }
+
+  return { userId: user.id }
+}
+
 export async function loginService(
   db: PrismaClient,
   app: FastifyInstance,

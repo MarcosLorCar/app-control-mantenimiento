@@ -4,6 +4,7 @@ import fastifyCookie from '@fastify/cookie'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import fastifyRateLimit from '@fastify/rate-limit'
+import fastifyOauth2 from '@fastify/oauth2'
 import path from 'path'
 import prismaPlugin from './plugins/prisma.plugin'
 import authPlugin from './plugins/auth.plugin'
@@ -45,6 +46,22 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   })
   await app.register(prismaPlugin)
   await app.register(authPlugin)
+
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    await app.register(fastifyOauth2, {
+      name: 'googleOAuth2',
+      scope: ['profile', 'email'],
+      credentials: {
+        client: {
+          id: process.env.GOOGLE_CLIENT_ID,
+          secret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+        auth: fastifyOauth2.GOOGLE_CONFIGURATION,
+      },
+      startRedirectPath: '/api/v1/auth/google',
+      callbackUri: process.env.GOOGLE_CALLBACK_URL ?? 'http://localhost:3000/api/v1/auth/google/callback',
+    })
+  }
 
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error)

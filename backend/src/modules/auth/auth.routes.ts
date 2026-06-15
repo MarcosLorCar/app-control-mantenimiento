@@ -1,10 +1,14 @@
 import bcrypt from 'bcryptjs'
 import { FastifyPluginAsync } from 'fastify'
 import { LoginBodySchema } from './auth.schema'
-import { loginService } from './auth.service'
+import { loginService, googleLoginService } from './auth.service'
 import { JwtPayload } from '@control-actions/shared'
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.get('/providers', async (_request, reply) => {
+    return reply.send({ data: { google: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) } })
+  })
+
   fastify.post('/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     const result = LoginBodySchema.safeParse(request.body)
     if (!result.success) {
@@ -57,6 +61,31 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.send({ data: { accessToken } })
     } catch {
       return reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Sesión expirada' } })
+    }
+  })
+
+  fastify.get('/google/callback', async (request, reply) => {
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173'
+    try {
+      // @ts-expect-error — googleOAuth2 is conditionally registered
+      const token = await fastify.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request)
+      const resp = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${token.token.access_token}` },
+      })
+      const { email } = (await resp.json()) as { email: string }
+      const data = await googleLoginService(fastify.db, email)
+      const refreshToken = await reply.refreshJwtSign({ sub: data.userId } as unknown as JwtPayload, { expiresIn: '7d' })
+      reply.setCookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60,
+      })
+      return reply.redirect(frontendUrl)
+    } catch (err: any) {
+      const errorCode = err?.code === 'NOT_REGISTERED' ? 'not_registered' : 'oauth_error'
+      return reply.redirect(`${frontendUrl}/login?error=${errorCode}`)
     }
   })
 

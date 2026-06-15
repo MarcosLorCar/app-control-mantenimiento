@@ -21,14 +21,22 @@ export async function getUser(db: PrismaClient, id: number) {
 
 export async function createUser(db: PrismaClient, body: CreateUserBody) {
   const existing = await db.user.findFirst({ where: { email: body.email } })
-  if (existing) throw { statusCode: 409, code: 'CONFLICT', message: 'El email ya está en uso' }
+  if (existing && existing.deletedAt === null) {
+    throw { statusCode: 409, code: 'CONFLICT', message: 'El email ya está en uso' }
+  }
   const tempPassword = body.password ?? crypto.randomBytes(12).toString('hex')
   const mustChangePassword = !body.password
   const passwordHash = await bcrypt.hash(tempPassword, 10)
-  const user = await db.user.create({
-    data: { email: body.email, passwordHash, fullName: body.fullName, roleId: body.roleId, mustChangePassword },
-    select: SAFE_SELECT,
-  })
+  const user = existing
+    ? await db.user.update({
+        where: { id: existing.id },
+        data: { passwordHash, fullName: body.fullName, roleId: body.roleId, mustChangePassword, isActive: true, deletedAt: null },
+        select: SAFE_SELECT,
+      })
+    : await db.user.create({
+        data: { email: body.email, passwordHash, fullName: body.fullName, roleId: body.roleId, mustChangePassword },
+        select: SAFE_SELECT,
+      })
   return { ...user, tempPassword: mustChangePassword ? tempPassword : undefined }
 }
 
@@ -45,4 +53,13 @@ export async function updateUser(db: PrismaClient, id: number, body: UpdateUserB
 export async function deleteUser(db: PrismaClient, id: number) {
   await getUser(db, id)
   await db.user.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
+}
+
+export async function resetUserPassword(db: PrismaClient, userId: number) {
+  const user = await db.user.findFirst({ where: { id: userId, deletedAt: null } })
+  if (!user) throw { statusCode: 404, code: 'NOT_FOUND', message: 'Usuario no encontrado' }
+  const tempPassword = crypto.randomBytes(12).toString('hex')
+  const passwordHash = await bcrypt.hash(tempPassword, 10)
+  await db.user.update({ where: { id: userId }, data: { passwordHash, mustChangePassword: true } })
+  return { tempPassword }
 }

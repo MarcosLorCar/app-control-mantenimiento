@@ -1,17 +1,19 @@
 import { useState } from 'react'
-import { useUsers, useUpdateUser, useDeleteUser } from '../../hooks/useUsers'
+import { useUsers, useUpdateUser, useDeleteUser, useResetUserPassword } from '../../hooks/useUsers'
 import { useRoles } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
-import { UserForm } from './UserForm'
+import { UserForm, PasswordModal } from './UserForm'
 
 export function Users() {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [resetPassword, setResetPassword] = useState<string | null>(null)
 
   const { data: users = [], isLoading } = useUsers()
   const { data: roles = [] } = useRoles()
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
+  const resetUser = useResetUserPassword()
 
   const roleName = (roleId: number) => roles.find(r => r.id === roleId)?.name ?? '—'
 
@@ -89,6 +91,13 @@ export function Users() {
                             {u.isActive ? 'Desactivar' : 'Activar'}
                           </button>
                           <button
+                            onClick={() => resetUser.mutate(u.id, { onSuccess: d => setResetPassword(d.tempPassword) })}
+                            disabled={resetUser.isPending}
+                            className="text-xs text-orange-500 hover:text-orange-700 disabled:opacity-50"
+                          >
+                            Resetear
+                          </button>
+                          <button
                             onClick={() => deleteUser.mutate(u.id)}
                             className="text-xs text-red-400 hover:text-red-600"
                           >
@@ -129,6 +138,13 @@ export function Users() {
                       {u.isActive ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
+                      onClick={() => resetUser.mutate(u.id, { onSuccess: d => setResetPassword(d.tempPassword) })}
+                      disabled={resetUser.isPending}
+                      className="text-xs text-orange-500 hover:text-orange-700 disabled:opacity-50"
+                    >
+                      Resetear
+                    </button>
+                    <button
                       onClick={() => deleteUser.mutate(u.id)}
                       className="text-xs text-red-400 hover:text-red-600"
                     >
@@ -143,6 +159,7 @@ export function Users() {
       )}
 
       {showForm && <UserForm onClose={() => setShowForm(false)} />}
+      {resetPassword && <PasswordModal tempPassword={resetPassword} onClose={() => setResetPassword(null)} />}
     </div>
   )
 }
