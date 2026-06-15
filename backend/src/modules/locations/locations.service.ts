@@ -38,19 +38,31 @@ export async function listLocations(
     orderBy: { name: 'asc' },
   })
 
-  const locationsWithCounts = await Promise.all(
-    locations.map(async (loc) => {
-      const recursiveMaterialsCount = await db.material.count({
-        where: {
-          deletedAt: null,
-          location: { path: { startsWith: loc.path }, deletedAt: null },
-        },
-      })
-      return { ...loc, _count: { ...loc._count, materials: recursiveMaterialsCount } }
-    })
-  )
+  type CountRow = { locationid: number; count: bigint }
+  const [rawCounts, allLocPaths] = await Promise.all([
+    db.$queryRaw<CountRow[]>`
+      SELECT m."locationId" AS locationid, COUNT(m.id) AS count
+      FROM materials m
+      JOIN locations l ON m."locationId" = l.id
+      WHERE m."deletedAt" IS NULL AND l."deletedAt" IS NULL
+      GROUP BY m."locationId"
+    `,
+    db.location.findMany({ where: { deletedAt: null }, select: { id: true, path: true } }),
+  ])
 
-  return locationsWithCounts
+  const pathById = new Map(allLocPaths.map(l => [l.id, l.path]))
+  const countByLocationId = new Map(rawCounts.map(r => [Number(r.locationid), Number(r.count)]))
+
+  return locations.map(loc => {
+    let materialsCount = 0
+    for (const [locId, cnt] of countByLocationId) {
+      const locPath = pathById.get(locId)
+      if (locPath && locPath.startsWith(loc.path)) {
+        materialsCount += cnt
+      }
+    }
+    return { ...loc, _count: { ...loc._count, materials: materialsCount } }
+  })
 }
 
 export async function getLocationDetail(db: PrismaClient, id: number) {
@@ -114,17 +126,28 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
     orderBy: { name: 'asc' },
   })
 
-  const mappedChildren = await Promise.all(
-    current.children.map(async (child) => {
-      const recursiveMaterialsCount = await db.material.count({
-        where: {
-          deletedAt: null,
-          location: { path: { startsWith: child.path }, deletedAt: null },
-        },
-      })
-      return { ...child, _count: { ...child._count, materials: recursiveMaterialsCount } }
-    })
-  )
+  type CountRow2 = { locationid: number; count: bigint }
+  const [childRawCounts, childLocPaths] = await Promise.all([
+    db.$queryRaw<CountRow2[]>`
+      SELECT m."locationId" AS locationid, COUNT(m.id) AS count
+      FROM materials m
+      JOIN locations l ON m."locationId" = l.id
+      WHERE m."deletedAt" IS NULL AND l."deletedAt" IS NULL
+      GROUP BY m."locationId"
+    `,
+    db.location.findMany({ where: { deletedAt: null }, select: { id: true, path: true } }),
+  ])
+  const childPathById = new Map(childLocPaths.map(l => [l.id, l.path]))
+  const childCountById = new Map(childRawCounts.map(r => [Number(r.locationid), Number(r.count)]))
+
+  const mappedChildren = current.children.map(child => {
+    let cnt = 0
+    for (const [locId, c] of childCountById) {
+      const p = childPathById.get(locId)
+      if (p && p.startsWith(child.path)) cnt += c
+    }
+    return { ...child, _count: { ...child._count, materials: cnt } }
+  })
 
   return {
     ...current,
@@ -152,7 +175,8 @@ export async function createLocation(db: PrismaClient, data: CreateLocationInput
   let parentPath: string | null = null
   if (parentId) {
     const parent = await db.location.findFirst({ where: { id: parentId, deletedAt: null } })
-    parentPath = parent?.path ?? null
+    if (!parent) throw { statusCode: 404, code: 'NOT_FOUND', message: 'La ubicación padre no existe' }
+    parentPath = parent.path
   }
 
   return db.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -216,20 +240,22 @@ export async function updateLocation(db: PrismaClient, id: number, data: UpdateL
 
     newPath = `${parentPath}${id}/`
 
-    // Update descendants paths and category
+    // Update descendants paths and category atomically
     const descendants = await db.location.findMany({
       where: { path: { startsWith: current.path } },
     })
 
-    for (const desc of descendants) {
-      if (desc.id === id) continue
-      const relativePart = desc.path.slice(current.path.length)
-      const descNewPath = `${newPath}${relativePart}`
-      await db.location.update({
-        where: { id: desc.id },
-        data: { path: descNewPath, infraTypeId },
-      })
-    }
+    await db.$transaction(
+      descendants
+        .filter(desc => desc.id !== id)
+        .map(desc => {
+          const relativePart = desc.path.slice(current.path.length)
+          return db.location.update({
+            where: { id: desc.id },
+            data: { path: `${newPath}${relativePart}`, infraTypeId },
+          })
+        })
+    )
   }
 
   return db.location.update({

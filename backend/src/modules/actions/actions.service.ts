@@ -108,20 +108,7 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
     }
   }
 
-  // Create primary action record
-  const action = await db.action.create({
-    data: {
-      title: rest.title,
-      description: rest.description,
-      locationId,
-      performedBy,
-      performedAt: performedAt ? new Date(performedAt) : undefined,
-      latitude: rest.latitude,
-      longitude: rest.longitude,
-    },
-  })
-
-  // Handle material operations
+  // Validate materials before any writes
   if (materials && materials.length > 0) {
     const existingIds = materials.map(m => m.materialId).filter((id): id is number => id !== undefined)
     const uniqueIds = new Set(existingIds)
@@ -131,133 +118,125 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
         code: 'DUPLICATE_MATERIAL',
       })
     }
+  }
 
-    for (const item of materials) {
-      const targetLocationId = item.locationId !== undefined ? item.locationId : locationId
+  return db.$transaction(async (tx) => {
+    const action = await tx.action.create({
+      data: {
+        title: rest.title,
+        description: rest.description,
+        locationId,
+        performedBy,
+        performedAt: performedAt ? new Date(performedAt) : undefined,
+        latitude: rest.latitude,
+        longitude: rest.longitude,
+      },
+    })
 
-      if (item.operation === 'INSTALL' && targetLocationId) {
-        const loc = await db.location.findFirst({ where: { id: targetLocationId, deletedAt: null } })
-        if (loc && loc.parentId === null) {
-          throw Object.assign(new Error('No se pueden instalar materiales directamente en una ubicación raíz.'), {
-            code: 'VALIDATION_ERROR'
-          })
-        }
-      }
+    if (materials && materials.length > 0) {
+      for (const item of materials) {
+        const targetLocationId = item.locationId !== undefined ? item.locationId : locationId
 
-      if (item.operation === 'UNINSTALL') {
-        if (!item.materialId) continue
-        
-        const existing = await db.material.findUnique({ where: { id: item.materialId } })
-        const snapshot = existing ? {
-          name: existing.name,
-          description: existing.description,
-          attributes: existing.attributes,
-        } : null
-
-        // Remove location pointer (retains data but no longer "physically" installed)
-        await db.material.update({
-          where: { id: item.materialId },
-          data: { locationId: null }
-        })
-
-        await db.actionMaterial.create({
-          data: {
-            actionId: action.id,
-            materialId: item.materialId,
-            operation: 'UNINSTALL',
-            snapshot: snapshot ? (snapshot as any) : undefined
+        if (item.operation === 'INSTALL' && targetLocationId) {
+          const loc = await tx.location.findFirst({ where: { id: targetLocationId, deletedAt: null } })
+          if (loc && loc.parentId === null) {
+            throw Object.assign(new Error('No se pueden instalar materiales directamente en una ubicación raíz.'), {
+              code: 'VALIDATION_ERROR'
+            })
           }
-        })
-      } else if (item.operation === 'INSTALL') {
-        let materialId = item.materialId
+        }
 
-        if (materialId) {
-          // If installing existing material
-          const existing = await db.material.findUnique({ where: { id: materialId } })
+        if (item.operation === 'UNINSTALL') {
+          if (!item.materialId) continue
+
+          const existing = await tx.material.findUnique({ where: { id: item.materialId } })
           const snapshot = existing ? {
             name: existing.name,
             description: existing.description,
             attributes: existing.attributes,
           } : null
 
-          await db.material.update({
-            where: { id: materialId },
-            data: { locationId: targetLocationId }
-          })
-
-          await db.actionMaterial.create({
+          await tx.material.update({ where: { id: item.materialId }, data: { locationId: null } })
+          await tx.actionMaterial.create({
             data: {
               actionId: action.id,
-              materialId: materialId,
-              operation: 'INSTALL',
-              snapshot: snapshot ? (snapshot as any) : undefined
-            }
+              materialId: item.materialId,
+              operation: 'UNINSTALL',
+              snapshot: snapshot ? (snapshot as any) : undefined,
+            },
           })
-        } else {
-          // If creating and installing new material
-          if (!item.name || !item.typeId) {
-            throw Object.assign(new Error('Nombre y tipo son requeridos para nuevos materiales'), {
-              code: 'VALIDATION_ERROR'
+        } else if (item.operation === 'INSTALL') {
+          let materialId = item.materialId
+
+          if (materialId) {
+            const existing = await tx.material.findUnique({ where: { id: materialId } })
+            const snapshot = existing ? {
+              name: existing.name,
+              description: existing.description,
+              attributes: existing.attributes,
+            } : null
+
+            await tx.material.update({ where: { id: materialId }, data: { locationId: targetLocationId } })
+            await tx.actionMaterial.create({
+              data: {
+                actionId: action.id,
+                materialId,
+                operation: 'INSTALL',
+                snapshot: snapshot ? (snapshot as any) : undefined,
+              },
+            })
+          } else {
+            if (!item.name || !item.typeId) {
+              throw Object.assign(new Error('Nombre y tipo son requeridos para nuevos materiales'), {
+                code: 'VALIDATION_ERROR',
+              })
+            }
+            const newMat = await tx.material.create({
+              data: {
+                name: item.name,
+                typeId: item.typeId,
+                description: item.description,
+                attributes: (item.attributes || {}) as any,
+                locationId: targetLocationId,
+                installedAt: performedAt ? new Date(performedAt) : undefined,
+              },
+            })
+            materialId = newMat.id
+            await tx.actionMaterial.create({
+              data: { actionId: action.id, materialId, operation: 'INSTALL', snapshot: undefined },
             })
           }
-          const newMat = await db.material.create({
-            data: {
-              name: item.name,
-              typeId: item.typeId,
-              description: item.description,
-              attributes: (item.attributes || {}) as any,
-              locationId: targetLocationId,
-              installedAt: performedAt ? new Date(performedAt) : undefined,
-            }
-          })
-          materialId = newMat.id
+        } else if (item.operation === 'UPDATE') {
+          if (!item.materialId) continue
 
-          await db.actionMaterial.create({
+          const existing = await tx.material.findUnique({ where: { id: item.materialId } })
+          const snapshot = existing ? {
+            name: existing.name,
+            description: existing.description,
+            attributes: existing.attributes,
+          } : null
+
+          const updateData: any = {}
+          if (item.name !== undefined) updateData.name = item.name
+          if (item.typeId !== undefined) updateData.typeId = item.typeId
+          if (item.description !== undefined) updateData.description = item.description
+          if (item.attributes !== undefined) updateData.attributes = item.attributes
+          if (item.locationId !== undefined) updateData.locationId = item.locationId
+
+          await tx.material.update({ where: { id: item.materialId }, data: updateData })
+          await tx.actionMaterial.create({
             data: {
               actionId: action.id,
-              materialId: materialId,
-              operation: 'INSTALL',
-              snapshot: undefined
-            }
+              materialId: item.materialId,
+              operation: 'UPDATE',
+              snapshot: snapshot ? (snapshot as any) : undefined,
+            },
           })
         }
-      } else if (item.operation === 'UPDATE') {
-        if (!item.materialId) continue
-
-        const existing = await db.material.findUnique({ where: { id: item.materialId } })
-        const snapshot = existing ? {
-          name: existing.name,
-          description: existing.description,
-          attributes: existing.attributes,
-        } : null
-
-        const updateData: any = {}
-        if (item.name !== undefined) updateData.name = item.name
-        if (item.typeId !== undefined) updateData.typeId = item.typeId
-        if (item.description !== undefined) updateData.description = item.description
-        if (item.attributes !== undefined) updateData.attributes = item.attributes
-        if (item.locationId !== undefined) updateData.locationId = item.locationId
-
-        await db.material.update({
-          where: { id: item.materialId },
-          data: updateData
-        })
-
-        await db.actionMaterial.create({
-          data: {
-            actionId: action.id,
-            materialId: item.materialId,
-            operation: 'UPDATE',
-            snapshot: snapshot ? (snapshot as any) : undefined
-          }
-        })
       }
     }
-  }
 
-  return db.action.findUnique({
-    where: { id: action.id },
-    include: ACTION_INCLUDE
+    return tx.action.findUnique({ where: { id: action.id }, include: ACTION_INCLUDE })
   })
 }
 

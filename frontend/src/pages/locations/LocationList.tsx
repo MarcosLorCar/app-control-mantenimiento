@@ -97,10 +97,12 @@ export function LocationList() {
               className="flex items-start gap-4 p-5 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
             >
               <div
-                className="w-12 h-12 rounded-[10px] flex items-center justify-center shrink-0 transition-all group-hover:scale-110"
+                className="w-12 h-12 rounded-[10px] flex items-center justify-center shrink-0 transition-all group-hover:scale-110 overflow-hidden"
                 style={{ backgroundColor: iconBg }}
               >
-                {loc.infraType?.icon ? (
+                {loc.image ? (
+                  <img src={loc.image} alt={loc.name} className="w-full h-full object-cover" />
+                ) : loc.infraType?.icon ? (
                   <span className="text-2xl">{loc.infraType.icon}</span>
                 ) : (
                   <Folder className="w-5.5 h-5.5 text-primary" />

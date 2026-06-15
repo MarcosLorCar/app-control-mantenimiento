@@ -1,32 +1,27 @@
 #!/usr/bin/env bash
-# Levanta DB, backend y frontend
-
+# Usage: ./dev.sh
+# Starts the dev DB, runs any pending migrations, then launches backend + frontend.
 set -e
 
-cleanup() {
-  echo ""
-  echo "→ Deteniendo procesos..."
-  kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
-  wait "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
-  stty sane
-}
-trap cleanup EXIT INT TERM
+echo "→ Starting DB container..."
+docker compose up -d
 
-echo "→ Iniciando base de datos..."
-docker compose up -d db || true
-
-echo "→ Esperando a PostgreSQL..."
-until docker exec infragest-db pg_isready -U postgres -q; do
+echo "→ Waiting for DB to be ready..."
+for i in $(seq 1 30); do
+  docker compose exec db pg_isready -U postgres -d infragest_dev > /dev/null 2>&1 && break
+  [ "$i" -eq 30 ] && echo "DB did not become ready in time." && exit 1
   sleep 1
 done
+echo "  DB ready."
 
-echo "→ Ejecutando migraciones..."
-npm run db:migrate --workspace=@infragest/backend
+echo "→ Running migrations..."
+(cd backend && npx prisma migrate dev)
 
-echo "→ Arrancando backend y frontend..."
-npm run dev --workspace=@infragest/backend &
-BACKEND_PID=$!
-npm run dev --workspace=@infragest/frontend &
-FRONTEND_PID=$!
+read -r -p "→ Run seed? This will wipe and recreate all dev data [y/N] " answer
+if [[ "$answer" =~ ^[Yy]$ ]]; then
+  echo "→ Seeding..."
+  (cd backend && npx prisma db seed)
+fi
 
-wait
+echo "→ Starting dev servers..."
+npm run dev
