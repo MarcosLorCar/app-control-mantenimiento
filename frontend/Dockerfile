@@ -9,7 +9,7 @@ COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 
 # Install dependencies for frontend and shared
-RUN npm ci --workspace=@control-actions/frontend --workspace=@control-actions/shared && npm install @rollup/rollup-linux-x64-gnu
+RUN npm ci --workspace=@infragest/frontend --workspace=@infragest/shared && npm install @rollup/rollup-linux-x64-gnu
 
 # Copy the source code
 COPY shared/ ./shared/

@@ -16,17 +16,17 @@ echo "→ Iniciando base de datos..."
 docker compose up -d db || true
 
 echo "→ Esperando a PostgreSQL..."
-until docker exec control-actions-db pg_isready -U postgres -q; do
+until docker exec infragest-db pg_isready -U postgres -q; do
   sleep 1
 done
 
 echo "→ Ejecutando migraciones..."
-npm run db:migrate --workspace=@control-actions/backend
+npm run db:migrate --workspace=@infragest/backend
 
 echo "→ Arrancando backend y frontend..."
-npm run dev --workspace=@control-actions/backend &
+npm run dev --workspace=@infragest/backend &
 BACKEND_PID=$!
-npm run dev --workspace=@control-actions/frontend &
+npm run dev --workspace=@infragest/frontend &
 FRONTEND_PID=$!
 
 wait

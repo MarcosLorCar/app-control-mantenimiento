@@ -1,11 +1,11 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: control-actions-db
+    container_name: infragest-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: control_actions_dev
+      POSTGRES_DB: infragest_dev
     ports:
       - "5433:5432"
     volumes:
