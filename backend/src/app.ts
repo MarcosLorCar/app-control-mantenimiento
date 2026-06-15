@@ -3,6 +3,7 @@ import fastifyJwt from '@fastify/jwt'
 import fastifyCookie from '@fastify/cookie'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
+import fastifyRateLimit from '@fastify/rate-limit'
 import path from 'path'
 import prismaPlugin from './plugins/prisma.plugin'
 import authPlugin from './plugins/auth.plugin'
@@ -22,6 +23,7 @@ export interface AppOptions {
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test' })
 
+  await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' })
   await app.register(fastifyCookie)
   await app.register(fastifyJwt, {
     secret: opts.jwtSecret,

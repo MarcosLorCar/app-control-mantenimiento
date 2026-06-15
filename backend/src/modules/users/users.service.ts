@@ -10,11 +10,11 @@ const SAFE_SELECT = {
 }
 
 export async function listUsers(db: PrismaClient) {
-  return db.user.findMany({ select: SAFE_SELECT, orderBy: { createdAt: 'desc' } })
+  return db.user.findMany({ where: { deletedAt: null }, select: SAFE_SELECT, orderBy: { createdAt: 'desc' } })
 }
 
 export async function getUser(db: PrismaClient, id: number) {
-  const user = await db.user.findUnique({ where: { id }, select: SAFE_SELECT })
+  const user = await db.user.findFirst({ where: { id, deletedAt: null }, select: SAFE_SELECT })
   if (!user) throw { statusCode: 404, code: 'NOT_FOUND', message: 'Usuario no encontrado' }
   return user
 }
@@ -44,5 +44,5 @@ export async function updateUser(db: PrismaClient, id: number, body: UpdateUserB
 
 export async function deleteUser(db: PrismaClient, id: number) {
   await getUser(db, id)
-  await db.user.delete({ where: { id } })
+  await db.user.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
 }

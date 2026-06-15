@@ -44,6 +44,9 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
     } catch {
       return reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Token inválido o expirado' } })
     }
+    if (request.user.must_change_password) {
+      return reply.code(403).send({ error: { code: 'PASSWORD_CHANGE_REQUIRED', message: 'Debes cambiar tu contraseña antes de continuar' } })
+    }
     if (!request.user.can_write) {
       reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Se requiere permiso de escritura' } })
     }
@@ -54,6 +57,9 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       await request.jwtVerify()
     } catch {
       return reply.code(401).send({ error: { code: 'UNAUTHORIZED', message: 'Token inválido o expirado' } })
+    }
+    if (request.user.must_change_password) {
+      return reply.code(403).send({ error: { code: 'PASSWORD_CHANGE_REQUIRED', message: 'Debes cambiar tu contraseña antes de continuar' } })
     }
     if (!request.user.can_manage) {
       reply.code(403).send({ error: { code: 'FORBIDDEN', message: 'Se requiere permiso de gestión' } })

@@ -4,11 +4,14 @@ import { changePassword } from '../api/auth'
 import { useAuth } from '../hooks/useAuth'
 
 export function ChangePassword() {
+  const { user, logout } = useAuth()
+  const isFirstTime = user?.must_change_password ?? true
+
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [isPending, setIsPending] = useState(false)
-  const { logout } = useAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -24,7 +27,7 @@ export function ChangePassword() {
     setError('')
     setIsPending(true)
     try {
-      await changePassword(newPassword)
+      await changePassword(newPassword, isFirstTime ? undefined : currentPassword)
       await logout()
       navigate('/login')
     } catch (err: any) {
@@ -39,11 +42,27 @@ export function ChangePassword() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white border border-gray-200 rounded-lg shadow p-8 w-full max-w-md">
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Establece tu contraseña</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">
+          {isFirstTime ? 'Establece tu contraseña' : 'Cambiar contraseña'}
+        </h1>
         <p className="text-sm text-gray-500 mb-6">
-          Tu cuenta requiere que establezcas una nueva contraseña antes de continuar.
+          {isFirstTime
+            ? 'Tu cuenta requiere que establezcas una nueva contraseña antes de continuar.'
+            : 'Ingresa tu contraseña actual y luego la nueva.'}
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!isFirstTime && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña actual</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={e => setCurrentPassword(e.target.value)}
+                className={inputCls}
+                autoFocus
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
             <input
@@ -51,7 +70,7 @@ export function ChangePassword() {
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
               className={inputCls}
-              autoFocus
+              autoFocus={isFirstTime}
             />
           </div>
           <div>

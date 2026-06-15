@@ -22,10 +22,10 @@ export async function logout(): Promise<void> {
   setToken(null)
 }
 
-export async function changePassword(newPassword: string): Promise<void> {
+export async function changePassword(newPassword: string, currentPassword?: string): Promise<void> {
   await apiFetch(`${API_BASE}/auth/password`, {
     method: 'PATCH',
-    body: JSON.stringify({ newPassword }),
+    body: JSON.stringify({ newPassword, ...(currentPassword !== undefined && { currentPassword }) }),
   })
 }
 

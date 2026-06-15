@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import type { CreateLocationInput, UpdateLocationInput } from './locations.schema'
 
 export async function listLocations(
@@ -38,33 +38,19 @@ export async function listLocations(
     orderBy: { name: 'asc' },
   })
 
-  // Fetch active materials and their location's path to count recursively
-  const materials = await db.material.findMany({
-    where: {
-      deletedAt: null,
-      location: {
-        deletedAt: null
-      }
-    },
-    select: {
-      location: {
-        select: {
-          path: true
-        }
-      }
-    }
-  })
+  const locationsWithCounts = await Promise.all(
+    locations.map(async (loc) => {
+      const recursiveMaterialsCount = await db.material.count({
+        where: {
+          deletedAt: null,
+          location: { path: { startsWith: loc.path }, deletedAt: null },
+        },
+      })
+      return { ...loc, _count: { ...loc._count, materials: recursiveMaterialsCount } }
+    })
+  )
 
-  return locations.map(loc => {
-    const recursiveMaterialsCount = materials.filter(m => m.location?.path.startsWith(loc.path)).length
-    return {
-      ...loc,
-      _count: {
-        ...loc._count,
-        materials: recursiveMaterialsCount
-      }
-    }
-  })
+  return locationsWithCounts
 }
 
 export async function getLocationDetail(db: PrismaClient, id: number) {
@@ -111,23 +97,6 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
 
   if (!current) return null
 
-  // Fetch active materials and their location's path to count recursively
-  const materials = await db.material.findMany({
-    where: {
-      deletedAt: null,
-      location: {
-        deletedAt: null
-      }
-    },
-    select: {
-      location: {
-        select: {
-          path: true
-        }
-      }
-    }
-  })
-
   // Fetch all materials in descendants (subfolders)
   const descendantMaterials = await db.material.findMany({
     where: {
@@ -145,16 +114,17 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
     orderBy: { name: 'asc' },
   })
 
-  const mappedChildren = current.children.map(child => {
-    const recursiveMaterialsCount = materials.filter(m => m.location?.path.startsWith(child.path)).length
-    return {
-      ...child,
-      _count: {
-        ...child._count,
-        materials: recursiveMaterialsCount
-      }
-    }
-  })
+  const mappedChildren = await Promise.all(
+    current.children.map(async (child) => {
+      const recursiveMaterialsCount = await db.material.count({
+        where: {
+          deletedAt: null,
+          location: { path: { startsWith: child.path }, deletedAt: null },
+        },
+      })
+      return { ...child, _count: { ...child._count, materials: recursiveMaterialsCount } }
+    })
+  )
 
   return {
     ...current,
@@ -178,32 +148,32 @@ export async function createLocation(db: PrismaClient, data: CreateLocationInput
     throw new Error('La categoría de infraestructura (infraTypeId) es obligatoria')
   }
 
-  // Create node first to get id
-  const location = await db.location.create({
-    data: {
-      name: rest.name,
-      description: rest.description,
-      latitude: rest.latitude,
-      longitude: rest.longitude,
-      parentId,
-      infraTypeId,
-    },
-  })
-
-  // Calculate materialized path
-  let path = `/${location.id}/`
+  // Fetch parent path before transaction to avoid nested async in $transaction
+  let parentPath: string | null = null
   if (parentId) {
     const parent = await db.location.findFirst({ where: { id: parentId, deletedAt: null } })
-    if (parent) {
-      path = `${parent.path}${location.id}/`
-    }
+    parentPath = parent?.path ?? null
   }
 
-  // Update with correct path
-  return db.location.update({
-    where: { id: location.id },
-    data: { path },
-    include: { infraType: true },
+  return db.$transaction(async (tx: Prisma.TransactionClient) => {
+    const location = await tx.location.create({
+      data: {
+        name: rest.name,
+        description: rest.description,
+        latitude: rest.latitude,
+        longitude: rest.longitude,
+        parentId,
+        infraTypeId,
+      },
+    })
+
+    const path = parentPath ? `${parentPath}${location.id}/` : `/${location.id}/`
+
+    return tx.location.update({
+      where: { id: location.id },
+      data: { path },
+      include: { infraType: true },
+    })
   })
 }
 

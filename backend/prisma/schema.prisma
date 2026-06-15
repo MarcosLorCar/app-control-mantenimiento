@@ -111,6 +111,7 @@ model MaterialType {
   @@map("material_types")
 }
 
+// Planned for future use — no routes or services connect to this table yet.
 model FixedProperty {
   id    Int    @id @default(autoincrement())
   code  String @unique
@@ -183,7 +184,7 @@ model ActionMaterial {
   actionId    Int
   materialId  Int
   operation   MaterialOperation
-  snapshot    Json?
+  snapshot    Json? // { name: string, description: string | null, attributes: Record<string, unknown> }
 
   action      Action   @relation(fields: [actionId], references: [id], onDelete: Cascade)
   material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)

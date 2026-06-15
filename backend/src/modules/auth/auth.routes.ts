@@ -5,7 +5,7 @@ import { loginService } from './auth.service'
 import { JwtPayload } from '@control-actions/shared'
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.post('/login', async (request, reply) => {
+  fastify.post('/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     const result = LoginBodySchema.safeParse(request.body)
     if (!result.success) {
       return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: result.error.message } })
@@ -61,11 +61,23 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   fastify.patch('/password', { preHandler: fastify.verifyToken }, async (request, reply) => {
-    const { newPassword } = request.body as { newPassword: string }
+    const { newPassword, currentPassword } = request.body as { newPassword: string; currentPassword?: string }
     if (!newPassword || newPassword.length < 8) {
       return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'La contraseña debe tener al menos 8 caracteres' } })
     }
-    const userId = (request.user as unknown as JwtPayload).sub
+    const caller = request.user as unknown as JwtPayload
+    const userId = caller.sub
+
+    if (!caller.must_change_password) {
+      if (!currentPassword) {
+        return reply.code(400).send({ error: { code: 'VALIDATION_ERROR', message: 'Debes proporcionar tu contraseña actual' } })
+      }
+      const user = await fastify.db.user.findUnique({ where: { id: userId }, select: { passwordHash: true } })
+      if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
+        return reply.code(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'La contraseña actual es incorrecta' } })
+      }
+    }
+
     const passwordHash = await bcrypt.hash(newPassword, 10)
     await fastify.db.user.update({
       where: { id: userId },

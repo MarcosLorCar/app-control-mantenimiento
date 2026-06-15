@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { FastifyInstance } from 'fastify'
 import { buildTestApp } from './helpers/app'
-import { clearDb, seedTestData } from './helpers/db'
+import { clearDb, seedTestData, testDb } from './helpers/db'
+import { JwtPayload } from '@control-actions/shared'
 
 let app: FastifyInstance
 
@@ -118,5 +119,59 @@ describe('POST /api/v1/auth/logout', () => {
   it('responde 401 sin token', async () => {
     const res = await app.inject({ method: 'POST', url: '/api/v1/auth/logout' })
     expect(res.statusCode).toBe(401)
+  })
+})
+
+describe('must_change_password enforcement', () => {
+  it('usuario con mustChangePassword=true recibe 403 en endpoints de escritura', async () => {
+    const seed = await seedTestData()
+
+    const user = await testDb.user.create({
+      data: {
+        email: 'newbie@test.com',
+        passwordHash: 'x',
+        fullName: 'Newbie',
+        roleId: seed.adminRole.id,
+        mustChangePassword: true,
+      },
+    })
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      role: seed.adminRole.name,
+      can_write: true,
+      can_manage: true,
+      must_change_password: true,
+    }
+    const token = app.jwt.sign(payload, { expiresIn: '15m' })
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/locations',
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: 'Test', infraTypeId: seed.infraType.id },
+    })
+    expect(res.statusCode).toBe(403)
+    expect(JSON.parse(res.body).error.code).toBe('PASSWORD_CHANGE_REQUIRED')
+  })
+
+  it('usuario con mustChangePassword=true puede cambiar su contraseña', async () => {
+    const seed = await seedTestData()
+
+    const loginRes = await app.inject({
+      method: 'POST',
+      url: '/api/v1/auth/login',
+      payload: { email: 'manager@test.com', password: 'password123' },
+    })
+    const { accessToken } = JSON.parse(loginRes.body).data
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/v1/auth/password',
+      headers: { authorization: `Bearer ${accessToken}` },
+      payload: { newPassword: 'nuevaclave123', currentPassword: 'password123' },
+    })
+    expect(res.statusCode).toBe(200)
   })
 })

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { FastifyInstance } from 'fastify'
 import { buildTestApp, getAdminToken, getReaderToken } from './helpers/app'
-import { clearDb, seedTestData } from './helpers/db'
+import { clearDb, seedTestData, testDb } from './helpers/db'
 
 let app: FastifyInstance
 let adminToken: string
@@ -72,7 +72,6 @@ describe('POST /api/v1/users', () => {
 
 describe('PATCH /api/v1/users/:id', () => {
   it('admin puede actualizar fullName', async () => {
-    // Obtener el ID del admin
     const listRes = await app.inject({
       method: 'GET', url: '/api/v1/users',
       headers: { authorization: `Bearer ${adminToken}` },
@@ -87,5 +86,59 @@ describe('PATCH /api/v1/users/:id', () => {
     })
     expect(res.statusCode).toBe(200)
     expect(JSON.parse(res.body).data.fullName).toBe('Admin Actualizado')
+  })
+})
+
+describe('DELETE /api/v1/users/:id', () => {
+  it('soft-delete usuario sin acciones devuelve 200', async () => {
+    const createRes = await app.inject({
+      method: 'POST', url: '/api/v1/users',
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { email: 'tobedeleted@test.com', password: 'password123', fullName: 'Para Borrar', roleId: adminRoleId },
+    })
+    const newUser = JSON.parse(createRes.body).data
+
+    const res = await app.inject({
+      method: 'DELETE', url: `/api/v1/users/${newUser.id}`,
+      headers: { authorization: `Bearer ${adminToken}` },
+    })
+    expect(res.statusCode).toBe(200)
+
+    const listRes = await app.inject({
+      method: 'GET', url: '/api/v1/users',
+      headers: { authorization: `Bearer ${adminToken}` },
+    })
+    const users = JSON.parse(listRes.body).data
+    expect(users.find((u: any) => u.id === newUser.id)).toBeUndefined()
+  })
+
+  it('soft-delete usuario con acciones devuelve 200 (no falla por FK)', async () => {
+    const seed = await seedTestData()
+
+    const newUser = await testDb.user.create({
+      data: { email: 'conacciones@test.com', passwordHash: 'x', fullName: 'Con Acciones', roleId: seed.adminRole.id },
+    })
+
+    await testDb.action.create({
+      data: {
+        title: 'Acción de prueba',
+        locationId: seed.infra.id,
+        performedBy: newUser.id,
+        performedAt: new Date(),
+      },
+    })
+
+    const res = await app.inject({
+      method: 'DELETE', url: `/api/v1/users/${newUser.id}`,
+      headers: { authorization: `Bearer ${adminToken}` },
+    })
+    expect(res.statusCode).toBe(200)
+
+    const listRes = await app.inject({
+      method: 'GET', url: '/api/v1/users',
+      headers: { authorization: `Bearer ${adminToken}` },
+    })
+    const users = JSON.parse(listRes.body).data
+    expect(users.find((u: any) => u.id === newUser.id)).toBeUndefined()
   })
 })

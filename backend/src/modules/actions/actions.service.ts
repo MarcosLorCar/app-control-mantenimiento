@@ -123,6 +123,15 @@ export async function createAction(db: PrismaClient, data: CreateActionInput, pe
 
   // Handle material operations
   if (materials && materials.length > 0) {
+    const existingIds = materials.map(m => m.materialId).filter((id): id is number => id !== undefined)
+    const uniqueIds = new Set(existingIds)
+    if (uniqueIds.size !== existingIds.length) {
+      throw Object.assign(new Error('El mismo material no puede aparecer más de una vez en la misma acción'), {
+        statusCode: 400,
+        code: 'DUPLICATE_MATERIAL',
+      })
+    }
+
     for (const item of materials) {
       const targetLocationId = item.locationId !== undefined ? item.locationId : locationId
 
