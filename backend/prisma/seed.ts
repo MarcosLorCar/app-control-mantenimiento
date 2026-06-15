@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -208,7 +208,7 @@ async function main() {
   })
   await prisma.actionMaterial.createMany({
     data: [
-      { actionId: accion2.id, materialId: clim1.id, operation: 'INSTALL', snapshot: null },
+      { actionId: accion2.id, materialId: clim1.id, operation: 'INSTALL', snapshot: Prisma.JsonNull },
     ],
   })
 
@@ -238,7 +238,7 @@ async function main() {
     },
   }).then(async (a) => {
     await prisma.actionMaterial.create({
-      data: { actionId: a.id, materialId: lumPista.id, operation: 'INSTALL', snapshot: null },
+      data: { actionId: a.id, materialId: lumPista.id, operation: 'INSTALL', snapshot: Prisma.JsonNull },
     })
   })
 
