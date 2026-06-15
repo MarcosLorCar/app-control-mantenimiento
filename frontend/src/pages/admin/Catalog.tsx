@@ -461,24 +461,15 @@ export function Catalog() {
 
               {/* Map selection tool */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-fg-secondary">
-                  Ubicación central por defecto <span className="text-muted">(Arrastra o haz clic en el mapa)</span>
-                </label>
-                <div className="border border-app-border rounded-lg overflow-hidden bg-card/30">
-                  <LocationMap
-                    latitude={cfgLat ? Number(cfgLat) : 38.9863}
-                    longitude={cfgLng ? Number(cfgLng) : -3.9291}
-                    defaultCenter={[38.9863, -3.9291]}
-                    onChange={(lat, lng) => {
-                      setCfgLat(lat.toString())
-                      setCfgLng(lng.toString())
-                    }}
-                  />
-                </div>
-                <div className="flex gap-3 text-[10px] text-muted font-mono bg-app-bg/60 p-2 rounded border border-app-border/40 justify-center">
-                  <span>Lat: {Number(cfgLat || '38.9863').toFixed(6)}</span>
-                  <span>Lon: {Number(cfgLng || '-3.9291').toFixed(6)}</span>
-                </div>
+                <LocationMap
+                  latitude={cfgLat ? Number(cfgLat) : 38.9863}
+                  longitude={cfgLng ? Number(cfgLng) : -3.9291}
+                  defaultCenter={[38.9863, -3.9291]}
+                  onChange={(lat, lng) => {
+                    setCfgLat(lat.toString())
+                    setCfgLng(lng.toString())
+                  }}
+                />
               </div>
 
               {cfgError && <p className="text-error text-xs">{cfgError}</p>}

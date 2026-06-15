@@ -184,13 +184,19 @@ export function LocationDetail() {
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl font-bold text-fg leading-tight">{loc.name}</h1>
                   </div>
-                  <div className="flex items-center gap-3 flex-wrap mt-0.5">
+                  {loc.formattedAddress && (
+                    <div className="text-xs text-muted mt-0.5 max-w-lg leading-relaxed flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span>{loc.formattedAddress}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 flex-wrap mt-1">
                     {loc.infraType && (
                       <p className="text-[11px] font-mono uppercase text-primary tracking-wider">{loc.infraType.name}</p>
                     )}
                     {loc.latitude !== null && loc.longitude !== null && (
                       <button
-                        onClick={() => navigate(`/?lat=${loc.latitude}&lng=${loc.longitude}&selectId=${loc.id}`)}
+                        onClick={() => navigate(`/map?lat=${loc.latitude}&lng=${loc.longitude}&selectId=${loc.id}&search=${encodeURIComponent(loc.name)}`)}
                         className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded transition-all active:scale-95 shadow-sm"
                         title="Ver esta ubicación en el mapa"
                       >

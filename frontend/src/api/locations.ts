@@ -29,6 +29,10 @@ export function createLocation(body: {
   type?: string | null
   parentId?: number | null
   infraTypeId?: number | null
+  latitude?: number | null
+  longitude?: number | null
+  placeId?: string | null
+  formattedAddress?: string | null
 }): Promise<Location> {
   return apiFetch<ApiData<Location>>(`${API_BASE}/locations`, {
     method: 'POST',
@@ -45,6 +49,10 @@ export function updateLocation(
     type?: string | null
     parentId?: number | null
     infraTypeId?: number | null
+    latitude?: number | null
+    longitude?: number | null
+    placeId?: string | null
+    formattedAddress?: string | null
   },
 ): Promise<Location> {
   return apiFetch<ApiData<Location>>(`${API_BASE}/locations/${id}`, {

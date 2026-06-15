@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
-  ClipboardList, Warehouse, Package,
+  ClipboardList, Warehouse, Package, Map,
   Users, Settings, LogOut, Bell, Menu,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
 const GENERAL_ITEMS = [
   { to: '/', icon: Warehouse, label: 'Departamentos' },
+  { to: '/map', icon: Map, label: 'Mapa' },
   { to: '/actions', icon: ClipboardList, label: 'Trabajos' },
   { to: '/materials', icon: Package, label: 'Materiales' },
 ]
@@ -19,6 +20,7 @@ const ADMIN_ITEMS = [
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Departamentos', subtitle: '' },
+  '/map': { title: 'Mapa de Ubicaciones', subtitle: 'Ubicaciones geolocalizadas' },
   '/categories': { title: 'Navegador de Ubicaciones', subtitle: 'Ubicaciones registradas en la categoría' },
   '/locations': { title: 'Ficha de Ubicación', subtitle: 'Detalle de equipos, materiales y trabajos' },
   '/actions': { title: 'Gestión de Trabajos', subtitle: 'Registro y seguimiento de trabajos' },
@@ -148,7 +150,7 @@ export function Layout() {
       </aside>
 
       {/* Contenido principal */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <div className={`flex-1 flex flex-col min-w-0 ${location.pathname === '/map' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {/* Topbar */}
         <header className="min-h-[4.5rem] bg-card flex items-center justify-between px-7 py-4 shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}>
@@ -176,7 +178,7 @@ export function Layout() {
         </header>
 
 
-        <main className="flex-1 p-5 md:p-8">
+        <main className={`flex-1 p-5 md:p-8 ${location.pathname === '/map' ? 'flex flex-col overflow-hidden' : ''}`}>
           <Outlet />
         </main>
       </div>
