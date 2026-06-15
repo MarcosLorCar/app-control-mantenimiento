@@ -101,15 +101,20 @@ export function LocationsMapPage() {
   const defaultLng = Number(settings.find(s => s.key === 'default_longitude')?.value ?? '-3.9291')
   const defaultCenter = useMemo<[number, number]>(() => [defaultLat, defaultLng], [defaultLat, defaultLng])
 
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [filterTypeId, setFilterTypeId] = useState<number | ''>('')
   const [registerGeo, setRegisterGeo] = useState<Parameters<typeof LocationForm>[0]['initialGeo'] | null>(null)
   
+  // Sync search state when query params change
+  useEffect(() => {
+    setSearch(searchParams.get('search') ?? '')
+  }, [searchParams])
+
   // Clicking coordinates on map (when not on marker) to register location
   const [pendingClickCoords, setPendingClickCoords] = useState<[number, number] | null>(null)
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
-    setPendingClickCoords([lat, lng])
+    setPendingClickCoords(prev => (prev === null ? [lat, lng] : null))
   }, [])
 
   const paramLat = searchParams.get('lat')

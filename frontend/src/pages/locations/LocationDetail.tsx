@@ -196,7 +196,7 @@ export function LocationDetail() {
                     )}
                     {loc.latitude !== null && loc.longitude !== null && (
                       <button
-                        onClick={() => navigate(`/map?lat=${loc.latitude}&lng=${loc.longitude}&selectId=${loc.id}`)}
+                        onClick={() => navigate(`/map?lat=${loc.latitude}&lng=${loc.longitude}&selectId=${loc.id}&search=${encodeURIComponent(loc.name)}`)}
                         className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded transition-all active:scale-95 shadow-sm"
                         title="Ver esta ubicación en el mapa"
                       >
