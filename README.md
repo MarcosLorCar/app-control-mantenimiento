@@ -91,11 +91,20 @@ El botón de Google solo aparece en el login si el servidor tiene las credencial
 
 ### 2. Variables de entorno (`backend/.env`)
 
+Dev (`backend/.env`):
 ```env
 GOOGLE_CLIENT_ID=<client id>
 GOOGLE_CLIENT_SECRET=<client secret>
 GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
-FRONTEND_URL=https://localhost:5173   # en prod: https://tudominio.com
+FRONTEND_URL=https://localhost:5173
+```
+
+Prod:
+```env
+GOOGLE_CLIENT_ID=<client id>
+GOOGLE_CLIENT_SECRET=<client secret>
+GOOGLE_CALLBACK_URL=https://tudominio.com/api/v1/auth/google/callback
+FRONTEND_URL=https://tudominio.com
 ```
 
 ### Notas
