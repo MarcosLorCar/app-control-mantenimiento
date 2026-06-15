@@ -23,5 +23,13 @@ Push-Location backend
 npx prisma migrate dev
 Pop-Location
 
+$answer = Read-Host "→ Run seed? This will wipe and recreate all dev data [y/N]"
+if ($answer -match '^[Yy]$') {
+    Write-Host "→ Seeding..." -ForegroundColor Cyan
+    Push-Location backend
+    npx prisma db seed
+    Pop-Location
+}
+
 Write-Host "→ Starting dev servers..." -ForegroundColor Cyan
 npm run dev
