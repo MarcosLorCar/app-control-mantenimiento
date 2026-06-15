@@ -114,8 +114,12 @@ export function LocationsMapPage() {
   const [pendingClickCoords, setPendingClickCoords] = useState<[number, number] | null>(null)
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
-    setPendingClickCoords(prev => (prev === null ? [lat, lng] : null))
-  }, [])
+    if (pendingClickCoords !== null) {
+      setPendingClickCoords(null)
+      return
+    }
+    setPendingClickCoords([lat, lng])
+  }, [pendingClickCoords])
 
   const paramLat = searchParams.get('lat')
   const paramLng = searchParams.get('lng')
