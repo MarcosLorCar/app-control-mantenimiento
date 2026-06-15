@@ -2,6 +2,16 @@ import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, Navigate, useSearchParams } from 'react-router-dom'
 import { Warehouse } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { useQuery } from '@tanstack/react-query'
+import { apiFetch } from '../api/client'
+
+function useAuthProviders() {
+  return useQuery({
+    queryKey: ['auth', 'providers'],
+    queryFn: () => apiFetch<{ data: { google: boolean } }>('/api/v1/auth/providers').then(r => r.data),
+    staleTime: Infinity,
+  })
+}
 
 export function Login() {
   const { user, login } = useAuth()
@@ -11,6 +21,7 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { data: providers } = useAuthProviders()
 
   useEffect(() => {
     if (searchParams.get('error') === 'not_registered') {
@@ -73,18 +84,22 @@ export function Login() {
             </button>
           </div>
         </form>
-        <div className="mt-4 flex items-center gap-3">
-          <span className="flex-1 border-t border-app-border" />
-          <span className="text-xs text-muted">o</span>
-          <span className="flex-1 border-t border-app-border" />
-        </div>
-        <a
-          href="/api/v1/auth/google"
-          className="mt-4 w-full h-10 flex items-center justify-center gap-2 border border-app-border rounded-lg text-sm font-medium text-fg hover:bg-sidebar-bg transition-colors"
-        >
-          <GoogleIcon />
-          Iniciar sesión con Google
-        </a>
+        {providers?.google && (
+          <>
+            <div className="mt-4 flex items-center gap-3">
+              <span className="flex-1 border-t border-app-border" />
+              <span className="text-xs text-muted">o</span>
+              <span className="flex-1 border-t border-app-border" />
+            </div>
+            <a
+              href="/api/v1/auth/google"
+              className="mt-4 w-full h-10 flex items-center justify-center gap-2 border border-app-border rounded-lg text-sm font-medium text-fg hover:bg-sidebar-bg transition-colors"
+            >
+              <GoogleIcon />
+              Iniciar sesión con Google
+            </a>
+          </>
+        )}
       </div>
     </div>
   )

@@ -5,6 +5,10 @@ import { loginService, googleLoginService } from './auth.service'
 import { JwtPayload } from '@control-actions/shared'
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.get('/providers', async (_request, reply) => {
+    return reply.send({ data: { google: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) } })
+  })
+
   fastify.post('/login', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (request, reply) => {
     const result = LoginBodySchema.safeParse(request.body)
     if (!result.success) {
