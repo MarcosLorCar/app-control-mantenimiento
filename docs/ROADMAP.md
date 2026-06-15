@@ -65,4 +65,40 @@ Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL ·
 | 3 | docker-compose.prod.yml + .env.prod.example | ✅ completado |
 | 4 | Configuración inicial del VPS (Docker, SSH, Certbot) | ⬜ pendiente |
 | 5 | Pipeline CI/CD con GitHub Actions | ✅ completado |
+| 5b | Auto-deploy vía self-hosted runner en Proxmox | ⬜ pendiente |
 | 6 | Backup automático de BD + verificación final | ⬜ pendiente |
+
+### Notas — Task 5b (self-hosted runner)
+
+**Objetivo:** que el contenedor Proxmox se actualice solo tras cada push a `main`, sin exponer puertos.
+
+**Approach:** instalar un GitHub Actions self-hosted runner en el contenedor Proxmox. El runner abre conexión saliente a GitHub (no requiere abrir puertos). El workflow añade un job `deploy` que corre en ese runner y ejecuta:
+
+```bash
+docker compose -f docker-compose.ghcr.yml pull
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+**Pasos para activarlo:**
+
+1. Ir a GitHub repo → Settings → Actions → Runners → **New self-hosted runner**
+2. Seguir las instrucciones de Linux que da GitHub en el contenedor Proxmox
+3. Registrar como servicio systemd:
+   ```bash
+   sudo ./svc.sh install && sudo ./svc.sh start
+   ```
+4. Añadir el job `deploy` a `.github/workflows/docker-build-push.yml`:
+   ```yaml
+   deploy:
+     needs: build-and-push
+     runs-on: self-hosted
+     if: github.ref == 'refs/heads/main'
+     steps:
+       - uses: actions/checkout@v4
+       - name: Pull and restart containers
+         run: |
+           docker compose -f docker-compose.ghcr.yml pull
+           docker compose -f docker-compose.ghcr.yml up -d
+   ```
+
+**Bloqueado en:** acceso a Settings del repo de GitHub para obtener el token de registro del runner.
