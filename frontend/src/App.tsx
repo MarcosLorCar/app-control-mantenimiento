@@ -14,6 +14,7 @@ import { ActionsPage } from './pages/actions/ActionsPage'
 import { ActionDetail } from './pages/actions/ActionDetail'
 import { ActionFormPage } from './pages/actions/ActionFormPage'
 import { MaterialsPage } from './pages/materials/MaterialsPage'
+import { LocationsMapPage } from './pages/locations/LocationsMapPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -35,6 +36,7 @@ export default function App() {
                 <Route path="/actions" element={<ActionsPage />} />
                 <Route path="/actions/new" element={<ActionFormPage />} />
                 <Route path="/actions/:id" element={<ActionDetail />} />
+                <Route path="/map" element={<LocationsMapPage />} />
                 <Route path="/materials" element={<MaterialsPage />} />
                 <Route path="/admin" element={<Users />} />
                 <Route path="/admin/catalog" element={<Catalog />} />
