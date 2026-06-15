@@ -4,9 +4,14 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'shared/**'
+      - 'backend/Dockerfile'
+      - 'frontend/Dockerfile'
+      - 'nginx.conf'
+      - '.github/workflows/docker-build-push.yml'
   workflow_dispatch:
 
 env:
