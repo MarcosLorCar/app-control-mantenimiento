@@ -24,8 +24,11 @@ export function Login() {
   const { data: providers } = useAuthProviders()
 
   useEffect(() => {
-    if (searchParams.get('error') === 'not_registered') {
+    const oauthError = searchParams.get('error')
+    if (oauthError === 'not_registered') {
       setError('Tu cuenta de Google no está registrada en el sistema.')
+    } else if (oauthError === 'oauth_error') {
+      setError('Error al conectar con Google. Inténtalo de nuevo.')
     }
   }, [searchParams])
 

@@ -73,7 +73,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         headers: { Authorization: `Bearer ${token.token.access_token}` },
       })
       const { email } = (await resp.json()) as { email: string }
-      const data = await googleLoginService(fastify.db, fastify, email)
+      const data = await googleLoginService(fastify.db, email)
       const refreshToken = await reply.refreshJwtSign({ sub: data.userId } as unknown as JwtPayload, { expiresIn: '7d' })
       reply.setCookie('refreshToken', refreshToken, {
         httpOnly: true,
@@ -83,8 +83,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
         maxAge: 7 * 24 * 60 * 60,
       })
       return reply.redirect(frontendUrl)
-    } catch {
-      return reply.redirect(`${frontendUrl}/login?error=not_registered`)
+    } catch (err: any) {
+      const errorCode = err?.code === 'NOT_REGISTERED' ? 'not_registered' : 'oauth_error'
+      return reply.redirect(`${frontendUrl}/login?error=${errorCode}`)
     }
   })
 
