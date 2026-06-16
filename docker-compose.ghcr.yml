@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/javierloro/infragest-backend:latest
+    image: ghcr.io/marcoslorcar/infragest-backend:latest
     container_name: infragest-backend-prod
     environment:
       NODE_ENV: production
@@ -45,7 +45,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/javierloro/infragest-frontend:latest
+    image: ghcr.io/marcoslorcar/infragest-frontend:latest
     container_name: infragest-frontend-prod
     ports:
       - "8080:80"

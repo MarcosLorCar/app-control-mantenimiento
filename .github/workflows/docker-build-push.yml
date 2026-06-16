@@ -16,7 +16,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  OWNER: javierloro
+  OWNER: marcoslorcar
 
 jobs:
   build-and-push:
