@@ -38,6 +38,8 @@ export interface Location {
   description: string | null
   latitude: number | null
   longitude: number | null
+  placeId: string | null
+  formattedAddress: string | null
   image: string | null
   path: string
   parentId: number | null

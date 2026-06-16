@@ -70,8 +70,10 @@ model Location {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  latitude    Float?
-  longitude   Float?
+  latitude         Float?
+  longitude        Float?
+  placeId          String?
+  formattedAddress String?
   image       String?   // <--- Image path of the location
 
   infraTypeId Int

@@ -1,25 +1,34 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { useCreateLocation, useUpdateLocation } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { useSystemSettings } from '../../hooks/useSystemSettings'
 import { LocationMap } from '../ui/LocationMap'
-import { MapPin } from 'lucide-react'
+import { MapPin, X } from 'lucide-react'
 import type { Location } from '../../api/types'
 
+interface InitialGeo {
+  lat: number
+  lng: number
+  placeId?: string | null
+  formattedAddress?: string | null
+  name?: string | null
+  description?: string | null
+}
 
 interface Props {
   parentId?: number | null
   infraTypeId?: number | null
   existing?: Location
+  initialGeo?: InitialGeo
   onClose: () => void
   onSuccess?: (created: Location) => void
 }
 
-export function LocationForm({ parentId, infraTypeId, existing, onClose, onSuccess }: Props) {
+export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onClose, onSuccess }: Props) {
   const isEdit = !!existing
-  const [name, setName] = useState(existing?.name ?? '')
-  const [description, setDescription] = useState(existing?.description ?? '')
+  const [name, setName] = useState(existing?.name ?? initialGeo?.name ?? '')
+  const [description, setDescription] = useState(existing?.description ?? initialGeo?.description ?? '')
   const [selectedInfraTypeId, setSelectedInfraTypeId] = useState<number | ''>(
     existing?.infraTypeId ?? infraTypeId ?? ''
   )
@@ -32,12 +41,13 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
     ? [Number(defaultLatSetting), Number(defaultLngSetting)]
     : [38.9863, -3.9291]
 
-  const [hasGeolocation, setHasGeolocation] = useState(
-    existing?.latitude !== null && existing?.longitude !== null && existing?.latitude !== undefined
-  )
-  const [latitude, setLatitude] = useState<number | null>(existing?.latitude ?? null)
-  const [longitude, setLongitude] = useState<number | null>(existing?.longitude ?? null)
-  const [showMapModal, setShowMapModal] = useState(false)
+  const [latitude, setLatitude] = useState<number | null>(existing?.latitude ?? initialGeo?.lat ?? null)
+  const [longitude, setLongitude] = useState<number | null>(existing?.longitude ?? initialGeo?.lng ?? null)
+  const [placeId, setPlaceId] = useState<string | null>(existing?.placeId ?? initialGeo?.placeId ?? null)
+  const [formattedAddress, setFormattedAddress] = useState<string | null>(existing?.formattedAddress ?? initialGeo?.formattedAddress ?? null)
+
+  // Map selector modal state
+  const [showMapSelector, setShowMapSelector] = useState(false)
   const [tempLat, setTempLat] = useState<number | null>(null)
   const [tempLng, setTempLng] = useState<number | null>(null)
 
@@ -48,6 +58,53 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
 
   const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
 
+  function clearGeo() {
+    setLatitude(null)
+    setLongitude(null)
+    setPlaceId(null)
+    setFormattedAddress(null)
+  }
+
+  function openMapSelector() {
+    setTempLat(latitude ?? defaultCenterCoords[0])
+    setTempLng(longitude ?? defaultCenterCoords[1])
+    setShowMapSelector(true)
+  }
+
+  async function handleConfirmMap() {
+    if (tempLat !== null && tempLng !== null) {
+      setLatitude(tempLat)
+      setLongitude(tempLng)
+      
+      // Default to coordinate string fallback in case geocoding fails or is slow
+      setFormattedAddress(`${tempLat.toFixed(5)}, ${tempLng.toFixed(5)}`)
+      setPlaceId(null)
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${tempLat}&lon=${tempLng}&format=json`,
+          {
+            headers: {
+              'User-Agent': 'InfraGest/1.0',
+            },
+          }
+        )
+        if (response.ok) {
+          const data = await response.json()
+          if (data.display_name) {
+            setFormattedAddress(data.display_name)
+          }
+          if (data.place_id) {
+            setPlaceId(String(data.place_id))
+          }
+        }
+      } catch (err) {
+        console.error('Error in reverse geocoding:', err)
+      }
+    }
+    setShowMapSelector(false)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -56,8 +113,10 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
       description: description.trim() || null,
       infraTypeId: selectedInfraTypeId ? Number(selectedInfraTypeId) : null,
       parentId: isEdit ? existing?.parentId : parentId ?? null,
-      latitude: hasGeolocation ? (latitude ?? defaultCenterCoords[0]) : null,
-      longitude: hasGeolocation ? (longitude ?? defaultCenterCoords[1]) : null,
+      latitude: latitude,
+      longitude: longitude,
+      placeId: placeId,
+      formattedAddress: formattedAddress,
     }
 
     if (!body.name) {
@@ -72,7 +131,7 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
 
     if (isEdit) {
       updateLoc.mutate(
-        { id: existing!.id, body: body as any },
+        { id: existing!.id, body },
         {
           onSuccess: (data) => {
             if (onSuccess) onSuccess(data)
@@ -83,7 +142,7 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
       )
     } else {
       createLoc.mutate(
-        body as any,
+        body,
         {
           onSuccess: (data) => {
             if (onSuccess) onSuccess(data)
@@ -100,14 +159,44 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-semibold text-fg-secondary mb-1">Nombre <span className="text-error">*</span></label>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Nombre de la ubicación"
-            className={inputCls}
-            required
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Nombre de la ubicación"
+              className={inputCls + ' flex-1'}
+              required
+            />
+            <button
+              type="button"
+              onClick={openMapSelector}
+              title="Seleccionar ubicación en el mapa"
+              className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-lg border transition-colors ${
+                latitude !== null
+                  ? 'bg-primary text-primary-fg border-primary hover:bg-[var(--primary-hover)]'
+                  : 'bg-card text-muted border-app-border hover:bg-app-bg hover:text-primary hover:border-primary'
+              }`}
+            >
+              <MapPin className="w-4 h-4" />
+            </button>
+          </div>
+          {latitude !== null && longitude !== null && (
+            <div className="flex items-center gap-1 mt-1.5 text-xs text-muted">
+              <MapPin className="w-3 h-3 shrink-0 text-primary" />
+              <span className="truncate flex-1">
+                {formattedAddress ?? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}
+              </span>
+              <button
+                type="button"
+                onClick={clearGeo}
+                className="shrink-0 hover:text-error transition-colors"
+                title="Quitar ubicación"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         {(!parentId || (isEdit && !existing?.parentId)) && (
@@ -138,55 +227,6 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
           />
         </div>
 
-        {/* Geolocalización */}
-        <div className="flex items-center justify-between py-2 border-t border-app-border/40 mt-2">
-          <div>
-            <label className="block text-xs font-semibold text-fg-secondary">Habilitar Geolocalización</label>
-            <p className="text-[10px] text-muted">Permite ubicar esta infraestructura en el mapa principal</p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={hasGeolocation}
-              onChange={e => {
-                const checked = e.target.checked
-                setHasGeolocation(checked)
-                if (checked && !latitude) {
-                  setLatitude(defaultCenterCoords[0])
-                  setLongitude(defaultCenterCoords[1])
-                }
-              }}
-              className="sr-only peer"
-            />
-            <div className="w-9 h-5 bg-muted rounded-full peer peer-focus:ring-2 peer-focus:ring-primary/30 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-          </label>
-        </div>
-
-        {hasGeolocation && (
-          <div className="flex flex-col gap-2 p-3 bg-app-bg/50 border border-app-border rounded-lg">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-fg-secondary font-medium">Ubicación GPS:</span>
-              <span className="font-mono text-muted text-[11px]">
-                {latitude !== null && longitude !== null
-                  ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
-                  : 'Sin seleccionar'}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setTempLat(latitude ?? defaultCenterCoords[0])
-                setTempLng(longitude ?? defaultCenterCoords[1])
-                setShowMapModal(true)
-              }}
-              className="w-full py-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              {latitude !== null && longitude !== null ? 'Modificar en el mapa' : 'Seleccionar en el mapa'}
-            </button>
-          </div>
-        )}
-
         {error && <p className="text-error text-sm">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
@@ -207,10 +247,13 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
         </div>
       </form>
 
-      {showMapModal && (
-        <Modal title="Seleccionar Ubicación" onClose={() => setShowMapModal(false)} size="2xl">
-          <div className="space-y-4 flex flex-col h-full flex-1">
-            <div className="border border-app-border rounded-lg overflow-hidden flex-1">
+      {showMapSelector && (
+        <Modal title="Seleccionar ubicación" onClose={() => setShowMapSelector(false)} size="full">
+          <div className="flex-1 flex flex-col min-h-0 space-y-4">
+            <div className="text-sm text-fg-secondary">
+              Haz clic en el mapa o arrastra el marcador para seleccionar la ubicación exacta.
+            </div>
+            <div className="flex-1 flex flex-col min-h-0">
               <LocationMap
                 latitude={tempLat}
                 longitude={tempLng}
@@ -219,27 +262,23 @@ export function LocationForm({ parentId, infraTypeId, existing, onClose, onSucce
                   setTempLat(lat)
                   setTempLng(lng)
                 }}
-                className="h-[60vh] min-h-[320px]"
+                className="min-h-0"
               />
             </div>
-            <div className="flex justify-end gap-3 pt-2 shrink-0">
+            <div className="flex justify-end gap-3 pt-2 shrink-0 border-t border-app-border">
               <button
                 type="button"
-                onClick={() => setShowMapModal(false)}
+                onClick={() => setShowMapSelector(false)}
                 className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setLatitude(tempLat)
-                  setLongitude(tempLng)
-                  setShowMapModal(false)
-                }}
-                className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] transition-colors font-semibold"
+                onClick={handleConfirmMap}
+                className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] transition-colors"
               >
-                Aceptar
+                Confirmar
               </button>
             </div>
           </div>
