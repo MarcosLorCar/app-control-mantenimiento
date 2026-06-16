@@ -124,6 +124,7 @@ describe('POST /api/v1/auth/logout', () => {
 
 describe('must_change_password enforcement', () => {
   it('usuario con mustChangePassword=true recibe 403 en endpoints de escritura', async () => {
+    await clearDb()
     const seed = await seedTestData()
 
     const user = await testDb.user.create({
@@ -157,6 +158,7 @@ describe('must_change_password enforcement', () => {
   })
 
   it('usuario con mustChangePassword=true puede cambiar su contraseña', async () => {
+    await clearDb()
     const seed = await seedTestData()
 
     const loginRes = await app.inject({

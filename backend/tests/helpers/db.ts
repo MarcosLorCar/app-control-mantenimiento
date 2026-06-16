@@ -23,7 +23,6 @@ export async function clearDb(db: PrismaClient = testDb) {
 let cachedHash: string | null = null
 
 export async function seedTestData(db: PrismaClient = testDb) {
-  await clearDb(db)
   const managerRole = await db.role.create({
     data: { name: 'admin', canWrite: true, canManage: true },
   })

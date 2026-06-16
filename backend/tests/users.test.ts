@@ -113,6 +113,7 @@ describe('DELETE /api/v1/users/:id', () => {
   })
 
   it('soft-delete usuario con acciones devuelve 200 (no falla por FK)', async () => {
+    await clearDb()
     const seed = await seedTestData()
 
     const newUser = await testDb.user.create({
