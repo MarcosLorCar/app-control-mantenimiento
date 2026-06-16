@@ -25,7 +25,19 @@ export interface AppOptions {
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test', trustProxy: true })
 
-  await app.register(fastifyHelmet, { global: true })
+  await app.register(fastifyHelmet, {
+    global: true,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", 'data:', 'blob:', '*.tile.openstreetmap.org', '*.openstreetmap.org'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+        fontSrc: ["'self'", 'fonts.gstatic.com'],
+        scriptSrc: ["'self'"],
+        connectSrc: ["'self'", 'nominatim.openstreetmap.org'],
+      },
+    },
+  })
   await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' })
   await app.register(fastifyCookie)
   await app.register(fastifyJwt, {
