@@ -62,7 +62,7 @@ Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL ·
 |---|------|--------|
 | 1 | Dockerfile multi-stage del backend | ✅ completado |
 | 2 | Configuración Nginx (TLS + proxy /api + SPA estático) | ✅ completado |
-| 3 | docker-compose.prod.yml + .env.prod.example | ✅ completado |
+| 3 | docker-compose.ghcr.yml + .env.example (producción) | ✅ completado |
 | 4 | Configuración inicial del VPS (Docker, SSH, Certbot) | ⬜ pendiente |
 | 5 | Pipeline CI/CD con GitHub Actions | ✅ completado |
 | 5b | Auto-deploy vía self-hosted runner en Proxmox | ⬜ pendiente |

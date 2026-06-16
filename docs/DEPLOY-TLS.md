@@ -25,15 +25,40 @@ automáticamente certificados Let's Encrypt. No necesitáis nada más.
 
 **Cómo usarlo:**
 
-1. Copiar `docker-compose.caddy.yml` y `Caddyfile` a la carpeta de despliegue.
-2. En el `Caddyfile`, sustituir `tudominio.com` por vuestro dominio real y el email.
-3. Levantar con:
+1. Crear `Caddyfile` en la carpeta de despliegue con el siguiente contenido:
+   ```
+   tudominio.com {
+     reverse_proxy infragest-frontend-prod:80
+   }
+   ```
+2. Crear `docker-compose.caddy.yml`:
+   ```yaml
+   services:
+     caddy:
+       image: caddy:2-alpine
+       restart: unless-stopped
+       ports:
+         - "80:80"
+         - "443:443"
+       volumes:
+         - ./Caddyfile:/etc/caddy/Caddyfile
+         - caddy_data:/data
+         - caddy_config:/config
+       networks:
+         - infragest_default
+   volumes:
+     caddy_data:
+     caddy_config:
+   networks:
+     infragest_default:
+       external: true
+   ```
+3. Sustituir `tudominio.com` por vuestro dominio real.
+4. Levantar con:
    ```bash
    docker compose -f docker-compose.ghcr.yml -f docker-compose.caddy.yml up -d
    ```
-4. Caddy obtiene el certificado en el primer arranque (necesita que el dominio ya apunte al servidor).
-
-Los archivos listos están en la raíz del proyecto: `Caddyfile` y `docker-compose.caddy.yml`.
+5. Caddy obtiene el certificado en el primer arranque (necesita que el dominio ya apunte al servidor).
 
 ---
 
