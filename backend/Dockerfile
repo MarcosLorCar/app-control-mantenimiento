@@ -1,3 +1,21 @@
+# Stage 0: Build the frontend
+FROM node:20-slim AS frontend-builder
+WORKDIR /app
+
+COPY package*.json ./
+COPY frontend/package*.json ./frontend/
+COPY shared/package*.json ./shared/
+COPY backend/package*.json ./backend/
+
+RUN npm ci --workspace=@infragest/frontend --workspace=@infragest/shared && \
+    npm install @rollup/rollup-linux-x64-gnu
+
+COPY shared/ ./shared/
+COPY frontend/ ./frontend/
+
+WORKDIR /app/frontend
+RUN npm run build
+
 # Stage 1: Build the backend and shared folders
 FROM node:20-alpine AS builder
 RUN apk add --no-cache openssl
@@ -45,6 +63,9 @@ COPY --from=builder /app/backend/prisma ./backend/prisma
 COPY --from=builder /app/shared ./shared
 
 WORKDIR /app/backend
+
+# Bundle the frontend static files so Fastify can serve the SPA
+COPY --from=frontend-builder /app/frontend/dist ./public/
 
 # Add entrypoint script to run migrations and start server
 COPY backend/docker-entrypoint.sh ./

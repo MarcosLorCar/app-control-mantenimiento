@@ -9,6 +9,7 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'script',
       devOptions: {
         enabled: true
       },

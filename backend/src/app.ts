@@ -7,6 +7,7 @@ import fastifyStatic from '@fastify/static'
 import fastifyRateLimit from '@fastify/rate-limit'
 import fastifyOauth2 from '@fastify/oauth2'
 import path from 'path'
+import fs from 'fs'
 import prismaPlugin from './plugins/prisma.plugin'
 import authPlugin from './plugins/auth.plugin'
 import authRoutes from './modules/auth/auth.routes'
@@ -38,7 +39,11 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
       },
     },
   })
-  await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' })
+  await app.register(fastifyRateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+    skip: (request) => !request.url.startsWith('/api/'),
+  })
   await app.register(fastifyCookie)
   await app.register(fastifyJwt, {
     secret: opts.jwtSecret,
@@ -58,6 +63,16 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     prefix: '/uploads/',
     decorateReply: false,
   })
+
+  const frontendDist = path.join(process.cwd(), 'public')
+  const serveFrontend = fs.existsSync(frontendDist)
+  if (serveFrontend) {
+    await app.register(fastifyStatic, {
+      root: frontendDist,
+      prefix: '/',
+      decorateReply: false,
+    })
+  }
   await app.register(prismaPlugin)
   await app.register(authPlugin)
 
@@ -100,6 +115,15 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await app.register(actionsRoutes, { prefix: '/api/v1' })
   await app.register(materialCatalogRoutes, { prefix: '/api/v1' })
   await app.register(materialsRoutes, { prefix: '/api/v1' })
+
+  if (serveFrontend) {
+    app.setNotFoundHandler(async (request, reply) => {
+      if (request.url.startsWith('/api/') || request.url.startsWith('/uploads/')) {
+        return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Not found' } })
+      }
+      return reply.type('text/html').send(fs.createReadStream(path.join(frontendDist, 'index.html')))
+    })
+  }
 
   return app
 }
