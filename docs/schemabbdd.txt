@@ -1,6 +1,6 @@
 // infragest — Database Schema (DBML)
 // Fuente de verdad: backend/prisma/schema.prisma
-// Actualizado: 2026-06-16
+// Actualizado: 2026-06-17
 
 // ==================== AUTH / USERS ====================
 
@@ -51,8 +51,10 @@ Table locations {
   deleted_at    timestamp
   latitude      float
   longitude     float
-  image         varchar   [note: 'Path to location image']
-  infra_type_id int       [not null, ref: > infrastructure_types.id]
+  image             varchar   [note: 'Path to location image']
+  place_id          varchar   [note: 'Nominatim place ID from reverse geocoding']
+  formatted_address varchar   [note: 'Human-readable address from Nominatim']
+  infra_type_id     int       [not null, ref: > infrastructure_types.id]
   parent_id     int       [ref: > locations.id]
 
   indexes {

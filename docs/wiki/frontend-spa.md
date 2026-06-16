@@ -26,4 +26,4 @@
 
 ## Map
 
-Leaflet + react-leaflet se usa en `LocationsMapPage` para visualizar ubicaciones geolocalizadas. Las coordenadas (`latitude`, `longitude`) se almacenan en el modelo `Location`.
+Leaflet + react-leaflet se usa en `LocationsMapPage` para visualizar ubicaciones geolocalizadas. Las coordenadas (`latitude`, `longitude`) se almacenan en el modelo `Location`. El geocodificado inverso usa la API de Nominatim (OpenStreetMap) para obtener `placeId` y `formattedAddress`.

@@ -23,5 +23,6 @@
 - `users`, `locations`, `infrastructure_types`, `material_types`, and `materials` have a `deleted_at` field for soft delete support.
 - `actions` support updates (`PATCH`) and hard deletes (`DELETE`). They do not have soft delete.
 - `Location.path` uses a materialized path format (`/rootId/.../selfId/`) for fast subtree queries.
+- `Location.placeId` and `Location.formattedAddress` store the result of reverse geocoding via Nominatim (OpenStreetMap).
 - `MaterialType.customAttributes` and `Material.attributes` are freeform JSON columns.
 - `ActionMaterial.snapshot` captures the material state at the time of the action (denormalized audit trail).
