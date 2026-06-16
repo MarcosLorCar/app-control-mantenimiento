@@ -42,7 +42,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   await app.register(fastifyRateLimit, {
     max: 100,
     timeWindow: '1 minute',
-    skip: (request) => !request.url.startsWith('/api/'),
+    allowList: (request) => !request.url.startsWith('/api/'),
   })
   await app.register(fastifyCookie)
   await app.register(fastifyJwt, {
