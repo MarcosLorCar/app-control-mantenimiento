@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance } from 'fastify'
+import fastifyHelmet from '@fastify/helmet'
 import fastifyJwt from '@fastify/jwt'
 import fastifyCookie from '@fastify/cookie'
 import fastifyMultipart from '@fastify/multipart'
@@ -22,8 +23,9 @@ export interface AppOptions {
 }
 
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
-  const app = Fastify({ logger: process.env.NODE_ENV !== 'test' })
+  const app = Fastify({ logger: process.env.NODE_ENV !== 'test', trustProxy: true })
 
+  await app.register(fastifyHelmet, { global: true })
   await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' })
   await app.register(fastifyCookie)
   await app.register(fastifyJwt, {
@@ -66,8 +68,14 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error)
     const statusCode = error.statusCode ?? 500
+    const isServerError = statusCode >= 500
     reply.code(statusCode).send({
-      error: { code: error.code ?? 'INTERNAL_ERROR', message: error.message },
+      error: {
+        code: error.code ?? 'INTERNAL_ERROR',
+        message: isServerError && process.env.NODE_ENV === 'production'
+          ? 'Error interno del servidor'
+          : error.message,
+      },
     })
   })
 
