@@ -65,7 +65,7 @@ Abre: [http://localhost:5173](http://localhost:5173) (El frontend hace proxy de 
 
 ## Usuarios de desarrollo (seed)
 
-Ejecutar el seed para crear los usuarios iniciales:
+Ejecutar el seed para crear los roles y usuarios de prueba (⚠️ **borra todos los datos existentes**):
 
 ```bash
 cd backend && npx prisma db seed
@@ -75,6 +75,41 @@ cd backend && npx prisma db seed
 |-------|----------|-----|
 | `admin@example.com` | `admin1234` | admin (todos los permisos) |
 | `editor@example.com` | `editor1234` | editor (solo escritura) |
+
+> El seed es solo para desarrollo local. En producción los roles se crean automáticamente
+> y el primer admin viene de las variables de entorno `ADMIN_EMAIL` / `ADMIN_PASSWORD` (ver más abajo).
+
+---
+
+## Despliegue en producción
+
+Las imágenes Docker se publican automáticamente en GHCR al hacer push a `main`.
+Para desplegarlas:
+
+```bash
+# Copiar .env.example → .env y rellenar todos los valores
+cp .env.example .env
+
+# Levantar
+./deploy.sh
+```
+
+### Variables de entorno obligatorias (`.env`)
+
+| Variable | Descripción |
+|----------|-------------|
+| `POSTGRES_PASSWORD` | Contraseña de la base de datos |
+| `JWT_SECRET` | Secreto para access tokens (mínimo 32 caracteres) |
+| `JWT_REFRESH_SECRET` | Secreto para refresh tokens (mínimo 32 caracteres) |
+| `ADMIN_EMAIL` | Email del primer administrador (se crea al arrancar) |
+| `ADMIN_PASSWORD` | Contraseña inicial del admin (deberá cambiarla en el primer login) |
+
+El bootstrap es **idempotente**: en cada reinicio del contenedor comprueba si los roles y el admin
+ya existen, y si es así no hace nada. La contraseña del admin nunca se sobreescribe en reinicios.
+
+### HTTPS / TLS
+
+Ver [`docs/DEPLOY-TLS.md`](docs/DEPLOY-TLS.md) para las opciones disponibles (Caddy, Cloudflare, certbot) con pros y contras.
 
 ---
 
