@@ -10,6 +10,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'script',
+      workbox: {
+        // Don't let the SPA navigation fallback swallow backend routes
+        // (e.g. the OAuth callback must reach the server, not render index.html)
+        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
+      },
       devOptions: {
         enabled: true
       },
