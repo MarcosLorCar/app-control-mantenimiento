@@ -76,4 +76,4 @@ Producción: **Azure App Service for Containers** en `https://infragest.azureweb
 
 - **TLS:** Azure termina HTTPS automáticamente en `*.azurewebsites.net`; no hace falta Certbot. Sin dominio personalizado (el host de Azure es suficiente).
 - **Backups:** Azure Postgres Flexible Server hace backups automáticos point-in-time (retención 7 días por defecto). Lo único pendiente es **probar una restauración** alguna vez para verificar el procedimiento.
-- **Autoalojamiento (Proxmox/VPS):** descartado. El path de `docker-compose.ghcr.yml` + Caddy/Certbot (ver `docs/DEPLOY-TLS.md`) sigue siendo válido si alguien quiere autoalojar, pero ya no es la producción.
+- **Autoalojamiento (Proxmox/VPS):** retirado por completo.

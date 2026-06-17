@@ -109,7 +109,7 @@ ya existen, y si es así no hace nada. La contraseña del admin nunca se sobrees
 
 ### HTTPS / TLS
 
-Ver [`docs/DEPLOY-TLS.md`](docs/DEPLOY-TLS.md) para las opciones disponibles (Caddy, Cloudflare, certbot) con pros y contras.
+En producción (Azure App Service) el TLS lo gestiona la plataforma automáticamente en `*.azurewebsites.net`; no hay que configurar nada.
 
 ---
 
