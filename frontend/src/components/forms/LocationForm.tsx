@@ -4,6 +4,7 @@ import { useCreateLocation, useUpdateLocation } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { useSystemSettings } from '../../hooks/useSystemSettings'
 import { LocationMap } from '../ui/LocationMap'
+import { reverseGeocode } from '../../utils/geocode'
 import { MapPin, X } from 'lucide-react'
 import type { Location } from '../../api/types'
 
@@ -80,27 +81,9 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
       setFormattedAddress(`${tempLat.toFixed(5)}, ${tempLng.toFixed(5)}`)
       setPlaceId(null)
 
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${tempLat}&lon=${tempLng}&format=json&accept-language=es`,
-          {
-            headers: {
-              'User-Agent': 'InfraGest/1.0',
-            },
-          }
-        )
-        if (response.ok) {
-          const data = await response.json()
-          if (data.display_name) {
-            setFormattedAddress(data.display_name)
-          }
-          if (data.place_id) {
-            setPlaceId(String(data.place_id))
-          }
-        }
-      } catch (err) {
-        console.error('Error in reverse geocoding:', err)
-      }
+      const { formattedAddress, placeId } = await reverseGeocode(tempLat, tempLng)
+      setFormattedAddress(formattedAddress)
+      setPlaceId(placeId)
     }
     setShowMapSelector(false)
   }
