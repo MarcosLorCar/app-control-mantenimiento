@@ -56,49 +56,24 @@ Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL ·
 
 ---
 
-## Plan 4 — Deploy (Docker + CI/CD)
+## Plan 4 — Deploy (Azure App Service + CI/CD)
+
+Producción: **Azure App Service for Containers** en `https://infragest.azurewebsites.net`, sirviendo una imagen única co-hospedada (backend + SPA) desde GHCR. Migrado desde el autoalojamiento en Proxmox (ya retirado).
 
 | # | Task | Estado |
 |---|------|--------|
-| 1 | Dockerfile multi-stage del backend | ✅ completado |
+| 1 | Dockerfile multi-stage (backend + SPA en un solo contenedor) | ✅ completado |
 | 2 | Backend Fastify sirve la SPA estática + API en un único contenedor (nginx eliminado) | ✅ completado |
-| 3 | docker-compose.ghcr.yml + .env.example (producción) | ✅ completado |
-| 4 | Configuración inicial del VPS (Docker, SSH, Certbot) | ⬜ pendiente |
-| 5 | Pipeline CI/CD con GitHub Actions | ✅ completado |
-| 5b | Auto-deploy vía self-hosted runner en Proxmox | ⬜ pendiente |
-| 6 | Backup automático de BD + verificación final | ⬜ pendiente |
+| 3 | Pipeline CI/CD (GitHub Actions → GHCR `infragest-app:latest`) | ✅ completado |
+| 4 | Azure App Service for Containers (pull de GHCR, puerto 3000, TLS gestionado) | ✅ completado |
+| 5 | Azure Database for PostgreSQL (Flexible Server) + migración de datos | ✅ completado |
+| 6 | Persistencia de uploads (Azure Files montado en `/app/backend/uploads`) | ✅ completado |
+| 7 | Google OAuth (env vars + callback) | ✅ completado |
+| 8 | Continuous Deployment (webhook GHCR → App Service re-pull en cada push a `main`) | ✅ completado |
+| 9 | Probar una restauración de backup | ⬜ pendiente |
 
-### Notas — Task 5b (self-hosted runner)
+### Notas
 
-**Objetivo:** que el contenedor Proxmox se actualice solo tras cada push a `main`, sin exponer puertos.
-
-**Approach:** instalar un GitHub Actions self-hosted runner en el contenedor Proxmox. El runner abre conexión saliente a GitHub (no requiere abrir puertos). El workflow añade un job `deploy` que corre en ese runner y ejecuta:
-
-```bash
-docker compose -f docker-compose.ghcr.yml pull
-docker compose -f docker-compose.ghcr.yml up -d
-```
-
-**Pasos para activarlo:**
-
-1. Ir a GitHub repo → Settings → Actions → Runners → **New self-hosted runner**
-2. Seguir las instrucciones de Linux que da GitHub en el contenedor Proxmox
-3. Registrar como servicio systemd:
-   ```bash
-   sudo ./svc.sh install && sudo ./svc.sh start
-   ```
-4. Añadir el job `deploy` a `.github/workflows/docker-build-push.yml`:
-   ```yaml
-   deploy:
-     needs: build-and-push
-     runs-on: self-hosted
-     if: github.ref == 'refs/heads/main'
-     steps:
-       - uses: actions/checkout@v4
-       - name: Pull and restart containers
-         run: |
-           docker compose -f docker-compose.ghcr.yml pull
-           docker compose -f docker-compose.ghcr.yml up -d
-   ```
-
-**Bloqueado en:** acceso a Settings del repo de GitHub para obtener el token de registro del runner.
+- **TLS:** Azure termina HTTPS automáticamente en `*.azurewebsites.net`; no hace falta Certbot. Sin dominio personalizado (el host de Azure es suficiente).
+- **Backups:** Azure Postgres Flexible Server hace backups automáticos point-in-time (retención 7 días por defecto). Lo único pendiente es **probar una restauración** alguna vez para verificar el procedimiento.
+- **Autoalojamiento (Proxmox/VPS):** descartado. El path de `docker-compose.ghcr.yml` + Caddy/Certbot (ver `docs/DEPLOY-TLS.md`) sigue siendo válido si alguien quiere autoalojar, pero ya no es la producción.
