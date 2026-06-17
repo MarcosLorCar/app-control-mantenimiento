@@ -6,6 +6,7 @@ import {
   useFixedProperties, useCreateFixedProperty, useDeleteFixedProperty
 } from '../../hooks/useCatalog'
 import { useSystemSettings, useUpdateSystemSettings } from '../../hooks/useSystemSettings'
+import { useHealth } from '../../hooks/useHealth'
 import { useAuth } from '../../hooks/useAuth'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
 import { CategoryEditModal } from '../../components/forms/CategoryEditModal'
@@ -30,6 +31,7 @@ export function Catalog() {
 
   const { data: settings = [] } = useSystemSettings()
   const updateSettings = useUpdateSystemSettings()
+  const { data: health } = useHealth()
 
   const defaultLat = settings.find(s => s.key === 'default_latitude')?.value ?? ''
   const defaultLng = settings.find(s => s.key === 'default_longitude')?.value ?? ''
@@ -452,6 +454,12 @@ export function Catalog() {
         </div>
 
       </div>
+
+      {health?.version && (
+        <p className="text-[11px] font-mono text-muted text-right">
+          Versión desplegada: {health.version.slice(0, 7)}
+        </p>
+      )}
 
       {editingCat && (
         <CategoryEditModal

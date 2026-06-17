@@ -3,6 +3,9 @@
 # Starts the dev DB, runs any pending migrations, then launches backend + frontend.
 set -e
 
+echo "→ Installing dependencies..."
+npm install
+
 echo "→ Starting DB container..."
 docker compose up -d
 
