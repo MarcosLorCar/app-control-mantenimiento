@@ -70,10 +70,10 @@ Producción: **Azure App Service for Containers** en `https://infragest.azureweb
 | 6 | Persistencia de uploads (Azure Files montado en `/app/backend/uploads`) | ✅ completado |
 | 7 | Google OAuth (env vars + callback) | ✅ completado |
 | 8 | Continuous Deployment (webhook GHCR → App Service re-pull en cada push a `main`) | ✅ completado |
-| 9 | Probar una restauración de backup | ⬜ pendiente |
+
 
 ### Notas
 
 - **TLS:** Azure termina HTTPS automáticamente en `*.azurewebsites.net`; no hace falta Certbot. Sin dominio personalizado (el host de Azure es suficiente).
-- **Backups:** Azure Postgres Flexible Server hace backups automáticos point-in-time (retención 7 días por defecto). Lo único pendiente es **probar una restauración** alguna vez para verificar el procedimiento.
+- **Backups:** Azure Postgres Flexible Server hace backups automáticos point-in-time (retención 7 días por defecto).
 - **Autoalojamiento (Proxmox/VPS):** retirado por completo.
