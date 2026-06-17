@@ -51,7 +51,15 @@ export async function updateUser(db: PrismaClient, id: number, body: UpdateUserB
 }
 
 export async function deleteUser(db: PrismaClient, id: number) {
-  await getUser(db, id)
+  const user = await getUser(db, id)
+  if (user.role.canManage) {
+    const otherAdmins = await db.user.count({
+      where: { deletedAt: null, isActive: true, id: { not: id }, role: { canManage: true } },
+    })
+    if (otherAdmins === 0) {
+      throw { statusCode: 409, code: 'LAST_ADMIN', message: 'No se puede eliminar el último administrador' }
+    }
+  }
   await db.user.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } })
 }
 
