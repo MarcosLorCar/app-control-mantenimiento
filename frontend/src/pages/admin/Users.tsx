@@ -1,20 +1,22 @@
 import { useState } from 'react'
-import { useUsers, useUpdateUser, useDeleteUser, useResetUserPassword } from '../../hooks/useUsers'
+import { useUsers, useUpdateUser, useResetUserPassword } from '../../hooks/useUsers'
 import { useRoles } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
 import { UserForm, PasswordModal } from './UserForm'
+import { EditUserModal } from './EditUserModal'
 import { useAuth } from '../../contexts/AuthContext'
+import type { User } from '../../api/types'
 
 export function Users() {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [resetPassword, setResetPassword] = useState<string | null>(null)
+  const [editingUser, setEditingUser] = useState<User | null>(null)
 
   const { user: me } = useAuth()
   const { data: users = [], isLoading } = useUsers()
   const { data: roles = [] } = useRoles()
   const updateUser = useUpdateUser()
-  const deleteUser = useDeleteUser()
   const resetUser = useResetUserPassword()
 
   const roleName = (roleId: number) => roles.find(r => r.id === roleId)?.name ?? '—'
@@ -75,21 +77,7 @@ export function Users() {
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{u.fullName}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{u.email}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
-                      {me?.can_manage ? (
-                        <select
-                          value={u.roleId}
-                          onChange={e => updateUser.mutate({ id: u.id, body: { roleId: Number(e.target.value) } })}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                        >
-                          {roles.map(r => (
-                            <option key={r.id} value={r.id}>{r.name}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        roleName(u.roleId)
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{roleName(u.roleId)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                         u.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
@@ -100,6 +88,12 @@ export function Users() {
                     <td className="px-4 py-3">
                       <RoleGuard require="manage">
                         <div className="flex gap-3">
+                          <button
+                            onClick={() => setEditingUser(u)}
+                            className="text-xs text-gray-700 hover:text-gray-900"
+                          >
+                            Editar
+                          </button>
                           <button
                             onClick={() => updateUser.mutate({ id: u.id, body: { isActive: !u.isActive } })}
                             className="text-xs text-blue-600 hover:text-blue-800"
@@ -112,12 +106,6 @@ export function Users() {
                             className="text-xs text-orange-500 hover:text-orange-700 disabled:opacity-50"
                           >
                             Resetear
-                          </button>
-                          <button
-                            onClick={() => deleteUser.mutate(u.id)}
-                            className="text-xs text-red-400 hover:text-red-600"
-                          >
-                            Eliminar
                           </button>
                         </div>
                       </RoleGuard>
@@ -138,19 +126,7 @@ export function Users() {
                 <p className="text-sm font-medium text-gray-900">{u.fullName}</p>
                 <p className="text-xs text-gray-500">{u.email}</p>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {me?.can_manage ? (
-                    <select
-                      value={u.roleId}
-                      onChange={e => updateUser.mutate({ id: u.id, body: { roleId: Number(e.target.value) } })}
-                      className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-gray-900"
-                    >
-                      {roles.map(r => (
-                        <option key={r.id} value={r.id}>{r.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-xs text-gray-600">{roleName(u.roleId)}</span>
-                  )}
+                  <span className="text-xs text-gray-600">{roleName(u.roleId)}</span>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     u.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
                   }`}>
@@ -159,6 +135,12 @@ export function Users() {
                 </div>
                 <RoleGuard require="manage">
                   <div className="flex gap-3 pt-0.5">
+                    <button
+                      onClick={() => setEditingUser(u)}
+                      className="text-xs text-gray-700 hover:text-gray-900"
+                    >
+                      Editar
+                    </button>
                     <button
                       onClick={() => updateUser.mutate({ id: u.id, body: { isActive: !u.isActive } })}
                       className="text-xs text-blue-600 hover:text-blue-800"
@@ -172,12 +154,6 @@ export function Users() {
                     >
                       Resetear
                     </button>
-                    <button
-                      onClick={() => deleteUser.mutate(u.id)}
-                      className="text-xs text-red-400 hover:text-red-600"
-                    >
-                      Eliminar
-                    </button>
                   </div>
                 </RoleGuard>
               </div>
@@ -188,6 +164,13 @@ export function Users() {
 
       {showForm && <UserForm onClose={() => setShowForm(false)} />}
       {resetPassword && <PasswordModal tempPassword={resetPassword} onClose={() => setResetPassword(null)} />}
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          isSelf={editingUser.id === me?.sub}
+          onClose={() => setEditingUser(null)}
+        />
+      )}
     </div>
   )
 }
