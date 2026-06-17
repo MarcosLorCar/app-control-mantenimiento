@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { CreateUserBody, UpdateUserBody } from './users.schema'
 
 const SAFE_SELECT = {
-  id: true, email: true, fullName: true, isActive: true, mustChangePassword: true,
+  id: true, email: true, fullName: true, roleId: true, isActive: true, mustChangePassword: true,
   createdAt: true, updatedAt: true,
   role: { select: { id: true, name: true, canWrite: true, canManage: true } },
 }
