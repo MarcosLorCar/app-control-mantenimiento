@@ -107,7 +107,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     })
   })
 
-  app.get('/api/v1/health', async () => ({ status: 'ok' }))
+  app.get('/api/v1/health', async () => ({ status: 'ok', version: process.env.GIT_SHA ?? 'dev' }))
 
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
   await app.register(usersRoutes, { prefix: '/api/v1/users' })
