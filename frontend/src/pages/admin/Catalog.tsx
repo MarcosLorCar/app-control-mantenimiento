@@ -11,6 +11,8 @@ import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcon
 import { CategoryEditModal } from '../../components/forms/CategoryEditModal'
 import { MaterialTypeEditModal } from '../../components/forms/MaterialTypeEditModal'
 import { LocationMap } from '../../components/ui/LocationMap'
+import { Modal } from '../../components/ui/Modal'
+import { MapPin, Plus } from 'lucide-react'
 
 
 
@@ -39,6 +41,30 @@ export function Catalog() {
   const [cfgError, setCfgError] = useState('')
   const [cfgSuccess, setCfgSuccess] = useState('')
   const [isEditingSettings, setIsEditingSettings] = useState(false)
+
+  // Map selector modal state
+  const [showMapModal, setShowMapModal] = useState(false)
+  const [tempLat, setTempLat] = useState<number | null>(null)
+  const [tempLng, setTempLng] = useState<number | null>(null)
+
+  // "Add" modal toggles (keep the creation forms out of the page itself)
+  const [showAddInfraType, setShowAddInfraType] = useState(false)
+  const [showAddMaterialType, setShowAddMaterialType] = useState(false)
+  const [showAddFixedProp, setShowAddFixedProp] = useState(false)
+
+  function openMapModal() {
+    setTempLat(cfgLat ? Number(cfgLat) : null)
+    setTempLng(cfgLng ? Number(cfgLng) : null)
+    setShowMapModal(true)
+  }
+
+  function handleConfirmMap() {
+    if (tempLat !== null && tempLng !== null) {
+      setCfgLat(tempLat.toString())
+      setCfgLng(tempLng.toString())
+    }
+    setShowMapModal(false)
+  }
 
   useEffect(() => {
     if (settings.length > 0 && !isEditingSettings) {
@@ -115,7 +141,7 @@ export function Catalog() {
     addInfraType.mutate(
       { name: itName.trim(), icon: itIcon, color: undefined },
       {
-        onSuccess: () => { setItName(''); setItIcon('Building2') },
+        onSuccess: () => { setItName(''); setItIcon('Building2'); setShowAddInfraType(false) },
         onError: (err: any) => setItError(err?.error?.message ?? 'Error al añadir'),
       }
     )
@@ -133,7 +159,7 @@ export function Catalog() {
     addMaterialType.mutate(
       { code: generatedCode, name: mtName.trim() },
       {
-        onSuccess: () => { setMtName('') },
+        onSuccess: () => { setMtName(''); setShowAddMaterialType(false) },
         onError: (err: any) => setMtError(err?.error?.message ?? 'Error al añadir'),
       }
     )
@@ -161,6 +187,7 @@ export function Catalog() {
           setFpName('')
           setFpType('STRING')
           refetchProps()
+          setShowAddFixedProp(false)
         },
         onError: (err: any) => setFpError(err?.error?.message ?? 'Error al añadir propiedad'),
       }
@@ -207,51 +234,13 @@ export function Catalog() {
             })}
           </ul>
           {canManage && (
-            <form onSubmit={handleAddInfraType} className="border-t border-app-border pt-4 space-y-3">
-              <input
-                type="text"
-                value={itName}
-                onChange={e => setItName(e.target.value)}
-                placeholder="Nombre del tipo"
-                className={inputCls}
-                required
-              />
-              <div>
-                <label className="block text-[10px] font-semibold text-fg-secondary mb-1">Seleccionar Icono</label>
-                <div className="grid grid-cols-3 gap-1.5 border border-app-border rounded-lg p-2 bg-card/50 max-h-[120px] overflow-y-auto">
-                  {CATEGORY_ICON_OPTIONS.map(opt => {
-                    const OptIcon = getCategoryIcon(opt.name)
-                    const isSelected = itIcon === opt.name
-                    return (
-                      <button
-                        key={opt.name}
-                        type="button"
-                        onClick={() => setItIcon(opt.name)}
-                        className={`flex items-center gap-1 p-1 rounded border text-[9px] transition-all hover:bg-primary/5 ${
-                          isSelected
-                            ? 'border-primary bg-primary/10 text-primary font-bold'
-                            : 'border-app-border text-muted hover:text-fg'
-                        }`}
-                        title={opt.label}
-                      >
-                        <OptIcon className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">{opt.label.split(' ')[0]}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={!itName.trim() || addInfraType.isPending}
-                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
-                >
-                  {itName.trim() ? 'Añadir' : 'Escribe nombre'}
-                </button>
-              </div>
-              {itError && <p className="text-error text-xs">{itError}</p>}
-            </form>
+            <button
+              type="button"
+              onClick={() => { setItError(''); setShowAddInfraType(true) }}
+              className="w-full flex items-center justify-center gap-1.5 border-t border-app-border pt-4 mt-1 text-sm font-bold text-primary hover:text-[var(--primary-hover)] transition-colors"
+            >
+              <Plus size={15} /> Añadir tipo
+            </button>
           )}
         </div>
 
@@ -296,26 +285,13 @@ export function Catalog() {
             ))}
           </ul>
           {canManage && (
-            <form onSubmit={handleAddMaterialType} className="border-t border-app-border pt-4 space-y-2">
-              <input
-                type="text"
-                value={mtName}
-                onChange={e => setMtName(e.target.value)}
-                placeholder="Nombre (ej: Bombilla LED)"
-                className={inputCls}
-                required
-              />
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={!mtName.trim() || addMaterialType.isPending}
-                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
-                >
-                  Añadir
-                </button>
-              </div>
-              {mtError && <p className="text-error text-xs">{mtError}</p>}
-            </form>
+            <button
+              type="button"
+              onClick={() => { setMtError(''); setShowAddMaterialType(true) }}
+              className="w-full flex items-center justify-center gap-1.5 border-t border-app-border pt-4 mt-1 text-sm font-bold text-primary hover:text-[var(--primary-hover)] transition-colors"
+            >
+              <Plus size={15} /> Añadir tipo de material
+            </button>
           )}
         </div>
 
@@ -344,36 +320,13 @@ export function Catalog() {
             ))}
           </ul>
           {canManage && (
-            <form onSubmit={handleAddFixedProp} className="border-t border-app-border pt-4 space-y-2">
-              <input
-                type="text"
-                value={fpName}
-                onChange={e => setFpName(e.target.value)}
-                placeholder="Nombre (ej: Fecha de Compra)"
-                className={inputCls}
-                required
-              />
-              <select
-                value={fpType}
-                onChange={e => setFpType(e.target.value as any)}
-                className={inputCls}
-              >
-                <option value="STRING">Texto (STRING)</option>
-                <option value="DATE">Fecha (DATE)</option>
-                <option value="NUMBER">Número (NUMBER)</option>
-                <option value="BOOLEAN">Booleano (BOOLEAN)</option>
-              </select>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={!fpName.trim() || addFixedProp.isPending}
-                  className="px-3 py-1.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors"
-                >
-                  Añadir
-                </button>
-              </div>
-              {fpError && <p className="text-error text-xs">{fpError}</p>}
-            </form>
+            <button
+              type="button"
+              onClick={() => { setFpError(''); setShowAddFixedProp(true) }}
+              className="w-full flex items-center justify-center gap-1.5 border-t border-app-border pt-4 mt-1 text-sm font-bold text-primary hover:text-[var(--primary-hover)] transition-colors"
+            >
+              <Plus size={15} /> Añadir propiedad
+            </button>
           )}
         </div>
 
@@ -459,17 +412,21 @@ export function Catalog() {
                 />
               </div>
 
-              {/* Map selection tool */}
+              {/* Map selection — opens a full-screen modal (mobile-friendly) */}
               <div className="space-y-1.5">
-                <LocationMap
-                  latitude={cfgLat ? Number(cfgLat) : 38.9863}
-                  longitude={cfgLng ? Number(cfgLng) : -3.9291}
-                  defaultCenter={[38.9863, -3.9291]}
-                  onChange={(lat, lng) => {
-                    setCfgLat(lat.toString())
-                    setCfgLng(lng.toString())
-                  }}
-                />
+                <label className="block text-xs font-semibold text-fg-secondary">Coordenadas</label>
+                <button
+                  type="button"
+                  onClick={openMapModal}
+                  className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-all active:scale-95 touch-manipulation min-h-[40px]"
+                >
+                  <MapPin size={14} />
+                  {cfgLat && cfgLng ? 'Cambiar ubicación en el mapa' : 'Seleccionar ubicación en el mapa'}
+                </button>
+                <div className="flex gap-3 text-[11px] text-muted font-mono">
+                  <span>Lat: {cfgLat || '—'}</span>
+                  <span>Lon: {cfgLng || '—'}</span>
+                </div>
               </div>
 
               {cfgError && <p className="text-error text-xs">{cfgError}</p>}
@@ -508,6 +465,142 @@ export function Catalog() {
           materialType={editingPropertiesMt}
           onClose={() => setEditingPropertiesMt(null)}
         />
+      )}
+
+      {showMapModal && (
+        <Modal title="Seleccionar ubicación por defecto" onClose={() => setShowMapModal(false)} size="full">
+          <div className="flex-1 flex flex-col min-h-0 space-y-4">
+            <div className="text-sm text-fg-secondary">
+              Haz clic en el mapa o arrastra el marcador para seleccionar la ubicación por defecto.
+            </div>
+            <div className="flex-1 flex flex-col min-h-0">
+              <LocationMap
+                latitude={tempLat}
+                longitude={tempLng}
+                defaultCenter={[38.9863, -3.9291]}
+                onChange={(lat, lng) => {
+                  setTempLat(lat)
+                  setTempLng(lng)
+                }}
+                className="min-h-0"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-2 shrink-0 border-t border-app-border">
+              <button
+                type="button"
+                onClick={() => setShowMapModal(false)}
+                className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmMap}
+                className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] transition-colors"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showAddInfraType && (
+        <Modal title="Nuevo tipo de infraestructura" onClose={() => setShowAddInfraType(false)} size="lg">
+          <form onSubmit={handleAddInfraType} className="space-y-3">
+            <input
+              type="text"
+              value={itName}
+              onChange={e => setItName(e.target.value)}
+              placeholder="Nombre del tipo"
+              className={inputCls}
+              required
+              autoFocus
+            />
+            <div>
+              <label className="block text-[10px] font-semibold text-fg-secondary mb-1">Seleccionar Icono</label>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 border border-app-border rounded-lg p-2 bg-card/50 max-h-[280px] overflow-y-auto">
+                {CATEGORY_ICON_OPTIONS.map(opt => {
+                  const OptIcon = getCategoryIcon(opt.name)
+                  const isSelected = itIcon === opt.name
+                  return (
+                    <button
+                      key={opt.name}
+                      type="button"
+                      onClick={() => setItIcon(opt.name)}
+                      className={`flex items-center gap-1 p-1.5 rounded border text-[10px] transition-all hover:bg-primary/5 ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 text-primary font-bold'
+                          : 'border-app-border text-muted hover:text-fg'
+                      }`}
+                      title={opt.label}
+                    >
+                      <OptIcon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{opt.label.split(' ')[0]}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {itError && <p className="text-error text-xs">{itError}</p>}
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setShowAddInfraType(false)} className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors">Cancelar</button>
+              <button type="submit" disabled={!itName.trim() || addInfraType.isPending} className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors">{addInfraType.isPending ? 'Añadiendo...' : 'Añadir'}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {showAddMaterialType && (
+        <Modal title="Nuevo tipo de material" onClose={() => setShowAddMaterialType(false)} size="md">
+          <form onSubmit={handleAddMaterialType} className="space-y-3">
+            <input
+              type="text"
+              value={mtName}
+              onChange={e => setMtName(e.target.value)}
+              placeholder="Nombre (ej: Bombilla LED)"
+              className={inputCls}
+              required
+              autoFocus
+            />
+            {mtError && <p className="text-error text-xs">{mtError}</p>}
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setShowAddMaterialType(false)} className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors">Cancelar</button>
+              <button type="submit" disabled={!mtName.trim() || addMaterialType.isPending} className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors">{addMaterialType.isPending ? 'Añadiendo...' : 'Añadir'}</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {showAddFixedProp && (
+        <Modal title="Nueva propiedad fija" onClose={() => setShowAddFixedProp(false)} size="md">
+          <form onSubmit={handleAddFixedProp} className="space-y-3">
+            <input
+              type="text"
+              value={fpName}
+              onChange={e => setFpName(e.target.value)}
+              placeholder="Nombre (ej: Fecha de Compra)"
+              className={inputCls}
+              required
+              autoFocus
+            />
+            <select
+              value={fpType}
+              onChange={e => setFpType(e.target.value as any)}
+              className={inputCls}
+            >
+              <option value="STRING">Texto (STRING)</option>
+              <option value="DATE">Fecha (DATE)</option>
+              <option value="NUMBER">Número (NUMBER)</option>
+              <option value="BOOLEAN">Booleano (BOOLEAN)</option>
+            </select>
+            {fpError && <p className="text-error text-xs">{fpError}</p>}
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setShowAddFixedProp(false)} className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors">Cancelar</button>
+              <button type="submit" disabled={!fpName.trim() || addFixedProp.isPending} className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors">{addFixedProp.isPending ? 'Añadiendo...' : 'Añadir'}</button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   )
