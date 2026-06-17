@@ -3,12 +3,14 @@ import { useUsers, useUpdateUser, useDeleteUser, useResetUserPassword } from '..
 import { useRoles } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
 import { UserForm, PasswordModal } from './UserForm'
+import { useAuth } from '../../contexts/AuthContext'
 
 export function Users() {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [resetPassword, setResetPassword] = useState<string | null>(null)
 
+  const { user: me } = useAuth()
   const { data: users = [], isLoading } = useUsers()
   const { data: roles = [] } = useRoles()
   const updateUser = useUpdateUser()
@@ -73,7 +75,21 @@ export function Users() {
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{u.fullName}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{u.email}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{roleName(u.roleId)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      {me?.can_manage ? (
+                        <select
+                          value={u.roleId}
+                          onChange={e => updateUser.mutate({ id: u.id, body: { roleId: Number(e.target.value) } })}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                        >
+                          {roles.map(r => (
+                            <option key={r.id} value={r.id}>{r.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        roleName(u.roleId)
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                         u.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
@@ -122,7 +138,19 @@ export function Users() {
                 <p className="text-sm font-medium text-gray-900">{u.fullName}</p>
                 <p className="text-xs text-gray-500">{u.email}</p>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-gray-600">{roleName(u.roleId)}</span>
+                  {me?.can_manage ? (
+                    <select
+                      value={u.roleId}
+                      onChange={e => updateUser.mutate({ id: u.id, body: { roleId: Number(e.target.value) } })}
+                      className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    >
+                      {roles.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-xs text-gray-600">{roleName(u.roleId)}</span>
+                  )}
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     u.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
                   }`}>
