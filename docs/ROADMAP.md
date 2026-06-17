@@ -1,6 +1,6 @@
 # Roadmap — InfraGest
 
-Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL · Docker + Nginx
+Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL · Docker (contenedor único; el backend sirve la SPA)
 
 ---
 
@@ -56,12 +56,12 @@ Arquitectura: monorepo · API REST (Fastify) + SPA (React/Vite) · PostgreSQL ·
 
 ---
 
-## Plan 4 — Deploy (Docker + Nginx + CI/CD)
+## Plan 4 — Deploy (Docker + CI/CD)
 
 | # | Task | Estado |
 |---|------|--------|
 | 1 | Dockerfile multi-stage del backend | ✅ completado |
-| 2 | Configuración Nginx (TLS + proxy /api + SPA estático) | ✅ completado |
+| 2 | Backend Fastify sirve la SPA estática + API en un único contenedor (nginx eliminado) | ✅ completado |
 | 3 | docker-compose.ghcr.yml + .env.example (producción) | ✅ completado |
 | 4 | Configuración inicial del VPS (Docker, SSH, Certbot) | ⬜ pendiente |
 | 5 | Pipeline CI/CD con GitHub Actions | ✅ completado |

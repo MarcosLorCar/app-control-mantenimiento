@@ -5,7 +5,7 @@
 Arquitectura elegida: API REST + SPA, en un monorepo.
 
 - Backend independiente (Fastify) y frontend SPA (React/Vite).
-- En produccion el SPA se compila a estaticos y se sirve por Nginx.
+- En produccion el SPA se compila a estaticos y lo sirve el propio backend (Fastify) desde el mismo contenedor.
 
 ## Authentication & authorization
 
