@@ -8,6 +8,7 @@ import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { useSystemSettings } from '../../hooks/useSystemSettings'
 import { getCategoryIcon } from '../../utils/categoryIcons'
 import { LocationForm } from '../../components/forms/LocationForm'
+import { reverseGeocode } from '../../utils/geocode'
 import type { Location } from '../../api/types'
 
 // Fix Leaflet marker icon asset paths inside Vite
@@ -104,6 +105,7 @@ export function LocationsMapPage() {
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [filterTypeId, setFilterTypeId] = useState<number | ''>('')
   const [registerGeo, setRegisterGeo] = useState<Parameters<typeof LocationForm>[0]['initialGeo'] | null>(null)
+  const [isGeocoding, setIsGeocoding] = useState(false)
   
   // Sync search state when query params change
   useEffect(() => {
@@ -235,18 +237,19 @@ export function LocationsMapPage() {
                   <div>Lon: {pendingClickCoords[1].toFixed(6)}</div>
                 </div>
                 <button
-                  onClick={() => {
-                    setRegisterGeo({
-                      lat: pendingClickCoords[0],
-                      lng: pendingClickCoords[1],
-                      formattedAddress: `${pendingClickCoords[0].toFixed(5)}, ${pendingClickCoords[1].toFixed(5)}`
-                    })
+                  disabled={isGeocoding}
+                  onClick={async () => {
+                    const coords = pendingClickCoords
+                    setIsGeocoding(true)
+                    const { formattedAddress, placeId } = await reverseGeocode(coords[0], coords[1])
+                    setIsGeocoding(false)
+                    setRegisterGeo({ lat: coords[0], lng: coords[1], formattedAddress, placeId })
                     setPendingClickCoords(null)
                   }}
-                  className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
-                  <span>Registrar aquí</span>
+                  <span>{isGeocoding ? 'Buscando dirección...' : 'Registrar aquí'}</span>
                 </button>
               </div>
             </Popup>
