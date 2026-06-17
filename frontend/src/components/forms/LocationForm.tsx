@@ -82,7 +82,7 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
 
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${tempLat}&lon=${tempLng}&format=json`,
+          `https://nominatim.openstreetmap.org/reverse?lat=${tempLat}&lon=${tempLng}&format=json&accept-language=es`,
           {
             headers: {
               'User-Agent': 'InfraGest/1.0',
