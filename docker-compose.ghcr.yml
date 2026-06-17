@@ -17,9 +17,11 @@ services:
       retries: 5
     restart: unless-stopped
 
-  backend:
-    image: ghcr.io/marcoslorcar/infragest-backend:latest
-    container_name: infragest-backend-prod
+  app:
+    image: ghcr.io/marcoslorcar/infragest-app:latest
+    container_name: infragest-app-prod
+    ports:
+      - "8080:3000"
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/infragest_prod?schema=public
@@ -42,16 +44,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
-    restart: unless-stopped
-
-  frontend:
-    image: ghcr.io/marcoslorcar/infragest-frontend:latest
-    container_name: infragest-frontend-prod
-    ports:
-      - "8080:80"
-    depends_on:
-      backend:
-        condition: service_healthy
     restart: unless-stopped
 
 volumes:

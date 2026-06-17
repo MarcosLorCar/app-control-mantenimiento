@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build and Push Docker Image
 
 on:
   push:
@@ -9,8 +9,6 @@ on:
       - 'frontend/**'
       - 'shared/**'
       - 'backend/Dockerfile'
-      - 'frontend/Dockerfile'
-      - 'nginx.conf'
       - '.github/workflows/docker-build-push.yml'
   workflow_dispatch:
 
@@ -44,34 +42,20 @@ jobs:
           SAFE_BRANCH=$(echo "${BRANCH_NAME}" | sed 's/[^a-zA-Z0-9._-]/-/g' | tr '[:upper:]' '[:lower:]')
           
           if [ "${SAFE_BRANCH}" = "main" ]; then
-            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "app_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-app:latest,${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-app:${{ github.sha }}" >> $GITHUB_OUTPUT
           else
-            echo "backend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-backend:${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "frontend_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-frontend:${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "app_tags=${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-app:${SAFE_BRANCH},${{ env.REGISTRY }}/${{ env.OWNER }}/infragest-app:${{ github.sha }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build and push Backend Image
-      - name: Build and push Backend image
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: backend/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.backend_tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # Build and push Frontend Image
-      - name: Build and push Frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: frontend/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.frontend_tags }}
+          tags: ${{ steps.meta.outputs.app_tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

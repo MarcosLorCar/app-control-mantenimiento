@@ -17,7 +17,7 @@ automáticamente certificados Let's Encrypt. No necesitáis nada más.
 - Renovación automática de certificados (nunca caduca).
 - Configuración mínima (5 líneas).
 - Totalmente autoalojado, sin dependencias externas.
-- El contenedor nginx existente sigue funcionando en :80 internamente, sin cambios.
+- El contenedor de la app sigue funcionando en :3000 internamente, sin cambios.
 
 **Contras:**
 - Un contenedor más que mantener.
@@ -28,7 +28,7 @@ automáticamente certificados Let's Encrypt. No necesitáis nada más.
 1. Crear `Caddyfile` en la carpeta de despliegue con el siguiente contenido:
    ```
    tudominio.com {
-     reverse_proxy infragest-frontend-prod:80
+     reverse_proxy infragest-app-prod:3000
    }
    ```
 2. Crear `docker-compose.caddy.yml`:
@@ -90,17 +90,19 @@ Cloudflare actúa de intermediario HTTPS gratuito. El servidor recibe tráfico H
 
 ---
 
-## Opción C — certbot + nginx :443
+## Opción C — certbot + nginx dedicado
 
-**Qué es:** Obtener un certificado Let's Encrypt con certbot y montarlo en el nginx existente.
+**Qué es:** Obtener un certificado Let's Encrypt con certbot y añadir un contenedor nginx
+nuevo sólo para terminar TLS y hacer proxy al backend en :3000 (la app ya no trae un nginx
+propio — fue eliminado al pasar a un único contenedor backend que sirve también el frontend).
 
 **Pros:**
 - Totalmente autoalojado.
-- Sin contenedores extra.
 
 **Contras:**
 - Renovación manual (o cron) cada 90 días — si se olvida, la app deja de funcionar.
-- Más configuración inicial: abrir puerto 443, editar nginx.conf, montar volumen con certs.
+- Más configuración inicial: añadir el contenedor nginx, abrir puerto 443, escribir su config,
+  montar volumen con certs.
 - Más difícil de mover entre servidores.
 
 **Cómo usarlo (resumen):**
@@ -111,8 +113,9 @@ apt install certbot
 certbot certonly --standalone -d tudominio.com --email vuestro@email.com --agree-tos
 ```
 
-Luego actualizar `nginx.conf` para escuchar en :443 con los certs, y montar `/etc/letsencrypt`
-en el contenedor de frontend. Ver guía oficial: https://certbot.eff.org/
+Luego escribir una config de nginx que escuche en :443 con los certs y haga
+`proxy_pass http://infragest-app-prod:3000`, y montar `/etc/letsencrypt` en ese contenedor.
+Ver guía oficial: https://certbot.eff.org/
 
 ---
 
