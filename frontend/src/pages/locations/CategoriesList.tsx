@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Folder, AlertCircle, LayoutGrid, List, Radar } from 'lucide-react'
+import { Plus, Folder, AlertCircle, LayoutGrid, List } from 'lucide-react'
+import { NearbyPinIcon } from '../../components/icons/NearbyPinIcon'
 import { useInfrastructureTypes, useCreateInfrastructureType } from '../../hooks/useCatalog'
 import { useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
@@ -168,7 +169,7 @@ export function CategoriesList() {
         className="fixed bottom-24 right-8 w-14 h-14 bg-card border border-app-border text-muted hover:text-fg hover:bg-muted/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20 group"
         title="Buscar por cercanía"
       >
-        <Radar className="w-6 h-6 stroke-[2.5]" />
+        <NearbyPinIcon size={24} strokeWidth={1.75} className="w-6 h-6" />
       </button>
 
       {/* Radar Modal */}
