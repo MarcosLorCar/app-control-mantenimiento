@@ -39,7 +39,6 @@ export async function listLocations(
         orderBy: { performedAt: 'desc' },
       },
     },
-    orderBy: { name: 'asc' },
   })
 
   type CountRow = { locationid: number; count: bigint }
@@ -57,7 +56,7 @@ export async function listLocations(
   const pathById = new Map(allLocPaths.map(l => [l.id, l.path]))
   const countByLocationId = new Map(rawCounts.map(r => [Number(r.locationid), Number(r.count)]))
 
-  return locations.map(loc => {
+  const mapped = locations.map(loc => {
     const { actions, ...rest } = loc
     let materialsCount = 0
     for (const [locId, cnt] of countByLocationId) {
@@ -72,6 +71,12 @@ export async function listLocations(
       lastActionAt: actions[0]?.performedAt ?? null,
     }
   })
+
+  return mapped.sort((a, b) => recencyOf(b) - recencyOf(a))
+}
+
+function recencyOf(loc: { lastActionAt?: Date | null; updatedAt: Date }): number {
+  return loc.lastActionAt ? new Date(loc.lastActionAt).getTime() : new Date(loc.updatedAt).getTime()
 }
 
 export async function getLocationDetail(db: PrismaClient, id: number) {
@@ -90,7 +95,6 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
             },
           },
         },
-        orderBy: { name: 'asc' },
       },
       materials: {
         where: { deletedAt: null },
@@ -149,14 +153,27 @@ export async function getLocationDetail(db: PrismaClient, id: number) {
   const childPathById = new Map(childLocPaths.map(l => [l.id, l.path]))
   const childCountById = new Map(childRawCounts.map(r => [Number(r.locationid), Number(r.count)]))
 
-  const mappedChildren = current.children.map(child => {
-    let cnt = 0
-    for (const [locId, c] of childCountById) {
-      const p = childPathById.get(locId)
-      if (p && p.startsWith(child.path)) cnt += c
-    }
-    return { ...child, _count: { ...child._count, materials: cnt } }
+  const childLastActions = await db.action.groupBy({
+    by: ['locationId'],
+    where: { locationId: { in: current.children.map(c => c.id) } },
+    _max: { performedAt: true },
   })
+  const lastActionByChildId = new Map(childLastActions.map(a => [a.locationId, a._max.performedAt]))
+
+  const mappedChildren = current.children
+    .map(child => {
+      let cnt = 0
+      for (const [locId, c] of childCountById) {
+        const p = childPathById.get(locId)
+        if (p && p.startsWith(child.path)) cnt += c
+      }
+      return {
+        ...child,
+        _count: { ...child._count, materials: cnt },
+        lastActionAt: lastActionByChildId.get(child.id) ?? null,
+      }
+    })
+    .sort((a, b) => recencyOf(b) - recencyOf(a))
 
   return {
     ...current,
