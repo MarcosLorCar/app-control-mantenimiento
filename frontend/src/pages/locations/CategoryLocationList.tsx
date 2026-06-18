@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Folder, Search, Plus, ChevronRight, GitBranch, Package, Zap, ChevronLeft, AlertCircle, MapPin, Clock } from 'lucide-react'
+import { Search, Plus, ChevronRight, Package, Zap, ChevronLeft, AlertCircle, Clock, X } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
@@ -88,6 +88,16 @@ export function CategoryLocationList() {
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="text-muted hover:text-fg shrink-0"
+              title="Limpiar búsqueda"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -124,7 +134,7 @@ export function CategoryLocationList() {
                     <img src={loc.image} alt={loc.name} className="w-full h-full object-cover" />
                   </button>
                 ) : (
-                  <MapPin className="w-6 h-6 text-primary" />
+                  <CatIcon className="w-6 h-6 text-primary" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -139,13 +149,6 @@ export function CategoryLocationList() {
 
                 {/* Previews counts */}
                 <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] text-fg-secondary">
-                  {count.children > 0 && (
-                    <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Sub-ubicaciones">
-                      <GitBranch className="w-3 h-3 text-muted" />
-                      <span className="font-medium text-fg">{count.children}</span>
-                      <span className="text-muted text-[9px]">subs</span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Materiales Instalados">
                     <Package className="w-3 h-3 text-muted" />
                     <span className="font-medium text-fg">{count.materials}</span>

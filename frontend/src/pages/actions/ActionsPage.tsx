@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, Plus, Calendar as CalendarIcon, List as ListIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { Search, Plus, Calendar as CalendarIcon, List as ListIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from 'lucide-react'
 import { useActions } from '../../hooks/useActions'
 import { useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
@@ -181,6 +181,16 @@ export function ActionsPage() {
               onChange={e => setSearch(e.target.value)}
               className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="text-muted hover:text-fg shrink-0"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Location filter dropdown with indentation representing tree depth */}

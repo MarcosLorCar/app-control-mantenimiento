@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Package } from 'lucide-react'
+import { Search, Package, X } from 'lucide-react'
 import { useMaterials } from '../../hooks/useMaterials'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
@@ -44,6 +44,16 @@ export function MaterialsPage() {
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="text-muted hover:text-fg shrink-0"
+              title="Limpiar búsqueda"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         {allTypes.length > 0 && (
           <select

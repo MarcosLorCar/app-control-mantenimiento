@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
-import { Search, ExternalLink, PlusCircle } from 'lucide-react'
+import { Search, ExternalLink, PlusCircle, X } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { useSystemSettings } from '../../hooks/useSystemSettings'
@@ -170,6 +170,16 @@ export function LocationsMapPage() {
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="text-muted hover:text-fg shrink-0"
+              title="Limpiar búsqueda"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         {infraTypes.length > 0 && (
           <select

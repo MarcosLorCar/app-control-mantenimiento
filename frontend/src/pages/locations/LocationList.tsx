@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Folder, Search, Plus, ChevronRight, GitBranch, Package, Zap, Clock } from 'lucide-react'
+import { Search, Plus, ChevronRight, Package, Zap, Clock, MapPin, X } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
+import { getCategoryIcon } from '../../utils/categoryIcons'
 import { formatRelativeTime } from '../../utils/date'
 
 export function LocationList() {
@@ -48,6 +49,16 @@ export function LocationList() {
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="text-muted hover:text-fg shrink-0"
+              title="Limpiar búsqueda"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         {infraTypes.length > 0 && (
           <select
@@ -61,15 +72,6 @@ export function LocationList() {
             ))}
           </select>
         )}
-        <RoleGuard require="write">
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 bg-primary text-primary-fg text-[13px] font-medium px-4 h-10 rounded-lg hover:bg-[var(--primary-hover)] shadow-sm transition-all shrink-0 hover:shadow"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Ubicación
-          </button>
-        </RoleGuard>
       </div>
 
       {/* Count Indicator */}
@@ -86,9 +88,7 @@ export function LocationList() {
         )}
         {filtered.map(loc => {
           const count = loc._count ?? { children: 0, materials: 0, actions: 0 }
-          const hasType = !!loc.infraType
-          const iconColor = loc.infraType?.color ?? 'var(--primary)'
-          const iconBg = loc.infraType?.color ? `${loc.infraType.color}15` : 'var(--info-bg)'
+          const CatIcon = getCategoryIcon(loc.infraType?.icon)
 
           return (
             <div
@@ -98,15 +98,12 @@ export function LocationList() {
               className="flex items-start gap-4 p-5 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
             >
               <div
-                className="w-12 h-12 rounded-[10px] flex items-center justify-center shrink-0 transition-all group-hover:scale-110 overflow-hidden"
-                style={{ backgroundColor: iconBg }}
+                className="w-12 h-12 rounded-[10px] flex items-center justify-center shrink-0 transition-all group-hover:scale-110 overflow-hidden bg-primary/10"
               >
                 {loc.image ? (
                   <img src={loc.image} alt={loc.name} className="w-full h-full object-cover" />
-                ) : loc.infraType?.icon ? (
-                  <span className="text-2xl">{loc.infraType.icon}</span>
                 ) : (
-                  <Folder className="w-5.5 h-5.5 text-primary" />
+                  <MapPin className="w-5.5 h-5.5 text-primary" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -114,7 +111,8 @@ export function LocationList() {
                   <p className="font-semibold text-fg truncate text-[15px] group-hover:text-primary transition-colors">{loc.name}</p>
                 </div>
                 {loc.infraType && (
-                  <p className="text-[11px] font-medium tracking-wide uppercase mt-0.5" style={{ color: iconColor }}>
+                  <p className="flex items-center gap-1 text-[11px] font-medium tracking-wide uppercase mt-0.5 text-muted">
+                    <CatIcon className="w-3 h-3 shrink-0" />
                     {loc.infraType.name}
                   </p>
                 )}
@@ -126,13 +124,6 @@ export function LocationList() {
 
                 {/* Foreshadowing previews */}
                 <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] text-fg-secondary">
-                  {count.children > 0 && (
-                    <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Sub-ubicaciones">
-                      <GitBranch className="w-3 h-3 text-muted" />
-                      <span className="font-medium text-fg">{count.children}</span>
-                      <span className="text-muted text-[9px]">subs</span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Materiales Instalados">
                     <Package className="w-3 h-3 text-muted" />
                     <span className="font-medium text-fg">{count.materials}</span>
@@ -158,6 +149,16 @@ export function LocationList() {
           )
         })}
       </div>
+
+      <RoleGuard require="write">
+        <button
+          onClick={() => setShowForm(true)}
+          className="fixed bottom-8 right-8 w-14 h-14 bg-primary hover:bg-[var(--primary-hover)] text-primary-fg rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20"
+          title="Nueva Ubicación"
+        >
+          <Plus className="w-6 h-6 stroke-[2.5]" />
+        </button>
+      </RoleGuard>
 
       {showForm && <LocationForm onClose={() => setShowForm(false)} />}
     </div>
