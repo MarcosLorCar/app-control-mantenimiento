@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
-  ClipboardList, Warehouse, Package, Map,
+  ClipboardList, MapPin, Package, Map,
   Users, Settings, LogOut, Bell, Menu,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
 const GENERAL_ITEMS = [
-  { to: '/', icon: Warehouse, label: 'Departamentos' },
+  { to: '/', icon: MapPin, label: 'Departamentos' },
   { to: '/map', icon: Map, label: 'Mapa' },
   { to: '/actions', icon: ClipboardList, label: 'Trabajos' },
   { to: '/materials', icon: Package, label: 'Materiales' },
@@ -69,9 +69,7 @@ export function Layout() {
       `}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 h-16 px-6 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <Warehouse className="w-[18px] h-[18px] text-white" />
-          </div>
+          <img src="/icon.svg" alt="Infragest" className="w-8 h-8 rounded-lg shrink-0" />
           <span className="text-white font-bold text-base tracking-[1px]">INFRAGEST</span>
         </div>
 

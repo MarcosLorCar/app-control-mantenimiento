@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Folder, Search, Plus, ChevronRight, GitBranch, Package, Zap } from 'lucide-react'
+import { Folder, Search, Plus, ChevronRight, GitBranch, Package, Zap, Clock } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
+import { formatRelativeTime } from '../../utils/date'
 
 export function LocationList() {
   const navigate = useNavigate()
@@ -77,7 +78,7 @@ export function LocationList() {
       </p>
 
       {/* Cards list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {filtered.length === 0 && (
           <div className="col-span-full bg-card rounded-xl border border-app-border p-10 text-center text-muted text-sm shadow-sm">
             {search ? 'Sin resultados para la búsqueda.' : 'No hay ubicaciones registradas.'}
@@ -120,7 +121,7 @@ export function LocationList() {
                 {loc.description ? (
                   <p className="text-[13px] text-fg-secondary mt-1.5 line-clamp-2">{loc.description}</p>
                 ) : (
-                  <p className="text-[13px] text-muted italic mt-1.5">Sin descripción</p>
+                  <p className="text-[13px] text-fg-secondary mt-1.5 line-clamp-2">{loc.formattedAddress ?? ''}</p>
                 )}
 
                 {/* Foreshadowing previews */}
@@ -143,6 +144,14 @@ export function LocationList() {
                     <span className="text-muted text-[9px]">trabajos</span>
                   </div>
                 </div>
+              </div>
+              <div className="hidden md:flex items-center gap-1.5 self-center text-[12px] text-fg-secondary shrink-0">
+                <Clock className="w-3.5 h-3.5 text-muted" />
+                {loc.lastActionAt ? (
+                  <span>Última actividad: <span className="font-medium text-fg">{formatRelativeTime(loc.lastActionAt)}</span></span>
+                ) : (
+                  <span className="italic text-muted">Sin actividad</span>
+                )}
               </div>
               <ChevronRight className="w-5 h-5 text-muted shrink-0 self-center group-hover:translate-x-1 transition-transform" />
             </div>

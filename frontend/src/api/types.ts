@@ -53,6 +53,7 @@ export interface Location {
     materials: number
     actions: number
   }
+  lastActionAt?: string | null
 }
 
 export interface LocationDetail extends Location {

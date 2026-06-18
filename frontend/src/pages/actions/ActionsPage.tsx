@@ -5,10 +5,7 @@ import { useActions } from '../../hooks/useActions'
 import { useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { Modal } from '../../components/ui/Modal'
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+import { formatDate } from '../../utils/date'
 
 const monthNames = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',

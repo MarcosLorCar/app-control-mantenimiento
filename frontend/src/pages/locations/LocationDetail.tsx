@@ -13,12 +13,7 @@ import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 import { getCategoryIcon } from '../../utils/categoryIcons'
 import { PhotoUploadModal } from '../../components/forms/PhotoUploadModal'
-
-
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+import { formatDate } from '../../utils/date'
 
 export function LocationDetail() {
   const { id } = useParams<{ id: string }>()

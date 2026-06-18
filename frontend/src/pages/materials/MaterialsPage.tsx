@@ -5,10 +5,7 @@ import { useMaterials } from '../../hooks/useMaterials'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 import type { Material } from '../../api/types'
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+import { formatDate } from '../../utils/date'
 
 export function MaterialsPage() {
   const navigate = useNavigate()
