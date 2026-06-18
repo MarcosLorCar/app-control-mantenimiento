@@ -21,15 +21,25 @@ export async function reverseGeocode(lat: number, lng: number): Promise<ReverseG
     if (!res.ok) return fallback
     const data = await res.json()
     const display: string = data.display_name ?? fallback.formattedAddress
-    // Trim the hierarchy at the city: keep everything up to and including the
-    // city/town/village, drop the trailing province, postcode and country.
+    // Build the address from road + city only, skipping neighbourhood/quarter
+    // tags (e.g. Nominatim's "Los Ángeles" barrio covers most of central
+    // Ciudad Real, so including it makes every point look like the same street).
     const a = data.address ?? {}
     const city: string | undefined = a.city || a.town || a.village || a.municipality || a.county
+    const road: string | undefined = a.road || a.pedestrian || a.footway
+    // Nominatim sets top-level `name` to the matched feature's name. For a
+    // bare road/place it just repeats the road name, so only treat it as a
+    // POI name when the match is an actual point of interest.
+    const poiName: string | undefined =
+      data.addresstype !== 'road' && data.name && data.name !== road && data.name !== city
+        ? data.name
+        : undefined
     let formattedAddress = display
-    if (city) {
-      const parts = display.split(', ')
-      const idx = parts.indexOf(city)
-      if (idx >= 0) formattedAddress = parts.slice(0, idx + 1).join(', ')
+    if (road && city) {
+      const streetAddress = a.house_number ? `${road} ${a.house_number}` : road
+      formattedAddress = poiName ? `${poiName}, ${streetAddress}, ${city}` : `${streetAddress}, ${city}`
+    } else if (city) {
+      formattedAddress = poiName ? `${poiName}, ${city}` : city
     }
     return {
       formattedAddress,
