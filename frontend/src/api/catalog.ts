@@ -13,7 +13,6 @@ export function createInfrastructureType(body: {
   name: string
   description?: string
   icon?: string
-  color?: string
 }): Promise<InfrastructureType> {
   return apiFetch<{ data: InfrastructureType }>(`${API_BASE}/infrastructure-types`, {
     method: 'POST',
@@ -23,7 +22,7 @@ export function createInfrastructureType(body: {
 
 export function updateInfrastructureType(
   id: number,
-  body: { name?: string; description?: string; icon?: string | null; color?: string | null },
+  body: { name?: string; description?: string; icon?: string | null },
 ): Promise<InfrastructureType> {
   return apiFetch<{ data: InfrastructureType }>(`${API_BASE}/infrastructure-types/${id}`, {
     method: 'PATCH',

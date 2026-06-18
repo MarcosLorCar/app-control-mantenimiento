@@ -141,7 +141,7 @@ export function Catalog() {
     if (!itName.trim()) return
     setItError('')
     addInfraType.mutate(
-      { name: itName.trim(), icon: itIcon, color: undefined },
+      { name: itName.trim(), icon: itIcon },
       {
         onSuccess: () => { setItName(''); setItIcon('Building2'); setShowAddInfraType(false) },
         onError: (err: any) => setItError(err?.error?.message ?? 'Error al añadir'),

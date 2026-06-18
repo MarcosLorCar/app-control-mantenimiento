@@ -51,16 +51,16 @@ async function main() {
 
   // ── Infrastructure types ─────────────────────────────────────────────────
   const typeEdificio = await prisma.infrastructureType.create({
-    data: { name: 'Dependencias Municipales', description: 'Edificios públicos y dependencias del ayuntamiento', icon: 'Building2', color: '#3B82F6' },
+    data: { name: 'Dependencias Municipales', description: 'Edificios públicos y dependencias del ayuntamiento', icon: 'Building2' },
   })
   const typeParque = await prisma.infrastructureType.create({
-    data: { name: 'Parques y Jardines', description: 'Parques públicos y zonas verdes', icon: 'Trees', color: '#10B981' },
+    data: { name: 'Parques y Jardines', description: 'Parques públicos y zonas verdes', icon: 'Trees' },
   })
   const typePista = await prisma.infrastructureType.create({
-    data: { name: 'Pistas Deportivas', description: 'Instalaciones y pistas deportivas públicas', icon: 'Activity', color: '#F59E0B' },
+    data: { name: 'Pistas Deportivas', description: 'Instalaciones y pistas deportivas públicas', icon: 'Activity' },
   })
   await prisma.infrastructureType.create({
-    data: { name: 'Colegios', description: 'Centros educativos y colegios públicos', icon: 'GraduationCap', color: '#8B5CF6' },
+    data: { name: 'Colegios', description: 'Centros educativos y colegios públicos', icon: 'GraduationCap' },
   })
 
   // ── Material types ───────────────────────────────────────────────────────

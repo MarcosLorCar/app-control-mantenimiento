@@ -31,7 +31,6 @@ export async function listLocations(
           id: true,
           name: true,
           icon: true,
-          color: true,
         },
       },
       actions: {
