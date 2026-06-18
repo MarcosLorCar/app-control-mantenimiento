@@ -28,7 +28,6 @@ export interface InfrastructureType {
   name: string
   description: string | null
   icon: string | null
-  color: string | null
   deletedAt: string | null
 }
 
@@ -44,7 +43,7 @@ export interface Location {
   path: string
   parentId: number | null
   infraTypeId: number
-  infraType: { id: number; name: string; icon: string | null; color: string | null }
+  infraType: { id: number; name: string; icon: string | null }
   createdAt: string
   updatedAt: string
   deletedAt: string | null
@@ -53,6 +52,7 @@ export interface Location {
     materials: number
     actions: number
   }
+  lastActionAt?: string | null
 }
 
 export interface LocationDetail extends Location {

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Folder, Search, Plus, ChevronRight, GitBranch, Package, Zap, ChevronLeft, AlertCircle, MapPin } from 'lucide-react'
+import { Search, Plus, ChevronRight, Package, Zap, ChevronLeft, AlertCircle, Clock, X } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
 import { getCategoryIcon } from '../../utils/categoryIcons'
 import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
+import { formatRelativeTime } from '../../utils/date'
 
 export function CategoryLocationList() {
   const { id } = useParams<{ id: string }>()
@@ -87,6 +88,16 @@ export function CategoryLocationList() {
             onChange={e => setSearch(e.target.value)}
             className="flex-1 bg-transparent text-[13px] text-fg placeholder-muted outline-none"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="text-muted hover:text-fg shrink-0"
+              title="Limpiar búsqueda"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -96,7 +107,7 @@ export function CategoryLocationList() {
       </p>
 
       {/* Cards list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {filtered.length === 0 && (
           <div className="col-span-full bg-card rounded-xl border border-app-border p-10 text-center text-muted text-sm shadow-sm">
             {search ? 'Sin resultados para la búsqueda.' : 'No hay ubicaciones registradas en esta categoría.'}
@@ -123,7 +134,7 @@ export function CategoryLocationList() {
                     <img src={loc.image} alt={loc.name} className="w-full h-full object-cover" />
                   </button>
                 ) : (
-                  <MapPin className="w-6 h-6 text-primary" />
+                  <CatIcon className="w-6 h-6 text-primary" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -133,18 +144,11 @@ export function CategoryLocationList() {
                 {loc.description ? (
                   <p className="text-[13px] text-fg-secondary mt-1.5 line-clamp-2">{loc.description}</p>
                 ) : (
-                  <p className="text-[13px] text-muted italic mt-1.5">Sin descripción</p>
+                  <p className="text-[13px] text-fg-secondary mt-1.5 line-clamp-2">{loc.formattedAddress ?? ''}</p>
                 )}
 
                 {/* Previews counts */}
                 <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px] text-fg-secondary">
-                  {count.children > 0 && (
-                    <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Sub-ubicaciones">
-                      <GitBranch className="w-3 h-3 text-muted" />
-                      <span className="font-medium text-fg">{count.children}</span>
-                      <span className="text-muted text-[9px]">subs</span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Materiales Instalados">
                     <Package className="w-3 h-3 text-muted" />
                     <span className="font-medium text-fg">{count.materials}</span>
@@ -156,6 +160,14 @@ export function CategoryLocationList() {
                     <span className="text-muted text-[9px]">trabajos</span>
                   </div>
                 </div>
+              </div>
+              <div className="hidden md:flex items-center gap-1.5 self-center text-[12px] text-fg-secondary shrink-0">
+                <Clock className="w-3.5 h-3.5 text-muted" />
+                {loc.lastActionAt ? (
+                  <span>Última actividad: <span className="font-medium text-fg">{formatRelativeTime(loc.lastActionAt)}</span></span>
+                ) : (
+                  <span className="italic text-muted">Sin actividad</span>
+                )}
               </div>
               <ChevronRight className="w-5 h-5 text-muted shrink-0 self-center group-hover:translate-x-1 transition-transform" />
             </div>

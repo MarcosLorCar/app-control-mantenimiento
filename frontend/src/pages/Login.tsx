@@ -1,6 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react'
 import { useNavigate, Navigate, useSearchParams } from 'react-router-dom'
-import { Warehouse } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '../api/client'
@@ -54,9 +53,7 @@ export function Login() {
     <div className="min-h-screen bg-sidebar-bg flex items-center justify-center p-4">
       <div className="bg-card rounded-2xl shadow-xl p-8 w-full max-w-[360px] border border-app-border">
         <div className="mb-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mx-auto mb-4">
-            <Warehouse className="w-6 h-6 text-white" />
-          </div>
+          <img src="/icon.svg" alt="Infragest" className="w-12 h-12 rounded-xl mx-auto mb-4" />
           <h1 className="text-xl font-bold text-fg">INFRAGEST</h1>
           <p className="text-xs text-muted mt-1">Sistema de gestión de infraestructuras</p>
         </div>

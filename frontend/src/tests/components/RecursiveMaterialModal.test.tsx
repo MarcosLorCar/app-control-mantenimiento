@@ -13,7 +13,7 @@ const mockLocations = [
     parentId: null,
     path: '/18/',
     infraTypeId: 6,
-    infraType: { id: 6, name: 'Parque', icon: '🌳', color: '#10B981' },
+    infraType: { id: 6, name: 'Parque', icon: '🌳' },
     createdAt: '',
     updatedAt: '',
     deletedAt: null
@@ -24,7 +24,7 @@ const mockLocations = [
     parentId: 18,
     path: '/18/19/',
     infraTypeId: 6,
-    infraType: { id: 6, name: 'Parque', icon: '🌳', color: '#10B981' },
+    infraType: { id: 6, name: 'Parque', icon: '🌳' },
     createdAt: '',
     updatedAt: '',
     deletedAt: null

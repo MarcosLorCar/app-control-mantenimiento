@@ -1,11 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Folder, AlertCircle } from 'lucide-react'
+import { Plus, Folder, AlertCircle, LayoutGrid, List, Radar } from 'lucide-react'
 import { useInfrastructureTypes, useCreateInfrastructureType } from '../../hooks/useCatalog'
 import { useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { Modal } from '../../components/ui/Modal'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
+import { LocationList } from './LocationList'
+import { NearestLocationModal } from '../../components/locations/NearestLocationModal'
+
+const VIEW_STORAGE_KEY = 'locationsListView'
+
+function getStoredView(): 'category' | 'list' {
+  const stored = localStorage.getItem(VIEW_STORAGE_KEY)
+  return stored === 'list' ? 'list' : 'category'
+}
 
 export function CategoriesList() {
   const navigate = useNavigate()
@@ -14,6 +23,13 @@ export function CategoriesList() {
   const { data: allLocations = [] } = useLocations(undefined) // Fetch all locations to calculate counts
   const createCat = useCreateInfrastructureType()
 
+  const [view, setViewState] = useState<'category' | 'list'>(getStoredView)
+
+  function setView(next: 'category' | 'list') {
+    setViewState(next)
+    localStorage.setItem(VIEW_STORAGE_KEY, next)
+  }
+  const [showNearest, setShowNearest] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -34,7 +50,6 @@ export function CategoriesList() {
         name: name.trim(),
         description: description.trim() || undefined,
         icon: icon,
-        color: undefined,
       },
       {
         onSuccess: () => {
@@ -67,63 +82,112 @@ export function CategoriesList() {
 
   return (
     <div className="space-y-6 relative min-h-[70vh]">
-      {/* Grid List */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {categories.length === 0 && (
-          <div className="col-span-full bg-card rounded-xl border border-app-border p-12 text-center text-muted text-sm">
-            No hay categorías registradas en el catálogo.
-          </div>
-        )}
-        {categories.map(cat => {
-          const count = getCount(cat.id)
-          const CatIcon = getCategoryIcon(cat.icon)
-
-          return (
-            <div
-              key={cat.id}
-              onClick={() => navigate(`/categories/${cat.id}`)}
-              role="button"
-              className="flex flex-col p-6 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
-            >
-              {/* Top border decoration */}
-              <div
-                className="absolute top-0 inset-x-0 h-1 bg-primary/25 transition-all group-hover:h-1.5 group-hover:bg-primary"
-              />
-
-              <div className="flex items-center gap-3.5 mb-4">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform group-hover:scale-110 group-hover:rotate-3"
-                >
-                  <CatIcon className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-fg text-[16px] group-hover:text-primary transition-colors leading-tight">
-                    {cat.name}
-                  </h3>
-                  <p className="text-[11px] font-semibold text-muted uppercase mt-0.5">
-                    {count} ubicación{count !== 1 ? 'es' : ''}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-xs text-fg-secondary line-clamp-3 leading-relaxed flex-1">
-                {cat.description || 'Sin descripción adicional.'}
-              </p>
-            </div>
-          )
-        })}
+      {/* View Toggle */}
+      <div className="flex justify-between items-center gap-3">
+        <div className="flex bg-card p-1 rounded-lg border border-app-border shadow-sm">
+          <button
+            onClick={() => setView('category')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+              view === 'category'
+                ? 'bg-primary text-primary-fg shadow-sm'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Por categoría
+          </button>
+          <button
+            onClick={() => setView('list')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+              view === 'list'
+                ? 'bg-primary text-primary-fg shadow-sm'
+                : 'text-muted hover:text-fg'
+            }`}
+          >
+            <List className="w-3.5 h-3.5" />
+            Lista
+          </button>
+        </div>
       </div>
 
+      {/* Grid List */}
+      {view === 'category' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {categories.length === 0 && (
+            <div className="col-span-full bg-card rounded-xl border border-app-border p-12 text-center text-muted text-sm">
+              No hay categorías registradas en el catálogo.
+            </div>
+          )}
+          {categories.map(cat => {
+            const count = getCount(cat.id)
+            const CatIcon = getCategoryIcon(cat.icon)
+
+            return (
+              <div
+                key={cat.id}
+                onClick={() => navigate(`/categories/${cat.id}`)}
+                role="button"
+                className="flex flex-col p-6 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-lg transition-all cursor-pointer group relative overflow-hidden"
+              >
+                {/* Top border decoration */}
+                <div
+                  className="absolute top-0 inset-x-0 h-1 bg-primary/25 transition-all group-hover:h-1.5 group-hover:bg-primary"
+                />
+
+                <div className="flex items-center gap-3.5 mb-4">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform group-hover:scale-110 group-hover:rotate-3"
+                  >
+                    <CatIcon className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-fg text-[16px] group-hover:text-primary transition-colors leading-tight">
+                      {cat.name}
+                    </h3>
+                    <p className="text-[11px] font-semibold text-muted uppercase mt-0.5">
+                      {count} ubicación{count !== 1 ? 'es' : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs text-fg-secondary line-clamp-3 leading-relaxed flex-1">
+                  {cat.description || 'Sin descripción adicional.'}
+                </p>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Flat List */}
+      {view === 'list' && <LocationList />}
+
+      {/* Radar FAB */}
+      <button
+        onClick={() => setShowNearest(true)}
+        className="fixed bottom-24 right-8 w-14 h-14 bg-card border border-app-border text-muted hover:text-fg hover:bg-muted/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20 group"
+        title="Buscar por cercanía"
+      >
+        <Radar className="w-6 h-6 stroke-[2.5]" />
+      </button>
+
+      {/* Radar Modal */}
+      {showNearest && (
+        <NearestLocationModal locations={allLocations} onClose={() => setShowNearest(false)} />
+      )}
+
       {/* FAB */}
-      <RoleGuard require="write">
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-primary hover:bg-[var(--primary-hover)] text-primary-fg rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20"
-          title="Nueva Categoría"
-        >
-          <Plus className="w-6 h-6 stroke-[2.5]" />
-        </button>
-      </RoleGuard>
+      {view === 'category' && (
+        <RoleGuard require="write">
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="fixed bottom-8 right-8 w-14 h-14 bg-primary hover:bg-[var(--primary-hover)] text-primary-fg rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20"
+            title="Nueva Categoría"
+          >
+            <Plus className="w-6 h-6 stroke-[2.5]" />
+          </button>
+        </RoleGuard>
+      )}
 
       {/* Modal Form */}
       {showAddForm && (

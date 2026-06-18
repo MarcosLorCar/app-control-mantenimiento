@@ -31,8 +31,12 @@ export async function listLocations(
           id: true,
           name: true,
           icon: true,
-          color: true,
         },
+      },
+      actions: {
+        select: { performedAt: true },
+        take: 1,
+        orderBy: { performedAt: 'desc' },
       },
     },
     orderBy: { name: 'asc' },
@@ -54,6 +58,7 @@ export async function listLocations(
   const countByLocationId = new Map(rawCounts.map(r => [Number(r.locationid), Number(r.count)]))
 
   return locations.map(loc => {
+    const { actions, ...rest } = loc
     let materialsCount = 0
     for (const [locId, cnt] of countByLocationId) {
       const locPath = pathById.get(locId)
@@ -61,7 +66,11 @@ export async function listLocations(
         materialsCount += cnt
       }
     }
-    return { ...loc, _count: { ...loc._count, materials: materialsCount } }
+    return {
+      ...rest,
+      _count: { ...loc._count, materials: materialsCount },
+      lastActionAt: actions[0]?.performedAt ?? null,
+    }
   })
 }
 

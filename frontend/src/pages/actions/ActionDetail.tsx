@@ -7,10 +7,7 @@ import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { RoleGuard } from '../../components/RoleGuard'
 import { ActionForm } from './ActionForm'
 import type { Material } from '../../api/types'
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+import { formatDate } from '../../utils/date'
 
 export function ActionDetail() {
   const { id } = useParams<{ id: string }>()

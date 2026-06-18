@@ -48,7 +48,6 @@ model InfrastructureType {
   name        String    @unique
   description String?
   icon        String?
-  color       String?
   deletedAt   DateTime?
 
   locations     Location[]
