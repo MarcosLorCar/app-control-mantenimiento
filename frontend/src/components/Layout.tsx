@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   ClipboardList, MapPin, Package, Map,
-  Users, Settings, LogOut, Bell, Menu,
+  Users, Settings, LogOut, Menu,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 
@@ -167,12 +167,6 @@ export function Layout() {
               )}
             </div>
           </div>
-          <button
-            className="w-9 h-9 rounded-lg border border-app-border flex items-center justify-center text-muted hover:text-fg transition-colors shrink-0"
-            title="Notificaciones"
-          >
-            <Bell className="w-[18px] h-[18px]" />
-          </button>
         </header>
 
 
