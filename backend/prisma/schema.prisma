@@ -48,6 +48,7 @@ model InfrastructureType {
   name        String    @unique
   description String?
   icon        String?
+  color       String?
   deletedAt   DateTime?
 
   locations     Location[]
@@ -73,6 +74,12 @@ model Location {
   longitude        Float?
   placeId          String?
   formattedAddress String?
+  // Structured address components (editable; formattedAddress is derived from these)
+  addrStreet       String?
+  addrHouseNumber  String?
+  addrCity         String?
+  addrPostcode     String?
+  addrProvince     String?
   image       String?   // <--- Image path of the location
 
   infraTypeId Int

@@ -1,6 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  // Only apply hover: utilities on devices that actually support hover, so
+  // touch devices (PWA on mobile) don't get sticky hover states while scrolling.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {

@@ -5,7 +5,7 @@ interface ModalProps {
   title: string
   onClose: () => void
   children: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full' | 'screen'
 }
 
 export function Modal({ title, onClose, children, size = 'md' }: ModalProps) {
@@ -17,11 +17,20 @@ export function Modal({ title, onClose, children, size = 'md' }: ModalProps) {
     '2xl': 'max-w-4xl',
     '3xl': 'max-w-6xl',
     full: 'max-w-[calc(100vw-2rem)] sm:max-w-[95vw] h-[calc(100vh-2rem)]',
+    screen: '',
   }
 
+  const isScreen = size === 'screen'
+
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-      <div className={`bg-card rounded-lg shadow-xl w-full mx-4 sm:mx-0 border border-app-border flex flex-col max-h-[calc(100vh-2rem)] ${sizeClasses[size]}`}>
+    <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] ${isScreen ? 'p-0' : 'p-4'}`}>
+      <div
+        className={
+          isScreen
+            ? 'bg-card shadow-xl w-screen h-[100dvh] border-0 flex flex-col'
+            : `bg-card rounded-lg shadow-xl w-full mx-4 sm:mx-0 border border-app-border flex flex-col max-h-[calc(100vh-2rem)] ${sizeClasses[size]}`
+        }
+      >
         <div className="flex items-center justify-between px-5 py-4 border-b border-app-border flex-shrink-0">
           <h2 className="text-lg font-semibold text-fg">{title}</h2>
           <button

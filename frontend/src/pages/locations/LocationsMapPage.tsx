@@ -1,12 +1,15 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { Search, ExternalLink, PlusCircle, X } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { useSystemSettings } from '../../hooks/useSystemSettings'
 import { getCategoryIcon } from '../../utils/categoryIcons'
+import { getCategoryColor, withAlpha } from '../../utils/categoryColors'
+import { buildCategoryMarker } from '../../utils/mapMarker'
+import { TILE_LAYERS, getStoredTileId, setStoredTileId } from '../../utils/mapTiles'
 import { LocationForm } from '../../components/forms/LocationForm'
 import { reverseGeocode } from '../../utils/geocode'
 import type { Location } from '../../api/types'
@@ -48,12 +51,17 @@ function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => v
     click(e) {
       onMapClick(e.latlng.lat, e.latlng.lng)
     },
+    baselayerchange(e) {
+      const layer = TILE_LAYERS.find(t => t.label === e.name)
+      if (layer) setStoredTileId(layer.id)
+    },
   })
   return null
 }
 
 function MapInfoCard({ loc, onNavigate }: { loc: Location; onNavigate: () => void }) {
   const CatIcon = getCategoryIcon(loc.infraType?.icon)
+  const color = getCategoryColor(loc.infraType?.color)
   return (
     <div className="p-1 space-y-2 min-w-[200px] max-w-[260px] text-fg">
       {loc.image && (
@@ -64,10 +72,13 @@ function MapInfoCard({ loc, onNavigate }: { loc: Location; onNavigate: () => voi
         />
       )}
       <div className="flex items-center gap-2 border-b border-gray-200 pb-1.5">
-        <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center shrink-0">
-          <CatIcon className="w-3.5 h-3.5 text-blue-600" />
+        <div
+          className="w-6 h-6 rounded flex items-center justify-center shrink-0"
+          style={{ backgroundColor: withAlpha(color, 0.12) }}
+        >
+          <CatIcon className="w-3.5 h-3.5" style={{ color }} />
         </div>
-        <span className="text-[11px] font-mono uppercase text-blue-600 font-bold">
+        <span className="text-[11px] font-mono uppercase font-bold" style={{ color }}>
           {loc.infraType?.name ?? 'Ubicación'}
         </span>
       </div>
@@ -106,6 +117,7 @@ export function LocationsMapPage() {
   const [filterTypeId, setFilterTypeId] = useState<number | ''>('')
   const [registerGeo, setRegisterGeo] = useState<Parameters<typeof LocationForm>[0]['initialGeo'] | null>(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
+  const [storedTileId] = useState(getStoredTileId)
   
   // Sync search state when query params change
   useEffect(() => {
@@ -214,17 +226,21 @@ export function LocationsMapPage() {
           scrollWheelZoom={true}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <LayersControl position="topright">
+            {TILE_LAYERS.map(t => (
+              <LayersControl.BaseLayer key={t.id} name={t.label} checked={t.id === storedTileId}>
+                <TileLayer url={t.url} attribution={t.attribution} maxZoom={t.maxZoom} />
+              </LayersControl.BaseLayer>
+            ))}
+          </LayersControl>
           <MapCenterController center={centerCoords} zoom={zoomLevel} />
           <MapEvents onMapClick={handleMapClick} />
-          
+
           {filteredLocations.map(loc => (
             <Marker
               key={loc.id}
               position={[loc.latitude!, loc.longitude!]}
+              icon={buildCategoryMarker(loc.infraType?.color)}
               eventHandlers={{
                 click: () => setPendingClickCoords(null)
               }}

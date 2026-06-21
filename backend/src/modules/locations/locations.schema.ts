@@ -1,5 +1,13 @@
 import { z } from 'zod'
 
+const addressFields = {
+  addrStreet: z.string().nullable().optional(),
+  addrHouseNumber: z.string().nullable().optional(),
+  addrCity: z.string().nullable().optional(),
+  addrPostcode: z.string().nullable().optional(),
+  addrProvince: z.string().nullable().optional(),
+}
+
 export const CreateLocationSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().nullable().optional(),
@@ -7,6 +15,7 @@ export const CreateLocationSchema = z.object({
   longitude: z.number().nullable().optional(),
   placeId: z.string().nullable().optional(),
   formattedAddress: z.string().nullable().optional(),
+  ...addressFields,
   parentId: z.number().int().positive().nullable().optional(),
   infraTypeId: z.number().int().positive().nullable().optional(),
 }).refine(data => {
@@ -24,6 +33,7 @@ export const UpdateLocationSchema = z.object({
   longitude: z.number().nullable().optional(),
   placeId: z.string().nullable().optional(),
   formattedAddress: z.string().nullable().optional(),
+  ...addressFields,
   parentId: z.number().int().positive().nullable().optional(),
   infraTypeId: z.number().int().positive().nullable().optional(),
 })

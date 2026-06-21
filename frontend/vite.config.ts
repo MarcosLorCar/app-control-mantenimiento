@@ -9,11 +9,18 @@ export default defineConfig({
     basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'script',
+      // We register the service worker ourselves (src/pwa.ts) so we can force
+      // update checks on load / tab focus and reliably activate new versions.
+      injectRegister: null,
       workbox: {
         // Don't let the SPA navigation fallback swallow backend routes
         // (e.g. the OAuth callback must reach the server, not render index.html)
         navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
+        // Take control immediately and drop stale precaches so a redeploy is
+        // picked up without a manual Ctrl+F5 / cache clear.
+        clientsClaim: true,
+        skipWaiting: true,
+        cleanupOutdatedCaches: true,
       },
       devOptions: {
         enabled: true

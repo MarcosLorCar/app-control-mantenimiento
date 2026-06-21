@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react'
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, LayersControl, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import iconUrl from 'leaflet/dist/images/marker-icon.png'
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import { TILE_LAYERS, getStoredTileId, setStoredTileId } from '../../utils/mapTiles'
 
 // Fix Leaflet marker icon asset paths inside Vite
 const DefaultIcon = L.icon({
@@ -33,6 +34,7 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
   const [position, setPosition] = useState<[number, number]>(
     latitude && longitude ? [latitude, longitude] : fallbackCenter
   )
+  const [defaultTileId] = useState(getStoredTileId)
   const [loadingGps, setLoadingGps] = useState(false)
   const isFirstLoad = useRef(true)
 
@@ -114,6 +116,10 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
         setPosition([lat, lng])
         onChange(lat, lng)
       },
+      baselayerchange(e) {
+        const layer = TILE_LAYERS.find(t => t.label === e.name)
+        if (layer) setStoredTileId(layer.id)
+      },
     })
 
     // Pan to new coordinate when updated externally
@@ -160,10 +166,13 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
           scrollWheelZoom={true}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <LayersControl position="topright">
+            {TILE_LAYERS.map(t => (
+              <LayersControl.BaseLayer key={t.id} name={t.label} checked={t.id === defaultTileId}>
+                <TileLayer url={t.url} attribution={t.attribution} maxZoom={t.maxZoom} />
+              </LayersControl.BaseLayer>
+            ))}
+          </LayersControl>
           <Marker
             draggable={true}
             eventHandlers={markerHandlers}
