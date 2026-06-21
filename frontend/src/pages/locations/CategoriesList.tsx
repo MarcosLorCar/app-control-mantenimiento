@@ -174,7 +174,7 @@ export function CategoriesList() {
       {/* Radar FAB */}
       <button
         onClick={() => setShowNearest(true)}
-        className="fixed bottom-24 right-8 w-14 h-14 bg-card border border-app-border text-muted hover:text-fg hover:bg-muted/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20 group"
+        className="fixed bottom-24 right-8 w-14 h-14 bg-card border border-app-border text-muted hover:text-fg hover:bg-muted/10 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-10 group"
         title="Buscar por cercanía"
       >
         <NearbyPinIcon size={24} strokeWidth={1.75} className="w-6 h-6" />
@@ -190,7 +190,7 @@ export function CategoriesList() {
         <RoleGuard require="write">
           <button
             onClick={() => setShowAddForm(true)}
-            className="fixed bottom-8 right-8 w-14 h-14 bg-primary hover:bg-[var(--primary-hover)] text-primary-fg rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20"
+            className="fixed bottom-8 right-8 w-14 h-14 bg-primary hover:bg-[var(--primary-hover)] text-primary-fg rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-10"
             title="Nueva Categoría"
           >
             <Plus className="w-6 h-6 stroke-[2.5]" />

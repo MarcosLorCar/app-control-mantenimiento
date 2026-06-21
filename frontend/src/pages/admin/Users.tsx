@@ -29,19 +29,19 @@ export function Users() {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <h1 className="text-2xl font-bold text-gray-900 flex-1">Usuarios</h1>
+        <h1 className="text-2xl font-bold text-fg flex-1">Usuarios</h1>
         <div className="flex gap-2">
           <input
             type="text"
             placeholder="Buscar..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-auto"
+            className="border border-app-border bg-card text-fg rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors w-full sm:w-auto"
           />
           <RoleGuard require="manage">
             <button
               onClick={() => setShowForm(true)}
-              className="bg-gray-900 text-white px-3 py-1.5 rounded-md text-sm hover:bg-gray-700 whitespace-nowrap"
+              className="bg-primary text-primary-fg px-3.5 py-1.5 rounded-lg text-sm font-semibold hover:bg-[var(--primary-hover)] transition-colors whitespace-nowrap shadow-sm"
             >
               + Nuevo
             </button>
@@ -54,33 +54,33 @@ export function Users() {
       ) : (
         <>
           {/* Vista tabla — md+ */}
-          <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="hidden md:block bg-card rounded-lg shadow-sm border border-app-border overflow-x-auto">
+            <table className="min-w-full divide-y divide-app-border/60">
+              <thead className="bg-app-bg">
                 <tr>
                   {['Nombre', 'Email', 'Rol', 'Estado', 'Acciones'].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-card divide-y divide-app-border/60">
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-400">
+                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-muted">
                       Sin usuarios
                     </td>
                   </tr>
                 )}
                 {filtered.map(u => (
-                  <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{u.fullName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{u.email}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{roleName(u.roleId)}</td>
+                  <tr key={u.id} className="hover:bg-app-bg/40 transition-colors">
+                    <td className="px-4 py-3 text-sm font-medium text-fg">{u.fullName}</td>
+                    <td className="px-4 py-3 text-sm text-fg-secondary">{u.email}</td>
+                    <td className="px-4 py-3 text-sm text-fg-secondary">{roleName(u.roleId)}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        u.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                        u.isActive ? 'bg-success/15 text-success' : 'bg-muted/15 text-muted'
                       }`}>
                         {u.isActive ? 'Activo' : 'Inactivo'}
                       </span>
@@ -90,20 +90,20 @@ export function Users() {
                         <div className="flex gap-3">
                           <button
                             onClick={() => setEditingUser(u)}
-                            className="text-xs text-gray-700 hover:text-gray-900"
+                            className="text-xs text-fg-secondary hover:text-fg font-medium transition-colors"
                           >
                             Editar
                           </button>
                           <button
                             onClick={() => updateUser.mutate({ id: u.id, body: { isActive: !u.isActive } })}
-                            className="text-xs text-blue-600 hover:text-blue-800"
+                            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
                           >
                             {u.isActive ? 'Desactivar' : 'Activar'}
                           </button>
                           <button
                             onClick={() => resetUser.mutate(u.id, { onSuccess: d => setResetPassword(d.tempPassword) })}
                             disabled={resetUser.isPending}
-                            className="text-xs text-orange-500 hover:text-orange-700 disabled:opacity-50"
+                            className="text-xs text-orange-500 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 disabled:opacity-50 font-medium transition-colors"
                           >
                             Resetear
                           </button>
@@ -117,18 +117,18 @@ export function Users() {
           </div>
 
           {/* Vista cards — móvil */}
-          <div className="md:hidden bg-white rounded-lg shadow divide-y divide-gray-100">
+          <div className="md:hidden bg-card rounded-lg shadow-sm border border-app-border divide-y divide-app-border/60">
             {filtered.length === 0 && (
-              <p className="px-4 py-6 text-center text-sm text-gray-400">Sin usuarios</p>
+              <p className="px-4 py-6 text-center text-sm text-muted">Sin usuarios</p>
             )}
             {filtered.map(u => (
               <div key={u.id} className="px-4 py-3 space-y-1.5">
-                <p className="text-sm font-medium text-gray-900">{u.fullName}</p>
-                <p className="text-xs text-gray-500">{u.email}</p>
+                <p className="text-sm font-semibold text-fg">{u.fullName}</p>
+                <p className="text-xs text-muted">{u.email}</p>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-gray-600">{roleName(u.roleId)}</span>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                    u.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  <span className="text-xs text-fg-secondary font-medium">{roleName(u.roleId)}</span>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
+                    u.isActive ? 'bg-success/15 text-success' : 'bg-muted/15 text-muted'
                   }`}>
                     {u.isActive ? 'Activo' : 'Inactivo'}
                   </span>
@@ -137,20 +137,20 @@ export function Users() {
                   <div className="flex gap-3 pt-0.5">
                     <button
                       onClick={() => setEditingUser(u)}
-                      className="text-xs text-gray-700 hover:text-gray-900"
+                      className="text-xs text-fg-secondary hover:text-fg font-medium transition-colors"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => updateUser.mutate({ id: u.id, body: { isActive: !u.isActive } })}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
                     >
                       {u.isActive ? 'Desactivar' : 'Activar'}
                     </button>
                     <button
                       onClick={() => resetUser.mutate(u.id, { onSuccess: d => setResetPassword(d.tempPassword) })}
                       disabled={resetUser.isPending}
-                      className="text-xs text-orange-500 hover:text-orange-700 disabled:opacity-50"
+                      className="text-xs text-orange-500 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 disabled:opacity-50 font-medium transition-colors"
                     >
                       Resetear
                     </button>

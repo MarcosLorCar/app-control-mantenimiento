@@ -20,7 +20,7 @@ export function EditUserModal({ user, isSelf, onClose }: Props) {
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
 
-  const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 disabled:opacity-60 disabled:cursor-not-allowed'
+  const inputCls = 'w-full border border-app-border bg-card text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary disabled:opacity-60 disabled:cursor-not-allowed transition-colors'
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,8 +58,8 @@ export function EditUserModal({ user, isSelf, onClose }: Props) {
     <Modal title="Editar usuario" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre completo <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-fg-secondary mb-1">
+            Nombre completo <span className="text-error">*</span>
           </label>
           <input
             type="text"
@@ -70,7 +70,7 @@ export function EditUserModal({ user, isSelf, onClose }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+          <label className="block text-sm font-semibold text-fg-secondary mb-1">Rol</label>
           <select
             value={roleId}
             onChange={e => setRoleId(Number(e.target.value))}
@@ -82,44 +82,44 @@ export function EditUserModal({ user, isSelf, onClose }: Props) {
             ))}
           </select>
           {isSelf && (
-            <p className="text-xs text-gray-400 mt-1">No puedes cambiar tu propio rol.</p>
+            <p className="text-xs text-muted mt-1">No puedes cambiar tu propio rol.</p>
           )}
         </div>
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && <p className="text-error text-sm">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors font-medium"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={updateUser.isPending}
-            className="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
+            className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors font-semibold"
           >
             {updateUser.isPending ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
       </form>
 
-      <div className="mt-6 pt-4 border-t border-red-200">
-        <h3 className="text-sm font-semibold text-red-600 mb-2">Zona de peligro</h3>
+      <div className="mt-6 pt-4 border-t border-error/20">
+        <h3 className="text-sm font-bold text-error mb-2">Zona de peligro</h3>
         {isSelf ? (
-          <p className="text-xs text-gray-400">No puedes eliminar tu propia cuenta.</p>
+          <p className="text-xs text-muted">No puedes eliminar tu propia cuenta.</p>
         ) : (
-          <div className="border border-red-200 bg-red-50 rounded-md p-3 space-y-2">
-            <p className="text-xs text-red-700">
+          <div className="border border-error/20 bg-error/5 rounded-lg p-3 space-y-2">
+            <p className="text-xs text-error">
               Esta acción desactiva al usuario y lo marca como eliminado. No se puede deshacer desde la interfaz.
             </p>
             {!confirmingDelete ? (
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
-                className="text-xs font-semibold text-red-600 hover:text-red-800 border border-red-300 rounded-md px-3 py-1.5 hover:bg-red-100"
+                className="text-xs font-bold text-error hover:text-red-700 border border-error/25 rounded-lg px-3 py-1.5 hover:bg-error/10 transition-colors"
               >
                 Eliminar usuario
               </button>
@@ -129,14 +129,14 @@ export function EditUserModal({ user, isSelf, onClose }: Props) {
                   type="button"
                   onClick={handleDelete}
                   disabled={deleteUser.isPending}
-                  className="text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-md px-3 py-1.5 disabled:opacity-50"
+                  className="text-xs font-bold text-white bg-error hover:bg-red-700 rounded-lg px-3 py-1.5 disabled:opacity-50 transition-colors"
                 >
                   {deleteUser.isPending ? 'Eliminando...' : 'Confirmar eliminación'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
-                  className="text-xs text-gray-600 hover:text-gray-800"
+                  className="text-xs text-fg-secondary hover:text-fg font-semibold transition-colors"
                 >
                   Cancelar
                 </button>

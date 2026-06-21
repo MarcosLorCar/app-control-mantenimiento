@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, ChevronRight, Package, Zap, Clock, X } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
@@ -9,9 +9,7 @@ import { getCategoryIcon } from '../../utils/categoryIcons'
 import { getCategoryColor, withAlpha } from '../../utils/categoryColors'
 import { formatRelativeTime } from '../../utils/date'
 import { useDensity } from '../../hooks/useDensity'
-import { useAlphaIndex } from '../../hooks/useAlphaIndex'
 import { DensityToggle } from '../../components/ui/DensityToggle'
-import { AlphaIndexScroller } from '../../components/ui/AlphaIndexScroller'
 import type { Location } from '../../api/types'
 
 export function LocationList() {
@@ -31,8 +29,13 @@ export function LocationList() {
     return matchText && matchType
   })
 
-  const getName = useCallback((loc: Location) => loc.name, [])
-  const { sorted, letters, firstOfLetter, setAnchorRef, scrollToLetter } = useAlphaIndex(filtered, getName)
+  const sorted = useMemo(
+    () =>
+      [...filtered].sort((a, b) =>
+        a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+      ),
+    [filtered]
+  )
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-20 text-muted text-sm">
@@ -99,18 +102,15 @@ export function LocationList() {
         )}
 
         <div className={`grid grid-cols-1 ${density === 'compact' ? 'gap-1.5' : 'gap-4'}`}>
-          {sorted.map((loc, i) => {
+          {sorted.map(loc => {
             const count = loc._count ?? { children: 0, materials: 0, actions: 0 }
             const CatIcon = getCategoryIcon(loc.infraType?.icon)
             const color = getCategoryColor(loc.infraType?.color)
-            const anchorLetter = firstOfLetter[i]
-            const anchorRef = anchorLetter ? setAnchorRef(anchorLetter) : undefined
 
             if (density === 'compact') {
               return (
                 <div
                   key={loc.id}
-                  ref={anchorRef}
                   onClick={() => navigate(`/locations/${loc.id}`)}
                   role="button"
                   className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-card border-app-border hover:border-primary/40 transition-colors cursor-pointer"
@@ -118,7 +118,9 @@ export function LocationList() {
                   {loc.image ? (
                     <img src={loc.image} alt={loc.name} className="w-8 h-8 rounded-md object-cover shrink-0" />
                   ) : (
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                      <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: color }} />
+                    </div>
                   )}
                   <span className="font-medium text-fg text-sm truncate flex-1">{loc.name}</span>
                   <ChevronRight className="w-4 h-4 text-muted shrink-0" />
@@ -129,7 +131,6 @@ export function LocationList() {
             return (
               <div
                 key={loc.id}
-                ref={anchorRef}
                 onClick={() => navigate(`/locations/${loc.id}`)}
                 role="button"
                 className="flex items-start gap-4 p-5 rounded-xl border bg-card border-app-border hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group"
@@ -187,14 +188,12 @@ export function LocationList() {
             )
           })}
         </div>
-
-        <AlphaIndexScroller letters={letters} onSelect={scrollToLetter} />
       </div>
 
       <RoleGuard require="write">
         <button
           onClick={() => setShowForm(true)}
-          className="fixed bottom-8 right-8 w-14 h-14 bg-primary hover:bg-[var(--primary-hover)] text-primary-fg rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-20"
+          className="fixed bottom-8 right-8 w-14 h-14 bg-primary hover:bg-[var(--primary-hover)] text-primary-fg rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105 transition-all z-10"
           title="Nueva Ubicación"
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />

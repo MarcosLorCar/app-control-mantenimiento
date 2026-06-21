@@ -21,21 +21,21 @@ export function PasswordModal({ tempPassword, onClose }: PasswordModalProps) {
   return (
     <Modal title="Contraseña temporal" onClose={onClose}>
       <div className="space-y-4">
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-fg-secondary">
           Contraseña temporal generada (solo visible ahora):
         </p>
         <div className="flex items-center gap-2">
-          <p className="flex-1 font-mono text-sm bg-gray-100 p-3 rounded select-all break-all">
+          <p className="flex-1 font-mono text-sm bg-app-bg p-3 rounded-lg border border-app-border select-all break-all text-fg">
             {tempPassword}
           </p>
           <button
             onClick={handleCopy}
-            className="shrink-0 px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            className="shrink-0 px-3 py-2 text-sm border border-app-border bg-card text-fg-secondary rounded-lg hover:bg-app-bg transition-colors"
           >
             {copied ? '¡Copiado!' : 'Copiar'}
           </button>
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           El usuario deberá cambiarla al primer acceso.
         </p>
         <label className="flex items-start gap-2 cursor-pointer">
@@ -43,16 +43,16 @@ export function PasswordModal({ tempPassword, onClose }: PasswordModalProps) {
             type="checkbox"
             checked={confirmed}
             onChange={e => setConfirmed(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+            className="mt-0.5 h-4 w-4 rounded border-app-border text-primary focus:ring-primary/40 bg-card"
           />
-          <span className="text-sm text-gray-700">
+          <span className="text-sm text-fg-secondary">
             He guardado la contraseña en un lugar seguro
           </span>
         </label>
         <button
           onClick={onClose}
           disabled={!confirmed}
-          className="w-full px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed font-semibold transition-colors"
         >
           Cerrar
         </button>
@@ -94,7 +94,7 @@ export function UserForm({ onClose }: Props) {
     )
   }
 
-  const inputCls = 'w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+  const inputCls = 'w-full border border-app-border bg-card text-fg rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
 
   if (tempPassword) {
     return <PasswordModal tempPassword={tempPassword} onClose={onClose} />
@@ -104,8 +104,8 @@ export function UserForm({ onClose }: Props) {
     <Modal title="Nuevo usuario" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre completo <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-fg-secondary mb-1">
+            Nombre completo <span className="text-error">*</span>
           </label>
           <input
             type="text"
@@ -116,7 +116,7 @@ export function UserForm({ onClose }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-semibold text-fg-secondary mb-1">
             Email <span className="text-red-500">*</span>
           </label>
           <input
@@ -128,8 +128,8 @@ export function UserForm({ onClose }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Rol <span className="text-red-500">*</span>
+          <label className="block text-sm font-semibold text-fg-secondary mb-1">
+            Rol <span className="text-error">*</span>
           </label>
           <select
             value={roleId}
@@ -143,20 +143,20 @@ export function UserForm({ onClose }: Props) {
           </select>
         </div>
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && <p className="text-error text-sm">{error}</p>}
 
         <div className="flex justify-end gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-sm text-fg-secondary border border-app-border rounded-lg hover:bg-app-bg transition-colors font-medium"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={createUser.isPending}
-            className="px-4 py-2 text-sm text-white bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50"
+            className="px-4 py-2 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors font-semibold"
           >
             {createUser.isPending ? 'Creando...' : 'Crear'}
           </button>

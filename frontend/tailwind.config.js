@@ -18,6 +18,8 @@ export default {
         'sidebar-fg': 'var(--sidebar-fg)',
         'sidebar-active': 'var(--sidebar-active)',
         'sidebar-active-fg': 'var(--sidebar-active-fg)',
+        'sidebar-border': 'var(--sidebar-border)',
+        'sidebar-hover': 'var(--sidebar-hover)',
         success: { DEFAULT: 'var(--success)', bg: 'var(--success-bg)' },
         warning: { DEFAULT: 'var(--warning)', bg: 'var(--warning-bg)' },
         error: { DEFAULT: 'var(--error)', bg: 'var(--error-bg)' },

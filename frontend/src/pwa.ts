@@ -30,6 +30,17 @@ function showUpdateToast() {
  * automatic reload into the fresh version. No manual cache clearing needed.
  */
 export function setupPWA() {
+  let refreshing = false
+  const hasController = !!navigator.serviceWorker?.controller
+
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    if (refreshing) return
+    refreshing = true
+    if (hasController) {
+      window.location.reload()
+    }
+  })
+
   const updateSW = registerSW({
     immediate: true,
     onRegisteredSW(_swUrl, registration) {

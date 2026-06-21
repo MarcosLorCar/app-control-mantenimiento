@@ -37,7 +37,7 @@ export function Catalog() {
 
   function handleRecalcAddresses() {
     if (recalc.running) return
-    if (!confirm('Se recalcularán las direcciones de todas las ubicaciones con coordenadas a partir de su posición. Puede tardar varios minutos (≈1 ubicación por segundo) y no debes cerrar esta pestaña. ¿Continuar?')) return
+    if (!confirm('Se recalcularán las direcciones de todas las ubicaciones con coordenadas. El proceso se ejecutará en segundo plano en el servidor, por lo que puedes cerrar esta pestaña o salir de la aplicación sin problema. ¿Continuar?')) return
     void runRecalc()
   }
 
@@ -467,8 +467,8 @@ export function Catalog() {
             <h2 className="text-[15px] font-semibold text-fg mb-4">Direcciones</h2>
             <p className="text-xs text-fg-secondary leading-relaxed mb-4">
               Recalcula la dirección de todas las ubicaciones con coordenadas a partir de su
-              posición en el mapa. Útil tras cambios en el formato de direcciones. El proceso es
-              secuencial (≈1 ubicación/segundo) y debes mantener esta pestaña abierta.
+              posición en el mapa. Útil tras cambios en el formato de direcciones. El proceso se ejecuta
+              en el servidor en segundo plano y no es necesario mantener la pestaña abierta.
             </p>
 
             {(recalc.running || recalc.finished) && (

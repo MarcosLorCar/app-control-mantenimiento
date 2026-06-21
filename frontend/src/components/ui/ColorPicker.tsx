@@ -9,15 +9,15 @@ interface Props {
 export function ColorPicker({ value, onChange }: Props) {
   const isPreset = CATEGORY_COLOR_PALETTE.some(c => c.toLowerCase() === value.toLowerCase())
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center gap-2 flex-wrap p-2">
       {CATEGORY_COLOR_PALETTE.map(c => (
         <button
           key={c}
           type="button"
           onClick={() => onChange(c)}
-          className={`w-7 h-7 rounded-full transition-transform hover:scale-110 ${
+          className={`w-7 h-7 rounded-full transition-all hover:opacity-90 ${
             value.toLowerCase() === c.toLowerCase()
-              ? 'ring-2 ring-offset-2 ring-offset-card ring-fg scale-110'
+              ? 'ring-2 ring-offset-2 ring-offset-card ring-fg'
               : ''
           }`}
           style={{ backgroundColor: c }}
@@ -25,21 +25,23 @@ export function ColorPicker({ value, onChange }: Props) {
         />
       ))}
       <label
-        className={`relative w-7 h-7 rounded-full overflow-hidden cursor-pointer border border-app-border ${
+        className={`relative w-7 h-7 rounded-full cursor-pointer border border-app-border transition-all hover:opacity-90 ${
           !isPreset ? 'ring-2 ring-offset-2 ring-offset-card ring-fg' : ''
         }`}
         title="Color personalizado"
       >
-        <input
-          type="color"
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
-        />
-        <span
-          className="absolute inset-0"
-          style={{ background: 'conic-gradient(red, orange, yellow, lime, aqua, blue, magenta, red)' }}
-        />
+        <div className="absolute inset-0 rounded-full overflow-hidden">
+          <input
+            type="color"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
+          />
+          <span
+            className="absolute inset-0"
+            style={{ background: 'conic-gradient(red, orange, yellow, lime, aqua, blue, magenta, red)' }}
+          />
+        </div>
       </label>
     </div>
   )

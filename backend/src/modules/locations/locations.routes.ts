@@ -282,5 +282,179 @@ export async function locationsRoutes(app: FastifyInstance) {
 
     return reply.status(204).send()
   })
+
+  // Start recalculation of addresses in the background
+  app.post('/recalc-addresses', { preHandler: [app.requireWrite] }, async (req, reply) => {
+    if (recalcProgress.running) {
+      return reply.status(400).send({ error: { code: 'ALREADY_RUNNING', message: 'El proceso ya está en ejecución' } })
+    }
+
+    // Start background process
+    void runRecalcBackground(app.db)
+
+    return reply.status(202).send({ data: recalcProgress })
+  })
+
+  // Get recalculation progress
+  app.get('/recalc-addresses/status', { preHandler: [app.verifyToken] }, async (req, reply) => {
+    return reply.send({ data: recalcProgress })
+  })
+}
+
+// Module-level scope for background recalculation state
+export interface RecalcProgress {
+  running: boolean
+  done: number
+  total: number
+  failed: number
+  finished: boolean
+}
+
+let recalcProgress: RecalcProgress = {
+  running: false,
+  done: 0,
+  total: 0,
+  failed: 0,
+  finished: false,
+}
+
+function clean(v: string | null | undefined): string | null {
+  const t = (v ?? '').trim()
+  return t.length ? t : null
+}
+
+function normalizeAddressParts(parts: {
+  addrStreet?: string | null
+  addrHouseNumber?: string | null
+  addrCity?: string | null
+  addrPostcode?: string | null
+  addrProvince?: string | null
+}) {
+  return {
+    addrStreet: clean(parts.addrStreet),
+    addrHouseNumber: clean(parts.addrHouseNumber),
+    addrCity: clean(parts.addrCity),
+    addrPostcode: clean(parts.addrPostcode),
+    addrProvince: clean(parts.addrProvince),
+  }
+}
+
+function buildFormattedAddress(parts: {
+  addrStreet?: string | null
+  addrHouseNumber?: string | null
+  addrCity?: string | null
+  addrPostcode?: string | null
+  addrProvince?: string | null
+}): string | null {
+  const p = normalizeAddressParts(parts)
+  const street = p.addrStreet
+    ? p.addrHouseNumber
+      ? `${p.addrStreet} ${p.addrHouseNumber}`
+      : p.addrStreet
+    : null
+  const cityLine = [p.addrPostcode, p.addrCity].filter(Boolean).join(' ') || null
+  const segments = [street, cityLine, p.addrProvince].filter(Boolean)
+  return segments.length ? segments.join(', ') : null
+}
+
+async function reverseGeocode(lat: number, lng: number) {
+  const fallback = {
+    addrStreet: null,
+    addrHouseNumber: null,
+    addrCity: null,
+    addrPostcode: null,
+    addrProvince: null,
+    formattedAddress: `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
+    placeId: null,
+  }
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=es&addressdetails=1`,
+      {
+        headers: {
+          'User-Agent': 'Infragest/1.0.0 (contact: support@infragest.local)',
+        }
+      }
+    )
+    if (!res.ok) return fallback
+    const data: any = await res.json()
+    const a = data.address ?? {}
+
+    const parts = {
+      addrStreet: a.road || a.pedestrian || a.footway || null,
+      addrHouseNumber: a.house_number || null,
+      addrCity: a.city || a.town || a.village || a.municipality || a.county || null,
+      addrPostcode: a.postcode || null,
+      addrProvince: a.province || a.state || null,
+    }
+
+    const formattedAddress =
+      buildFormattedAddress(parts) ?? data.display_name ?? fallback.formattedAddress
+
+    return {
+      ...parts,
+      formattedAddress,
+      placeId: data.place_id ? String(data.place_id) : null,
+    }
+  } catch {
+    return fallback
+  }
+}
+
+async function runRecalcBackground(db: any) {
+  recalcProgress = {
+    running: true,
+    done: 0,
+    total: 0,
+    failed: 0,
+    finished: false,
+  }
+
+  try {
+    const geo = await db.location.findMany({
+      where: {
+        deletedAt: null,
+        latitude: { not: null },
+        longitude: { not: null },
+      }
+    })
+
+    recalcProgress.total = geo.length
+    if (geo.length === 0) {
+      recalcProgress.running = false
+      recalcProgress.finished = true
+      return
+    }
+
+    for (let i = 0; i < geo.length; i++) {
+      const loc = geo[i]
+      try {
+        const r = await reverseGeocode(Number(loc.latitude), Number(loc.longitude))
+        await db.location.update({
+          where: { id: loc.id },
+          data: {
+            formattedAddress: r.formattedAddress,
+            placeId: r.placeId,
+            addrStreet: r.addrStreet,
+            addrHouseNumber: r.addrHouseNumber,
+            addrCity: r.addrCity,
+            addrPostcode: r.addrPostcode,
+            addrProvince: r.addrProvince,
+          }
+        })
+      } catch (err) {
+        recalcProgress.failed++
+      }
+      recalcProgress.done = i + 1
+      if (i < geo.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1100))
+      }
+    }
+  } catch (err) {
+    // Suppress background errors
+  } finally {
+    recalcProgress.running = false
+    recalcProgress.finished = true
+  }
 }
 

@@ -3,8 +3,10 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   ClipboardList, MapPin, Package, Map,
   Users, Settings, LogOut, Menu,
+  Sun, Moon,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { useTheme } from '../hooks/useTheme'
 
 const GENERAL_ITEMS = [
   { to: '/', icon: MapPin, label: 'Departamentos' },
@@ -32,6 +34,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
 
 export function Layout() {
   const { user, logout } = useAuth()
+  const { theme, toggleTheme, isDark } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -62,7 +65,7 @@ export function Layout() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 w-60 bg-sidebar-bg border-r border-white/[0.08] flex flex-col shrink-0
+        fixed inset-y-0 left-0 z-30 w-60 bg-sidebar-bg border-r border-sidebar-border flex flex-col shrink-0
         transition-transform duration-200
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:relative lg:translate-x-0
@@ -90,7 +93,7 @@ export function Layout() {
                   `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
                     active
                       ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
-                      : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
+                      : 'text-sidebar-fg hover:bg-sidebar-hover hover:text-white border-transparent'
                   }`
                 }
               >
@@ -114,7 +117,7 @@ export function Layout() {
                   `flex items-center gap-3 py-2.5 rounded-md text-sm transition-colors border-l-2 pr-3 pl-[10px] ${
                     isActive
                       ? 'bg-sidebar-active text-sidebar-active-fg font-medium border-primary'
-                      : 'text-sidebar-fg hover:bg-sidebar-active/50 hover:text-white border-transparent'
+                      : 'text-sidebar-fg hover:bg-sidebar-hover hover:text-white border-transparent'
                   }`
                 }
               >
@@ -127,8 +130,7 @@ export function Layout() {
 
         {/* Footer */}
         <div
-          className="flex items-center gap-3 px-6 py-4 shrink-0"
-          style={{ borderTop: '1px solid #334155' }}
+          className="flex items-center gap-3 px-6 py-4 shrink-0 border-t border-sidebar-border"
         >
           <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
             <span className="text-white text-[13px] font-semibold">{initials}</span>
@@ -150,8 +152,7 @@ export function Layout() {
       {/* Contenido principal */}
       <div className={`flex-1 flex flex-col min-w-0 ${location.pathname === '/map' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         {/* Topbar */}
-        <header className="min-h-[4.5rem] bg-card flex items-center justify-between px-7 py-4 shrink-0"
-          style={{ borderBottom: '1px solid var(--border)' }}>
+        <header className="min-h-[4.5rem] bg-card flex items-center justify-between px-7 py-4 shrink-0 border-b border-app-border">
           <div className="flex items-center gap-3">
             <button
               className="lg:hidden p-1.5 rounded text-muted hover:bg-app-bg"
@@ -166,6 +167,16 @@ export function Layout() {
                 <p className="text-[13px] text-muted leading-snug mt-0.5">{pageInfo.subtitle}</p>
               )}
             </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              title="Cambiar tema"
+              className="w-10 h-10 border border-app-border rounded-lg bg-card text-fg-secondary flex items-center justify-center cursor-pointer transition-colors hover:bg-app-bg hover:text-fg"
+            >
+              {isDark ? <Sun className="w-[19px] h-[19px]" /> : <Moon className="w-[19px] h-[19px]" />}
+            </button>
           </div>
         </header>
 

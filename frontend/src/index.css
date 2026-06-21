@@ -15,6 +15,8 @@
   --sidebar-fg: #CBD5E1;
   --sidebar-active: #2D4060;
   --sidebar-active-fg: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
   --success: #059669;
   --success-bg: #ECFDF5;
   --warning: #D97706;
@@ -22,6 +24,30 @@
   --error: #DC2626;
   --error-bg: #FEF2F2;
   --info-bg: #EFF6FF;
+}
+
+[data-theme="dark"] {
+  --primary: #3B82F6;
+  --primary-hover: #2563EB;
+  --bg: #0B1120;
+  --card: #1E293B;
+  --fg: #F1F5F9;
+  --fg-secondary: #CBD5E1;
+  --muted: #94A3B8;
+  --sidebar-bg: #1C2536;
+  --sidebar-fg: #CBD5E1;
+  --sidebar-active: #26344E;
+  --sidebar-active-fg: #FFFFFF;
+  --sidebar-border: rgba(255, 255, 255, 0.04);
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --border: #242F41;
+  --success: #10B981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning: #F59E0B;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --error: #EF4444;
+  --error-bg: rgba(239, 68, 68, 0.15);
+  --info-bg: rgba(59, 130, 246, 0.15);
 }
 
 @tailwind base;
@@ -56,16 +82,50 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--muted);
 }
 
 /* For Firefox support */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: var(--border) transparent;
+}
+
+/* Leaflet popup and control overrides for light/dark theme */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background-color: var(--card) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--muted) !important;
+}
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: var(--fg) !important;
+}
+.leaflet-bar {
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1) !important;
+}
+.leaflet-bar a {
+  background-color: var(--card) !important;
+  color: var(--fg) !important;
+  border: none !important;
+}
+.leaflet-bar a:first-child {
+  border-bottom: 1px solid var(--border) !important;
+}
+.leaflet-bar a:hover {
+  background-color: var(--bg) !important;
+}
+.leaflet-control-layers {
+  background-color: var(--card) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--border) !important;
 }
 

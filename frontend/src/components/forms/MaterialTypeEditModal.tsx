@@ -144,7 +144,7 @@ export function MaterialTypeEditModal({ materialType, onClose }: Props) {
 
   return (
     <Modal title={`Editar Tipo de Material - ${materialType.name}`} onClose={onClose}>
-      <div className="max-h-[75vh] overflow-y-auto pr-2 space-y-5">
+      <div className="max-h-[75vh] overflow-y-auto px-2 space-y-5">
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-fg-secondary mb-1">

@@ -71,7 +71,7 @@ function MapInfoCard({ loc, onNavigate }: { loc: Location; onNavigate: () => voi
           className="w-full h-28 object-cover rounded-md"
         />
       )}
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-1.5">
+      <div className="flex items-center gap-2 border-b border-app-border pb-1.5">
         <div
           className="w-6 h-6 rounded flex items-center justify-center shrink-0"
           style={{ backgroundColor: withAlpha(color, 0.12) }}
@@ -83,9 +83,9 @@ function MapInfoCard({ loc, onNavigate }: { loc: Location; onNavigate: () => voi
         </span>
       </div>
       <div>
-        <h4 className="font-bold text-sm leading-snug text-gray-900">{loc.name}</h4>
+        <h4 className="font-bold text-sm leading-snug text-fg">{loc.name}</h4>
         {loc.description && (
-          <p className="text-[11px] text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-[11px] text-muted mt-1 line-clamp-2 leading-relaxed">
             {loc.description}
           </p>
         )}
@@ -257,8 +257,8 @@ export function LocationsMapPage() {
           {pendingClickCoords && (
             <Popup position={pendingClickCoords} eventHandlers={{ remove: () => setPendingClickCoords(null) }}>
               <div className="p-2 space-y-2 min-w-[180px] text-fg">
-                <h4 className="font-bold text-sm text-gray-900 leading-snug">Registrar Ubicación</h4>
-                <div className="text-[11px] text-gray-500 font-mono">
+                <h4 className="font-bold text-sm text-fg leading-snug">Registrar Ubicación</h4>
+                <div className="text-[11px] text-muted font-mono">
                   <div>Lat: {pendingClickCoords[0].toFixed(6)}</div>
                   <div>Lon: {pendingClickCoords[1].toFixed(6)}</div>
                 </div>
