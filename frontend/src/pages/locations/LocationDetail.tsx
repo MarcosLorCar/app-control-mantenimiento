@@ -1,9 +1,13 @@
 import { useState, useEffect, Fragment } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight, ChevronDown, Camera, Calendar, MapPin, Image } from 'lucide-react'
-import { useLocation, useDeleteLocation, useLocations, useUploadLocationImage, useDeleteLocationImage, useLocationGallery, useDeleteLocationPhoto } from '../../hooks/useLocations'
+import { useLocation, useDeleteLocation, useLocations, useUpdateLocation, useUploadLocationImage, useDeleteLocationImage, useLocationGallery, useDeleteLocationPhoto } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
+import { AddressEditModal } from '../../components/forms/AddressEditModal'
+import { normalizeAddressParts } from '../../utils/address'
+import { getCategoryIcon } from '../../utils/categoryIcons'
+import { getCategoryColor, withAlpha } from '../../utils/categoryColors'
 import { MaterialForm } from '../../components/forms/MaterialForm'
 import { LocationPhotoUploadModal } from '../../components/forms/LocationPhotoUploadModal'
 import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
@@ -11,7 +15,6 @@ import { Modal } from '../../components/ui/Modal'
 import type { Location, Material, LocationPhoto } from '../../api/types'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
-import { getCategoryIcon } from '../../utils/categoryIcons'
 import { PhotoUploadModal } from '../../components/forms/PhotoUploadModal'
 import { formatDate } from '../../utils/date'
 
@@ -23,6 +26,7 @@ export function LocationDetail() {
   const { data: loc, isLoading, error } = useLocation(locationId)
   const { data: allLocs = [] } = useLocations(undefined) // Fetch all for breadcrumbs name resolution
   const deleteLoc = useDeleteLocation()
+  const updateLoc = useUpdateLocation()
   const uploadImageMutation = useUploadLocationImage()
   const deleteImageMutation = useDeleteLocationImage()
 
@@ -32,6 +36,7 @@ export function LocationDetail() {
   const rootLocation = allLocs.find(l => l.id === rootId) || loc
 
   const [showEdit, setShowEdit] = useState(false)
+  const [showAddressEdit, setShowAddressEdit] = useState(false)
   const [showAddChild, setShowAddChild] = useState(false)
   const [showAddMaterial, setShowAddMaterial] = useState(false)
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null)
@@ -131,10 +136,15 @@ export function LocationDetail() {
 
           {/* Category Icon / Custom Image Header Display */}
           {(() => {
+            const HeaderIcon = getCategoryIcon(loc.infraType?.icon)
+            const headerColor = getCategoryColor(loc.infraType?.color)
             return (
               <div className="flex items-center gap-3.5">
                 <div className="relative shrink-0">
-                  <div className="w-20 h-20 bg-primary/10 rounded-xl flex items-center justify-center text-primary overflow-hidden border border-app-border/45 shadow-sm">
+                  <div
+                    className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden border border-app-border/45 shadow-sm"
+                    style={{ backgroundColor: withAlpha(headerColor, 0.1), color: headerColor }}
+                  >
                     {loc.image ? (
                       <button
                         type="button"
@@ -145,7 +155,7 @@ export function LocationDetail() {
                         <img src={loc.image} alt={loc.name} className="w-full h-full object-cover animate-fade-in" />
                       </button>
                     ) : (
-                      <MapPin className="w-7 h-7" />
+                      <HeaderIcon className="w-7 h-7" />
                     )}
                   </div>
                   <RoleGuard require="write">
@@ -180,9 +190,19 @@ export function LocationDetail() {
                     <h1 className="text-2xl font-bold text-fg leading-tight">{loc.name}</h1>
                   </div>
                   {loc.formattedAddress && (
-                    <div className="text-xs text-muted mt-0.5 max-w-lg leading-relaxed flex items-center gap-1">
+                    <div className="text-xs text-muted mt-0.5 max-w-lg leading-relaxed flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
                       <span>{loc.formattedAddress}</span>
+                      <RoleGuard require="write">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddressEdit(true)}
+                          className="shrink-0 text-muted hover:text-primary transition-colors"
+                          title="Editar dirección"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      </RoleGuard>
                     </div>
                   )}
                   <div className="flex items-center gap-3 flex-wrap mt-1">
@@ -800,6 +820,29 @@ export function LocationDetail() {
         <LocationForm
           existing={loc}
           onClose={() => setShowEdit(false)}
+        />
+      )}
+      {showAddressEdit && (
+        <AddressEditModal
+          initial={normalizeAddressParts(loc)}
+          saving={updateLoc.isPending}
+          onSave={(parts, formatted) => {
+            updateLoc.mutate(
+              {
+                id: loc.id,
+                body: {
+                  ...parts,
+                  formattedAddress:
+                    formatted ??
+                    (loc.latitude !== null && loc.longitude !== null
+                      ? `${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}`
+                      : null),
+                },
+              },
+              { onSuccess: () => setShowAddressEdit(false) }
+            )
+          }}
+          onClose={() => setShowAddressEdit(false)}
         />
       )}
       {showAddChild && (

@@ -22,6 +22,16 @@ export function getLocation(id: number): Promise<LocationDetail> {
   return apiFetch<ApiData<LocationDetail>>(`${API_BASE}/locations/${id}`).then(r => r.data)
 }
 
+interface LocationAddressFields {
+  placeId?: string | null
+  formattedAddress?: string | null
+  addrStreet?: string | null
+  addrHouseNumber?: string | null
+  addrCity?: string | null
+  addrPostcode?: string | null
+  addrProvince?: string | null
+}
+
 export function createLocation(body: {
   code?: string | null
   name: string
@@ -31,9 +41,7 @@ export function createLocation(body: {
   infraTypeId?: number | null
   latitude?: number | null
   longitude?: number | null
-  placeId?: string | null
-  formattedAddress?: string | null
-}): Promise<Location> {
+} & LocationAddressFields): Promise<Location> {
   return apiFetch<ApiData<Location>>(`${API_BASE}/locations`, {
     method: 'POST',
     body: JSON.stringify(body),
@@ -51,9 +59,7 @@ export function updateLocation(
     infraTypeId?: number | null
     latitude?: number | null
     longitude?: number | null
-    placeId?: string | null
-    formattedAddress?: string | null
-  },
+  } & LocationAddressFields,
 ): Promise<Location> {
   return apiFetch<ApiData<Location>>(`${API_BASE}/locations/${id}`, {
     method: 'PATCH',

@@ -4,8 +4,10 @@ import { useCreateLocation, useUpdateLocation } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { useSystemSettings } from '../../hooks/useSystemSettings'
 import { LocationMap } from '../ui/LocationMap'
+import { AddressEditModal } from './AddressEditModal'
 import { reverseGeocode } from '../../utils/geocode'
-import { MapPin, X } from 'lucide-react'
+import { normalizeAddressParts, type AddressParts } from '../../utils/address'
+import { MapPin, X, Pencil } from 'lucide-react'
 import type { Location } from '../../api/types'
 
 interface InitialGeo {
@@ -46,9 +48,17 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
   const [longitude, setLongitude] = useState<number | null>(existing?.longitude ?? initialGeo?.lng ?? null)
   const [placeId, setPlaceId] = useState<string | null>(existing?.placeId ?? initialGeo?.placeId ?? null)
   const [formattedAddress, setFormattedAddress] = useState<string | null>(existing?.formattedAddress ?? initialGeo?.formattedAddress ?? null)
+  const [addrParts, setAddrParts] = useState<AddressParts>(normalizeAddressParts({
+    addrStreet: existing?.addrStreet,
+    addrHouseNumber: existing?.addrHouseNumber,
+    addrCity: existing?.addrCity,
+    addrPostcode: existing?.addrPostcode,
+    addrProvince: existing?.addrProvince,
+  }))
 
   // Map selector modal state
   const [showMapSelector, setShowMapSelector] = useState(false)
+  const [showAddressEdit, setShowAddressEdit] = useState(false)
   const [tempLat, setTempLat] = useState<number | null>(null)
   const [tempLng, setTempLng] = useState<number | null>(null)
 
@@ -64,6 +74,7 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
     setLongitude(null)
     setPlaceId(null)
     setFormattedAddress(null)
+    setAddrParts(normalizeAddressParts({}))
   }
 
   function openMapSelector() {
@@ -80,10 +91,12 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
       // Default to coordinate string fallback in case geocoding fails or is slow
       setFormattedAddress(`${tempLat.toFixed(5)}, ${tempLng.toFixed(5)}`)
       setPlaceId(null)
+      setAddrParts(normalizeAddressParts({}))
 
-      const { formattedAddress, placeId } = await reverseGeocode(tempLat, tempLng)
-      setFormattedAddress(formattedAddress)
-      setPlaceId(placeId)
+      const result = await reverseGeocode(tempLat, tempLng)
+      setFormattedAddress(result.formattedAddress)
+      setPlaceId(result.placeId)
+      setAddrParts(normalizeAddressParts(result))
     }
     setShowMapSelector(false)
   }
@@ -100,6 +113,11 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
       longitude: longitude,
       placeId: placeId,
       formattedAddress: formattedAddress,
+      addrStreet: addrParts.addrStreet,
+      addrHouseNumber: addrParts.addrHouseNumber,
+      addrCity: addrParts.addrCity,
+      addrPostcode: addrParts.addrPostcode,
+      addrProvince: addrParts.addrProvince,
     }
 
     if (!body.name) {
@@ -165,11 +183,19 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
             </button>
           </div>
           {latitude !== null && longitude !== null && (
-            <div className="flex items-center gap-1 mt-1.5 text-xs text-muted">
+            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted">
               <MapPin className="w-3 h-3 shrink-0 text-primary" />
               <span className="truncate flex-1">
                 {formattedAddress ?? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`}
               </span>
+              <button
+                type="button"
+                onClick={() => setShowAddressEdit(true)}
+                className="shrink-0 hover:text-primary transition-colors"
+                title="Editar dirección"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
               <button
                 type="button"
                 onClick={clearGeo}
@@ -230,8 +256,25 @@ export function LocationForm({ parentId, infraTypeId, existing, initialGeo, onCl
         </div>
       </form>
 
+      {showAddressEdit && (
+        <AddressEditModal
+          initial={addrParts}
+          onSave={(parts, formatted) => {
+            setAddrParts(parts)
+            setFormattedAddress(
+              formatted ??
+                (latitude !== null && longitude !== null
+                  ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+                  : null)
+            )
+            setShowAddressEdit(false)
+          }}
+          onClose={() => setShowAddressEdit(false)}
+        />
+      )}
+
       {showMapSelector && (
-        <Modal title="Seleccionar ubicación" onClose={() => setShowMapSelector(false)} size="full">
+        <Modal title="Seleccionar ubicación" onClose={() => setShowMapSelector(false)} size="screen">
           <div className="flex-1 flex flex-col min-h-0 space-y-4">
             <div className="text-sm text-fg-secondary">
               Haz clic en el mapa o arrastra el marcador para seleccionar la ubicación exacta.

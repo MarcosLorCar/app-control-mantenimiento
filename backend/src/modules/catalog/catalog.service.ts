@@ -4,7 +4,7 @@ import type {
 } from './catalog.schema'
 
 const INFRA_TYPE_SELECT = {
-  id: true, name: true, description: true, icon: true, deletedAt: true,
+  id: true, name: true, description: true, icon: true, color: true, deletedAt: true,
 }
 
 export function listInfrastructureTypes(db: PrismaClient) {

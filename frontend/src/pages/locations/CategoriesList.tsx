@@ -7,6 +7,8 @@ import { useLocations } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { Modal } from '../../components/ui/Modal'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
+import { getCategoryColor, withAlpha, DEFAULT_CATEGORY_COLOR } from '../../utils/categoryColors'
+import { ColorPicker } from '../../components/ui/ColorPicker'
 import { LocationList } from './LocationList'
 import { NearestLocationModal } from '../../components/locations/NearestLocationModal'
 
@@ -35,6 +37,7 @@ export function CategoriesList() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [icon, setIcon] = useState('Building2')
+  const [color, setColor] = useState<string>(DEFAULT_CATEGORY_COLOR)
   const [formErr, setFormErr] = useState('')
 
   const getCount = (catId: number) => {
@@ -51,12 +54,14 @@ export function CategoriesList() {
         name: name.trim(),
         description: description.trim() || undefined,
         icon: icon,
+        color: color,
       },
       {
         onSuccess: () => {
           setName('')
           setDescription('')
           setIcon('Building2')
+          setColor(DEFAULT_CATEGORY_COLOR)
           setShowAddForm(false)
         },
         onError: (err: any) => {
@@ -122,6 +127,7 @@ export function CategoriesList() {
           {categories.map(cat => {
             const count = getCount(cat.id)
             const CatIcon = getCategoryIcon(cat.icon)
+            const catColor = getCategoryColor(cat.color)
 
             return (
               <div
@@ -132,14 +138,16 @@ export function CategoriesList() {
               >
                 {/* Top border decoration */}
                 <div
-                  className="absolute top-0 inset-x-0 h-1 bg-primary/25 transition-all group-hover:h-1.5 group-hover:bg-primary"
+                  className="absolute top-0 inset-x-0 h-1 transition-all group-hover:h-1.5"
+                  style={{ backgroundColor: catColor }}
                 />
 
                 <div className="flex items-center gap-3.5 mb-4">
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 transition-transform group-hover:scale-110 group-hover:rotate-3"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 group-hover:rotate-3"
+                    style={{ backgroundColor: withAlpha(catColor, 0.12) }}
                   >
-                    <CatIcon className="w-6 h-6 text-primary" />
+                    <CatIcon className="w-6 h-6" style={{ color: catColor }} />
                   </div>
                   <div>
                     <h3 className="font-bold text-fg text-[16px] group-hover:text-primary transition-colors leading-tight">
@@ -231,6 +239,11 @@ export function CategoriesList() {
                   )
                 })}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-fg-secondary mb-2">Color</label>
+              <ColorPicker value={color} onChange={setColor} />
             </div>
 
             <div>

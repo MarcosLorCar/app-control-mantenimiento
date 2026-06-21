@@ -28,6 +28,7 @@ export interface InfrastructureType {
   name: string
   description: string | null
   icon: string | null
+  color: string | null
   deletedAt: string | null
 }
 
@@ -39,11 +40,16 @@ export interface Location {
   longitude: number | null
   placeId: string | null
   formattedAddress: string | null
+  addrStreet: string | null
+  addrHouseNumber: string | null
+  addrCity: string | null
+  addrPostcode: string | null
+  addrProvince: string | null
   image: string | null
   path: string
   parentId: number | null
   infraTypeId: number
-  infraType: { id: number; name: string; icon: string | null }
+  infraType: { id: number; name: string; icon: string | null; color: string | null }
   createdAt: string
   updatedAt: string
   deletedAt: string | null

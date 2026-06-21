@@ -6,6 +6,7 @@ import {
   useFixedProperties, useCreateFixedProperty, useDeleteFixedProperty
 } from '../../hooks/useCatalog'
 import { useSystemSettings, useUpdateSystemSettings } from '../../hooks/useSystemSettings'
+import { useRecalcAddresses } from '../../hooks/useRecalcAddresses'
 import { useHealth } from '../../hooks/useHealth'
 import { useAuth } from '../../hooks/useAuth'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
@@ -31,7 +32,14 @@ export function Catalog() {
 
   const { data: settings = [] } = useSystemSettings()
   const updateSettings = useUpdateSystemSettings()
+  const { progress: recalc, run: runRecalc } = useRecalcAddresses()
   const { data: health } = useHealth()
+
+  function handleRecalcAddresses() {
+    if (recalc.running) return
+    if (!confirm('Se recalcularán las direcciones de todas las ubicaciones con coordenadas a partir de su posición. Puede tardar varios minutos (≈1 ubicación por segundo) y no debes cerrar esta pestaña. ¿Continuar?')) return
+    void runRecalc()
+  }
 
   const defaultLat = settings.find(s => s.key === 'default_latitude')?.value ?? ''
   const defaultLng = settings.find(s => s.key === 'default_longitude')?.value ?? ''
@@ -452,6 +460,46 @@ export function Catalog() {
             </form>
           )}
         </div>
+
+        {/* Mantenimiento de direcciones */}
+        {canManage && (
+          <div className="bg-card rounded-xl border border-app-border p-5 h-fit col-span-1 md:col-span-2 xl:col-span-1">
+            <h2 className="text-[15px] font-semibold text-fg mb-4">Direcciones</h2>
+            <p className="text-xs text-fg-secondary leading-relaxed mb-4">
+              Recalcula la dirección de todas las ubicaciones con coordenadas a partir de su
+              posición en el mapa. Útil tras cambios en el formato de direcciones. El proceso es
+              secuencial (≈1 ubicación/segundo) y debes mantener esta pestaña abierta.
+            </p>
+
+            {(recalc.running || recalc.finished) && (
+              <div className="mb-4 space-y-2">
+                <div className="h-2 w-full bg-app-bg rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${recalc.total ? Math.round((recalc.done / recalc.total) * 100) : 0}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-muted font-mono">
+                  {recalc.running
+                    ? `Recalculando ${recalc.done}/${recalc.total}…`
+                    : `Completado: ${recalc.done}/${recalc.total}${recalc.failed ? ` · ${recalc.failed} con error` : ''}`}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleRecalcAddresses}
+                disabled={recalc.running}
+                className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 disabled:opacity-50 rounded-lg transition-all active:scale-95 touch-manipulation min-h-[36px] shadow-sm"
+              >
+                <MapPin size={14} />
+                {recalc.running ? 'Recalculando…' : 'Recalcular direcciones'}
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
 

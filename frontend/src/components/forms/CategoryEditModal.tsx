@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { useUpdateInfrastructureType, useDeleteInfrastructureType } from '../../hooks/useCatalog'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
+import { getCategoryColor, DEFAULT_CATEGORY_COLOR } from '../../utils/categoryColors'
+import { ColorPicker } from '../ui/ColorPicker'
 import { AlertTriangle, Trash2 } from 'lucide-react'
 import type { InfrastructureType } from '../../api/types'
 
@@ -17,6 +19,7 @@ export function CategoryEditModal({ category, onClose }: Props) {
   const [name, setName] = useState(category.name)
   const [description, setDescription] = useState(category.description ?? '')
   const [icon, setIcon] = useState(category.icon ?? 'Building2')
+  const [color, setColor] = useState<string>(getCategoryColor(category.color))
   
   // Deletion safety state
   const [deleteConfirmName, setDeleteConfirmName] = useState('')
@@ -40,6 +43,7 @@ export function CategoryEditModal({ category, onClose }: Props) {
           name: name.trim(),
           description: description.trim() || undefined,
           icon,
+          color: color || DEFAULT_CATEGORY_COLOR,
         },
       },
       {
@@ -111,6 +115,11 @@ export function CategoryEditModal({ category, onClose }: Props) {
                 )
               })}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-fg-secondary mb-2">Color</label>
+            <ColorPicker value={color} onChange={setColor} />
           </div>
 
           <div>
