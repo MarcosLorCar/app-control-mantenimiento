@@ -32,7 +32,16 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'blob:', '*.tile.openstreetmap.org', '*.openstreetmap.org'],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'blob:',
+          '*.tile.openstreetmap.org',
+          '*.openstreetmap.org',
+          '*.tile.openstreetmap.fr',
+          '*.basemaps.cartocdn.com',
+          'server.arcgisonline.com',
+        ],
         styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
         fontSrc: ["'self'", 'fonts.gstatic.com'],
         scriptSrc: ["'self'"],
