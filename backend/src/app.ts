@@ -40,7 +40,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
           '*.openstreetmap.org',
           '*.tile.openstreetmap.fr',
           '*.basemaps.cartocdn.com',
-          'server.arcgisonline.com',
+          '*.arcgisonline.com',
         ],
         styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
         fontSrc: ["'self'", 'fonts.gstatic.com'],

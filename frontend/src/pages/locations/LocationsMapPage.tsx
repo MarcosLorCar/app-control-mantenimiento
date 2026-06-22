@@ -46,10 +46,19 @@ function MapCenterController({ center, zoom }: { center: [number, number]; zoom:
   return null
 }
 
-function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+function MapEvents({
+  onMapClick,
+  onPopupClose,
+}: {
+  onMapClick: (lat: number, lng: number) => void
+  onPopupClose: () => void
+}) {
   useMapEvents({
     click(e) {
       onMapClick(e.latlng.lat, e.latlng.lng)
+    },
+    popupclose() {
+      onPopupClose()
     },
     baselayerchange(e) {
       const layer = TILE_LAYERS.find(t => t.label === e.name)
@@ -124,10 +133,18 @@ export function LocationsMapPage() {
     setSearch(searchParams.get('search') ?? '')
   }, [searchParams])
 
+  const lastPopupCloseTime = useRef(0)
+
   // Clicking coordinates on map (when not on marker) to register location
   const [pendingClickCoords, setPendingClickCoords] = useState<[number, number] | null>(null)
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
+    // If a popup was closed in the last 100ms, it was closed because of this click,
+    // so we shouldn't open a new coordinates popup.
+    if (Date.now() - lastPopupCloseTime.current < 100) {
+      return
+    }
+
     if (pendingClickCoords !== null) {
       setPendingClickCoords(null)
       return
@@ -234,7 +251,12 @@ export function LocationsMapPage() {
             ))}
           </LayersControl>
           <MapCenterController center={centerCoords} zoom={zoomLevel} />
-          <MapEvents onMapClick={handleMapClick} />
+          <MapEvents
+            onMapClick={handleMapClick}
+            onPopupClose={() => {
+              lastPopupCloseTime.current = Date.now()
+            }}
+          />
 
           {filteredLocations.map(loc => (
             <Marker

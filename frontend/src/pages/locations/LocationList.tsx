@@ -101,7 +101,7 @@ export function LocationList() {
           </div>
         )}
 
-        <div className={`grid grid-cols-1 ${density === 'compact' ? 'gap-1.5' : 'gap-4'}`}>
+        <div className={`grid grid-cols-1 ${density === 'compact' ? 'gap-1.5' : 'gap-4'} transition-all`}>
           {sorted.map(loc => {
             const count = loc._count ?? { children: 0, materials: 0, actions: 0 }
             const CatIcon = getCategoryIcon(loc.infraType?.icon)
@@ -113,7 +113,7 @@ export function LocationList() {
                   key={loc.id}
                   onClick={() => navigate(`/locations/${loc.id}`)}
                   role="button"
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-card border-app-border hover:border-primary/40 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-card border-app-border hover:border-primary/40 transition-all cursor-pointer"
                 >
                   {loc.image ? (
                     <img src={loc.image} alt={loc.name} className="w-8 h-8 rounded-md object-cover shrink-0" />
