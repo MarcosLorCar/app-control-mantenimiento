@@ -10,11 +10,13 @@ import { useRecalcAddresses } from '../../hooks/useRecalcAddresses'
 import { useHealth } from '../../hooks/useHealth'
 import { useAuth } from '../../hooks/useAuth'
 import { getCategoryIcon, CATEGORY_ICON_OPTIONS } from '../../utils/categoryIcons'
+import { getCategoryColor } from '../../utils/categoryColors'
 import { CategoryEditModal } from '../../components/forms/CategoryEditModal'
 import { MaterialTypeEditModal } from '../../components/forms/MaterialTypeEditModal'
 import { LocationMap } from '../../components/ui/LocationMap'
 import { Modal } from '../../components/ui/Modal'
-import { MapPin, Plus } from 'lucide-react'
+import { MapPin, Plus, Sun, Moon } from 'lucide-react'
+import { useTheme } from '../../hooks/useTheme'
 
 
 
@@ -23,6 +25,7 @@ const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm b
 
 export function Catalog() {
   const { user } = useAuth()
+  const { toggleTheme, isDark } = useTheme()
   const canManage = !!user?.can_manage
 
   const { data: infraTypes = [] } = useInfrastructureTypes()
@@ -227,7 +230,7 @@ export function Catalog() {
               return (
                 <li key={it.id} className="py-2.5 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 truncate min-w-0">
-                    <CatIcon className="w-4 h-4 text-primary shrink-0" />
+                    <CatIcon className="w-4 h-4 shrink-0" style={{ color: getCategoryColor(it.color) }} />
                     <span className="text-sm text-fg truncate">{it.name}</span>
                   </div>
                   {canManage && (
@@ -501,6 +504,40 @@ export function Catalog() {
           </div>
         )}
 
+      </div>
+
+      {/* Tema Visual (Apariencia) */}
+      <div className="bg-card rounded-xl border border-app-border p-5 max-w-md">
+        <h2 className="text-[15px] font-semibold text-fg mb-2">Tema visual</h2>
+        <p className="text-xs text-fg-secondary leading-relaxed mb-4">
+          Personaliza el aspecto de la aplicación eligiendo entre el tema claro y oscuro.
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => { if (isDark) toggleTheme() }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
+              !isDark
+                ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                : 'border-app-border text-fg-secondary hover:bg-app-bg hover:text-fg'
+            }`}
+          >
+            <Sun className="w-4 h-4" />
+            Tema claro
+          </button>
+          <button
+            type="button"
+            onClick={() => { if (!isDark) toggleTheme() }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border text-sm font-medium transition-all cursor-pointer ${
+              isDark
+                ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                : 'border-app-border text-fg-secondary hover:bg-app-bg hover:text-fg'
+            }`}
+          >
+            <Moon className="w-4 h-4" />
+            Tema oscuro
+          </button>
+        </div>
       </div>
 
       {health?.version && (
