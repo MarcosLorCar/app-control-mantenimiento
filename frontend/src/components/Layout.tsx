@@ -3,10 +3,8 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   ClipboardList, MapPin, Package, Map,
   Users, Settings, LogOut, Menu,
-  Sun, Moon,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
-import { useTheme } from '../hooks/useTheme'
 
 const GENERAL_ITEMS = [
   { to: '/', icon: MapPin, label: 'Departamentos' },
@@ -34,7 +32,6 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
 
 export function Layout() {
   const { user, logout } = useAuth()
-  const { theme, toggleTheme, isDark } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -42,6 +39,7 @@ export function Layout() {
   useEffect(() => { setSidebarOpen(false) }, [location.pathname])
 
   async function handleLogout() {
+    if (!confirm('¿Seguro que deseas cerrar sesión?')) return
     await logout()
     navigate('/login')
   }
@@ -169,15 +167,7 @@ export function Layout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              title="Cambiar tema"
-              className="w-10 h-10 border border-app-border rounded-lg bg-card text-fg-secondary flex items-center justify-center cursor-pointer transition-colors hover:bg-app-bg hover:text-fg"
-            >
-              {isDark ? <Sun className="w-[19px] h-[19px]" /> : <Moon className="w-[19px] h-[19px]" />}
-            </button>
-          </div>
+
         </header>
 
 

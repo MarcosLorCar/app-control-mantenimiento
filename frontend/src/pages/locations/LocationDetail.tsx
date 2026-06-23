@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Folder, GitBranch, Package, Zap, Plus, Pencil, Trash, ChevronRight, ChevronDown, Camera, Calendar, MapPin, Image } from 'lucide-react'
+import { Folder, GitBranch, Package, ClipboardPen, Plus, Pencil, Trash, ChevronRight, ChevronDown, Camera, Calendar, MapPin, Image } from 'lucide-react'
 import { useLocation, useDeleteLocation, useLocations, useUpdateLocation, useUploadLocationImage, useDeleteLocationImage, useLocationGallery, useDeleteLocationPhoto } from '../../hooks/useLocations'
 import { RoleGuard } from '../../components/RoleGuard'
 import { LocationForm } from '../../components/forms/LocationForm'
@@ -234,7 +234,7 @@ export function LocationDetail() {
               onClick={() => navigate(`/actions/new?locationId=${rootId}`)}
               className="flex items-center gap-1.5 bg-primary text-primary-fg px-3.5 py-2 rounded-lg text-xs font-semibold hover:bg-[var(--primary-hover)] shadow-sm transition-all"
             >
-              <Zap className="w-3.5 h-3.5" /> Registrar Trabajo
+              <ClipboardPen className="w-3.5 h-3.5" /> Registrar Trabajo
             </button>
           </RoleGuard>
           <button
@@ -721,7 +721,7 @@ export function LocationDetail() {
           <section className="bg-card rounded-xl border border-app-border p-5 shadow-sm h-fit">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg flex items-center gap-2">
-                <Zap className="w-4 h-4 text-primary" /> Historial de Trabajos
+                <ClipboardPen className="w-4 h-4 text-primary" /> Historial de Trabajos
               </h2>
               <div className="flex items-center gap-2">
                 <button

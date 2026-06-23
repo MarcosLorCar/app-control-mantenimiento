@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, ChevronRight, Package, Zap, Clock, X } from 'lucide-react'
+import { Search, Plus, ChevronRight, Package, ClipboardPen, Clock, X } from 'lucide-react'
 import { useLocations } from '../../hooks/useLocations'
 import { useInfrastructureTypes } from '../../hooks/useCatalog'
 import { RoleGuard } from '../../components/RoleGuard'
@@ -169,7 +169,7 @@ export function LocationList() {
                       <span className="text-muted text-[9px]">materiales</span>
                     </div>
                     <div className="flex items-center gap-1 bg-app-bg px-1.5 py-0.5 rounded border border-app-border" title="Trabajos Realizados">
-                      <Zap className="w-3 h-3 text-muted" />
+                      <ClipboardPen className="w-3 h-3 text-muted" />
                       <span className="font-medium text-fg">{count.actions}</span>
                       <span className="text-muted text-[9px]">trabajos</span>
                     </div>

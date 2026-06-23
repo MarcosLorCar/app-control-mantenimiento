@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { Zap, Package, MapPin, Pencil, Trash2, Calendar, User, Folder, Plus, Minus } from 'lucide-react'
+import { ClipboardPen, Package, MapPin, Pencil, Trash2, Calendar, User, Folder, Plus, Minus } from 'lucide-react'
 import { useAction, useDeleteAction } from '../../hooks/useActions'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
@@ -49,7 +49,7 @@ export function ActionDetail() {
           </nav>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
-              <Zap className="w-5 h-5" />
+              <ClipboardPen className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-fg leading-tight">{action.title}</h1>
