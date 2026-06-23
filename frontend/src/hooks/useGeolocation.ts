@@ -36,27 +36,35 @@ export function useGeolocation() {
     }
 
     setStatus('locating')
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoords({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        })
-        setStatus('success')
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          setStatus('denied')
-        } else {
-          setStatus('error')
-          setError(err.message || 'Error al obtener la ubicación.')
+    const getPosition = (highAccuracy: boolean) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          })
+          setStatus('success')
+        },
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            setStatus('denied')
+          } else if (highAccuracy) {
+            // Fallback to low accuracy on timeout/error
+            getPosition(false)
+          } else {
+            setStatus('error')
+            setError(err.message || 'Error al obtener la ubicación.')
+          }
+        },
+        {
+          enableHighAccuracy: highAccuracy,
+          timeout: highAccuracy ? 8000 : 12000,
+          maximumAge: highAccuracy ? 0 : 60000,
         }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-      }
-    )
+      )
+    }
+
+    getPosition(true)
   }, [])
 
   const reset = useCallback(() => {

@@ -50,19 +50,33 @@ export function LocationMap({ latitude, longitude, onChange, defaultCenter, clas
     if (latitude === null || longitude === null) {
       if ('geolocation' in navigator) {
         setLoadingGps(true)
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const { latitude: lat, longitude: lng } = pos.coords
-            setPosition([lat, lng])
-            onChange(lat, lng)
-            setLoadingGps(false)
-          },
-          () => {
-            setLoadingGps(false)
-            onChange(fallbackCenter[0], fallbackCenter[1])
-          },
-          { enableHighAccuracy: true, timeout: 5000 }
-        )
+
+        const getPosition = (highAccuracy: boolean) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const { latitude: lat, longitude: lng } = pos.coords
+              setPosition([lat, lng])
+              onChange(lat, lng)
+              setLoadingGps(false)
+            },
+            (err) => {
+              if (highAccuracy && err.code !== err.PERMISSION_DENIED) {
+                // Fallback to low accuracy on timeout/error
+                getPosition(false)
+              } else {
+                setLoadingGps(false)
+                onChange(fallbackCenter[0], fallbackCenter[1])
+              }
+            },
+            {
+              enableHighAccuracy: highAccuracy,
+              timeout: highAccuracy ? 8000 : 12000,
+              maximumAge: highAccuracy ? 0 : 60000,
+            }
+          )
+        }
+
+        getPosition(true)
       } else {
         onChange(fallbackCenter[0], fallbackCenter[1])
       }
