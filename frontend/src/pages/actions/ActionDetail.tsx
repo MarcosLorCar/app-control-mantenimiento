@@ -6,6 +6,7 @@ import { MaterialEditAttributesModal } from '../../components/forms/MaterialEdit
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { RoleGuard } from '../../components/RoleGuard'
 import { ActionForm } from './ActionForm'
+import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
 import type { Material } from '../../api/types'
 import { formatDate } from '../../utils/date'
 
@@ -19,6 +20,7 @@ export function ActionDetail() {
 
   const [showEdit, setShowEdit] = useState(false)
   const [editingMaterial, setEditingMaterial] = useState<{ material: any; readOnly: boolean; title?: string } | null>(null)
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
 
   if (isLoading) return <p className="text-muted text-sm py-20 text-center">Cargando detalles del trabajo...</p>
   if (error || !action) return <p className="text-error text-sm py-20 text-center">Trabajo no encontrado.</p>
@@ -298,6 +300,26 @@ export function ActionDetail() {
               </div>
             )}
           </section>
+
+          {action.photos && action.photos.length > 0 && (
+            <section className="bg-card rounded-xl border border-app-border p-5 shadow-sm space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-fg mb-1">Fotos del Trabajo</h2>
+              <div className="grid grid-cols-2 gap-2">
+                {action.photos.map(photo => (
+                  <div
+                    key={photo.id}
+                    onClick={() => setPreviewImage({ src: photo.url, alt: action.title })}
+                    className="relative group aspect-square rounded-lg overflow-hidden border border-app-border bg-app-bg/50 cursor-pointer shadow-sm hover:border-primary transition-all"
+                  >
+                    <img src={photo.url} alt={action.title} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                      <span className="text-[10px] text-white font-semibold bg-black/60 px-2.5 py-1 rounded">Ver</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
@@ -315,6 +337,14 @@ export function ActionDetail() {
           readOnly={editingMaterial.readOnly}
           titleOverride={editingMaterial.title}
           onClose={() => setEditingMaterial(null)}
+        />
+      )}
+
+      {previewImage && (
+        <ImagePreviewModal
+          src={previewImage.src}
+          alt={previewImage.alt}
+          onClose={() => setPreviewImage(null)}
         />
       )}
     </div>

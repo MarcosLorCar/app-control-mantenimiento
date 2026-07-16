@@ -8,6 +8,7 @@ import { LocationMap } from '../../components/ui/LocationMap'
 import { useQueryClient } from '@tanstack/react-query'
 import { Plus, Pencil, Trash, ClipboardList, AlertCircle, Eye, Package, RotateCcw, MapPin, UploadCloud, Camera } from 'lucide-react'
 import { uploadActionPhoto } from '../../api/actions'
+import { PhotoInputZone } from '../../components/forms/PhotoInputZone'
 import type { Action, Material } from '../../api/types'
 
 interface Props {
@@ -86,19 +87,7 @@ export function ActionForm({ action, locationId, onClose }: Props) {
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null)
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [isDragOver, setIsDragOver] = useState(false)
   const isPending = createMut.isPending || updateMut.isPending || isUploadingPhoto
-
-  const cameraInputRef = useRef<HTMLInputElement>(null)
-  const archiveInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera
-    const isMobileOS = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
-    const isIPad = navigator.maxTouchPoints > 0 && /Macintosh/.test(userAgent)
-    setIsMobile(isMobileOS || isIPad)
-  }, [])
 
   useEffect(() => {
     return () => {
@@ -108,29 +97,7 @@ export function ActionForm({ action, locationId, onClose }: Props) {
     }
   }, [photoPreviewUrl])
 
-  // Drag and drop handlers for photo upload
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    const selected = e.dataTransfer.files?.[0] || null
-    if (selected) {
-      if (selected.type.startsWith('image/')) {
-        setSelectedPhoto(selected)
-        if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
-        setPhotoPreviewUrl(URL.createObjectURL(selected))
-      }
-    }
-  }
+  // Photo upload handlers are delegated to PhotoInputZone
 
   // Load currently installed materials as active when selectedLocationId updates
   useEffect(() => {
@@ -525,125 +492,19 @@ export function ActionForm({ action, locationId, onClose }: Props) {
           {/* Adjuntar Foto */}
           {!isEdit && (
             <div>
-              {/* Hidden Inputs */}
-              <input
-                type="file"
-                ref={cameraInputRef}
-                accept="image/*"
-                capture="environment"
-                onChange={e => {
-                  const selected = e.target.files?.[0] || null
-                  setSelectedPhoto(selected)
-                  if (selected) {
-                    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
-                    setPhotoPreviewUrl(URL.createObjectURL(selected))
-                  }
-                }}
-                className="hidden"
-              />
-              <input
-                type="file"
-                ref={archiveInputRef}
-                accept="image/*"
-                onChange={e => {
-                  const selected = e.target.files?.[0] || null
-                  setSelectedPhoto(selected)
-                  if (selected) {
-                    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
-                    setPhotoPreviewUrl(URL.createObjectURL(selected))
-                  }
-                }}
-                className="hidden"
-              />
-
               <label className="block text-xs font-semibold text-fg-secondary mb-1.5">
                 Adjuntar Foto del Trabajo (Opcional)
               </label>
-              
-              {!selectedPhoto ? (
-                !isMobile ? (
-                  <div 
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => archiveInputRef.current?.click()}
-                    className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer group ${
-                      isDragOver
-                        ? 'border-primary bg-primary/5 scale-[1.01]'
-                        : 'border-app-border bg-app-bg/10 hover:bg-app-bg/25 hover:border-primary/50'
-                    }`}
-                  >
-                    <UploadCloud className="w-8 h-8 text-muted mb-2 group-hover:text-primary transition-colors" />
-                    <p className="text-xs font-semibold text-fg mb-0.5">Haz clic para seleccionar o arrastra una foto</p>
-                    <p className="text-[10px] text-muted">Formatos aceptados: PNG, JPG, WEBP</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center border-2 border-dashed border-app-border rounded-xl p-6 bg-app-bg/10 text-center gap-3">
-                    <div className="text-center space-y-0.5">
-                      <UploadCloud className="w-8 h-8 text-muted mx-auto mb-1.5" />
-                      <p className="text-xs font-semibold text-fg">Foto del Trabajo (Opcional)</p>
-                      <p className="text-[10px] text-muted">Sube una foto del mantenimiento realizado</p>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row gap-2.5 w-full justify-center">
-                      <button
-                        type="button"
-                        onClick={() => cameraInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-fg hover:bg-[var(--primary-hover)] rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95 shadow-sm"
-                      >
-                        <Camera className="w-3.5 h-3.5" /> Hacer Foto (Cámara)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => archiveInputRef.current?.click()}
-                        className="flex items-center justify-center gap-1.5 px-3.5 py-1.5 border border-app-border bg-card hover:bg-app-bg text-fg-secondary hover:text-fg rounded-lg text-xs font-semibold cursor-pointer transition-all active:scale-95 shadow-sm"
-                      >
-                        <UploadCloud className="w-3.5 h-3.5" /> Seleccionar Archivo
-                      </button>
-                    </div>
-                  </div>
-                )
-              ) : (
-                <div className="border border-app-border bg-app-bg/15 rounded-xl p-3 flex items-center gap-3 relative animate-fade-in">
-                  {photoPreviewUrl && (
-                    <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-app-border bg-black/5 flex items-center justify-center">
-                      <img
-                        src={photoPreviewUrl}
-                        alt="Vista previa"
-                        className="w-full h-full object-cover shadow-sm"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-fg truncate pr-1" title={selectedPhoto.name}>
-                      {selectedPhoto.name}
-                    </p>
-                    <p className="text-[10px] text-muted font-mono mt-0.5">
-                      {(selectedPhoto.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => archiveInputRef.current?.click()}
-                      className="px-2.5 py-1.5 border border-app-border bg-card hover:bg-app-bg text-fg-secondary hover:text-fg rounded-lg text-[10px] font-semibold cursor-pointer transition-all active:scale-95 shadow-sm"
-                    >
-                      Cambiar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedPhoto(null)
-                        if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
-                        setPhotoPreviewUrl(null)
-                      }}
-                      className="px-2.5 py-1.5 border border-error/25 bg-error/10 hover:bg-error/20 text-error rounded-lg text-[10px] font-semibold transition-all active:scale-95 shadow-sm"
-                    >
-                      Quitar
-                    </button>
-                  </div>
-                </div>
-              )}
+              <PhotoInputZone
+                onFileSelect={(selected) => {
+                  setSelectedPhoto(selected)
+                  if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl)
+                  setPhotoPreviewUrl(selected ? URL.createObjectURL(selected) : null)
+                }}
+                selectedFile={selectedPhoto}
+                previewUrl={photoPreviewUrl}
+                isPending={isPending}
+              />
             </div>
           )}
 

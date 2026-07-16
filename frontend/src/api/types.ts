@@ -133,6 +133,7 @@ export interface Action {
   }[]
   location: { id: number; name: string; path: string; parentId: number | null; latitude: number | null; longitude: number | null } | null
   performer: { id: number; fullName: string; email: string }
+  photos?: LocationPhoto[]
 }
 
 export interface SystemSetting {

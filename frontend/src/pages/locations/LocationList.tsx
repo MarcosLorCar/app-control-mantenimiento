@@ -94,7 +94,7 @@ export function LocationList() {
       </p>
 
       {/* Cards list */}
-      <div className="relative pr-5">
+      <div className="relative">
         {sorted.length === 0 && (
           <div className="bg-card rounded-xl border border-app-border p-10 text-center text-muted text-sm shadow-sm">
             {search ? 'Sin resultados para la búsqueda.' : 'No hay ubicaciones registradas.'}

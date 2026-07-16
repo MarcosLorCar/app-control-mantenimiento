@@ -21,6 +21,7 @@ const ACTION_INCLUDE = {
   },
   location: { select: { id: true, name: true, path: true, parentId: true, latitude: true, longitude: true } },
   performer: { select: { id: true, fullName: true, email: true } },
+  photos: true,
 }
 
 export function listActions(
