@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance } from 'fastify'
+import fastifyCors from '@fastify/cors'
 import fastifyHelmet from '@fastify/helmet'
 import fastifyJwt from '@fastify/jwt'
 import fastifyCookie from '@fastify/cookie'
@@ -26,6 +27,11 @@ export interface AppOptions {
 export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test', trustProxy: true })
 
+  await app.register(fastifyCors, {
+    origin: true,
+    credentials: true,
+  })
+
   await app.register(fastifyHelmet, {
     global: true,
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
@@ -46,6 +52,7 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
         fontSrc: ["'self'", 'fonts.gstatic.com'],
         scriptSrc: ["'self'"],
         connectSrc: ["'self'", 'nominatim.openstreetmap.org'],
+        upgradeInsecureRequests: null,
       },
     },
   })
