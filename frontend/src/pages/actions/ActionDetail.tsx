@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ClipboardPen, Package, MapPin, Pencil, Trash2, Calendar, User, Folder, Plus, Minus } from 'lucide-react'
-import { useAction, useDeleteAction } from '../../hooks/useActions'
+import { useAction, useDeleteAction, actionKeys } from '../../hooks/useActions'
+import { useQueryClient } from '@tanstack/react-query'
 import { MaterialEditAttributesModal } from '../../components/forms/MaterialEditAttributesModal'
 import { MaterialAttributePills } from '../../components/MaterialAttributePills'
 import { RoleGuard } from '../../components/RoleGuard'
-import { ActionForm } from './ActionForm'
 import { ImagePreviewModal } from '../../components/ui/ImagePreviewModal'
+import { PhotoUploadModal } from '../../components/forms/PhotoUploadModal'
+import { uploadActionPhoto } from '../../api/actions'
+import { deleteLocationPhoto } from '../../api/locations'
 import type { Material } from '../../api/types'
 import { formatDate } from '../../utils/date'
 
@@ -14,11 +17,13 @@ export function ActionDetail() {
   const { id } = useParams<{ id: string }>()
   const actionId = Number(id)
   const navigate = useNavigate()
+  const qc = useQueryClient()
 
   const { data: action, isLoading, error } = useAction(actionId)
   const deleteMut = useDeleteAction()
 
-  const [showEdit, setShowEdit] = useState(false)
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
   const [editingMaterial, setEditingMaterial] = useState<{ material: any; readOnly: boolean; title?: string } | null>(null)
   const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
 
@@ -65,10 +70,10 @@ export function ActionDetail() {
         <div className="flex gap-2 shrink-0">
           <RoleGuard require="write">
             <button
-              onClick={() => setShowEdit(true)}
+              onClick={() => navigate(`/actions/${action.id}/edit`)}
               className="flex items-center gap-1.5 border border-app-border px-3.5 py-2 rounded-lg text-xs font-semibold text-fg-secondary bg-card hover:bg-app-bg hover:text-fg shadow-sm transition-all"
             >
-              <Pencil className="w-3.5 h-3.5" /> Editar Info
+              <Pencil className="w-3.5 h-3.5" /> Editar Trabajo
             </button>
           </RoleGuard>
           <RoleGuard require="manage">
@@ -301,33 +306,81 @@ export function ActionDetail() {
             )}
           </section>
 
-          {action.photos && action.photos.length > 0 && (
-            <section className="bg-card rounded-xl border border-app-border p-5 shadow-sm space-y-4">
+          <section className="bg-card rounded-xl border border-app-border p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold uppercase tracking-wider text-fg mb-1">Fotos del Trabajo</h2>
+              <RoleGuard require="write">
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoUploadModal(true)}
+                  className="text-xs text-primary font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Añadir Foto
+                </button>
+              </RoleGuard>
+            </div>
+
+            {action.photos && action.photos.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
                 {action.photos.map(photo => (
                   <div
                     key={photo.id}
-                    onClick={() => setPreviewImage({ src: photo.url, alt: action.title })}
-                    className="relative group aspect-square rounded-lg overflow-hidden border border-app-border bg-app-bg/50 cursor-pointer shadow-sm hover:border-primary transition-all"
+                    className="relative group aspect-square rounded-lg overflow-hidden border border-app-border bg-app-bg/50 shadow-sm transition-all"
                   >
                     <img src={photo.url} alt={action.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                      <span className="text-[10px] text-white font-semibold bg-black/60 px-2.5 py-1 rounded">Ver</span>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all p-2">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImage({ src: photo.url, alt: action.title })}
+                        className="text-[10px] text-white font-semibold bg-black/60 hover:bg-black/80 px-2 py-1 rounded transition-colors"
+                      >
+                        Ver
+                      </button>
+                      <RoleGuard require="write">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm('¿Eliminar esta foto del trabajo?')) return
+                            try {
+                              await deleteLocationPhoto(photo.id)
+                              qc.invalidateQueries({ queryKey: actionKeys.detail(actionId) })
+                            } catch (err) {
+                              console.error(err)
+                              alert('No se pudo eliminar la foto')
+                            }
+                          }}
+                          className="text-[10px] text-white font-semibold bg-rose-600/80 hover:bg-rose-600 px-2 py-1 rounded transition-colors"
+                        >
+                          Eliminar
+                        </button>
+                      </RoleGuard>
                     </div>
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+            ) : (
+              <p className="text-xs text-muted italic bg-app-bg/20 p-3 rounded-lg border border-dashed border-app-border text-center">
+                Sin fotos adjuntas a este trabajo.
+              </p>
+            )}
+          </section>
         </div>
       </div>
 
       {/* Modals */}
-      {showEdit && (
-        <ActionForm
-          action={action}
-          onClose={() => setShowEdit(false)}
+      {showPhotoUploadModal && (
+        <PhotoUploadModal
+          onClose={() => setShowPhotoUploadModal(false)}
+          onUpload={async (file: File) => {
+            setIsUploadingPhoto(true)
+            try {
+              await uploadActionPhoto(action.id, file)
+              qc.invalidateQueries({ queryKey: actionKeys.detail(actionId) })
+            } finally {
+              setIsUploadingPhoto(false)
+            }
+          }}
+          isPending={isUploadingPhoto}
         />
       )}
 

@@ -292,6 +292,83 @@ describe('Actions', () => {
       expect(res.statusCode).toBe(200)
       expect(res.json().data.description).toBe('Completado sin incidencias')
     })
+
+    it('updates action materials (installs new, modifies existing, reconciles removed)', async () => {
+      // Create initial action with seed.material UNINSTALLED
+      const action = await testDb.action.create({
+        data: {
+          title: 'Mantenimiento inicial',
+          locationId: seed.infra.id,
+          performedBy: seed.editor.id,
+          materials: {
+            create: [
+              { materialId: seed.material.id, operation: 'UNINSTALL' }
+            ]
+          }
+        },
+      })
+      await testDb.material.update({
+        where: { id: seed.material.id },
+        data: { locationId: null }
+      })
+
+      // PATCH action: remove UNINSTALL of seed.material (restoring it) and install a brand new material
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `/api/v1/actions/${action.id}`,
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Mantenimiento modificado',
+          materials: [
+            {
+              name: 'Nuevo Foco LED',
+              typeId: seed.materialType.id,
+              description: 'Foco instalado en la edición',
+              operation: 'INSTALL',
+              locationId: seed.structure.id,
+              attributes: { watts: 50 },
+            }
+          ]
+        },
+      })
+
+      expect(res.statusCode).toBe(200)
+      const data = res.json().data
+      expect(data.title).toBe('Mantenimiento modificado')
+      expect(data.materials).toHaveLength(1)
+      expect(data.materials[0].operation).toBe('INSTALL')
+      expect(data.materials[0].material.name).toBe('Nuevo Foco LED')
+
+      // Verify seed.material was restored to seed.infra.id
+      const restored = await testDb.material.findUnique({ where: { id: seed.material.id } })
+      expect(restored?.locationId).toBe(seed.infra.id)
+    })
+
+    it('allows installing materials directly to root location', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/actions',
+        headers: { authorization: `Bearer ${editorToken}` },
+        payload: {
+          title: 'Instalación en raíz',
+          locationId: seed.infra.id,
+          materials: [
+            {
+              name: 'Material Raíz Directo',
+              typeId: seed.materialType.id,
+              operation: 'INSTALL',
+              locationId: seed.infra.id,
+            }
+          ]
+        },
+      })
+
+      expect(res.statusCode).toBe(201)
+      const data = res.json().data
+      expect(data.materials).toHaveLength(1)
+      const createdMat = await testDb.material.findFirst({ where: { name: 'Material Raíz Directo' } })
+      expect(createdMat?.locationId).toBe(seed.infra.id)
+    })
   })
 
   describe('DELETE /api/v1/actions/:id', () => {

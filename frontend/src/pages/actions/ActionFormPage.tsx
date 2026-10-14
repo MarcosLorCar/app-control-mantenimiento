@@ -1,16 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { useCreateAction } from '../../hooks/useActions'
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
+import { useCreateAction, useUpdateAction, useAction, actionKeys } from '../../hooks/useActions'
 import { useLocations, locationKeys } from '../../hooks/useLocations'
+import { deleteLocationPhoto } from '../../api/locations'
 import { useQueryClient } from '@tanstack/react-query'
 import { RecursiveMaterialModal, MaterialChange } from '../../components/forms/RecursiveMaterialModal'
-import { ClipboardList, AlertCircle, Pencil, ChevronLeft, Package, Check, Camera, UploadCloud } from 'lucide-react'
+import { ClipboardList, AlertCircle, Pencil, ChevronLeft, Check, Camera, UploadCloud, RotateCcw, Trash2 } from 'lucide-react'
 import { uploadActionPhoto } from '../../api/actions'
+import { compressImage } from '../../utils/imageCompression'
+import type { LocationPhoto } from '../../api/types'
 
 export function ActionFormPage() {
   const navigate = useNavigate()
+  const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
   const qc = useQueryClient()
+
+  const isEdit = !!id
+  const actionId = id ? Number(id) : undefined
+
+  // Action query for edit mode
+  const { data: existingAction, isLoading: loadingAction } = useAction(actionId ?? 0)
 
   // Form states
   const [title, setTitle] = useState('')
@@ -23,7 +33,11 @@ export function ActionFormPage() {
   const [stagedChanges, setStagedChanges] = useState<MaterialChange[]>([])
   const [showMaterialModal, setShowMaterialModal] = useState(false)
 
-  // Photo states & refs
+  // Existing photos state (in edit mode)
+  const [existingPhotos, setExistingPhotos] = useState<LocationPhoto[]>([])
+  const [removedPhotoIds, setRemovedPhotoIds] = useState<number[]>([])
+
+  // New photo states & refs
   interface PhotoItem {
     file: File
     previewUrl: string
@@ -49,20 +63,54 @@ export function ActionFormPage() {
     return () => {
       selectedPhotos.forEach(p => URL.revokeObjectURL(p.previewUrl))
     }
-  }, [])
+  }, [selectedPhotos])
 
-  // Add photos utility
-  const addPhotos = (files: File[]) => {
-    const newItems = files
-      .filter(f => f.type.startsWith('image/'))
-      .map(f => ({
-        file: f,
-        previewUrl: URL.createObjectURL(f)
-      }))
+  // Populate data when editing existing action
+  useEffect(() => {
+    if (isEdit && existingAction) {
+      setTitle(existingAction.title)
+      setDescription(existingAction.description ?? '')
+      if (existingAction.performedAt) {
+        setPerformedAt(new Date(existingAction.performedAt).toISOString().slice(0, 10))
+      }
+      if (existingAction.locationId) {
+        setSelectedLocationId(existingAction.locationId)
+      }
+      setExistingPhotos(existingAction.photos || [])
+      setRemovedPhotoIds([])
+
+      if (existingAction.materials && existingAction.materials.length > 0) {
+        const initialStaged: MaterialChange[] = existingAction.materials.map(am => ({
+          tempId: `existing-${am.materialId}`,
+          materialId: am.materialId,
+          name: am.material.name,
+          typeId: am.material.typeId,
+          description: am.material.description,
+          attributes: (am.material.attributes || {}) as Record<string, any>,
+          locationId: am.material.locationId ?? existingAction.locationId,
+          operation: am.operation,
+          type: am.material.type,
+        }))
+        setStagedChanges(initialStaged)
+      } else {
+        setStagedChanges([])
+      }
+    }
+  }, [isEdit, existingAction])
+
+  // Add photos utility with client-side compression
+  const addPhotos = async (files: File[]) => {
+    const imageFiles = files.filter(f => f.type.startsWith('image/'))
+    const compressedFiles = await Promise.all(imageFiles.map(f => compressImage(f)))
+
+    const newItems = compressedFiles.map(f => ({
+      file: f,
+      previewUrl: URL.createObjectURL(f),
+    }))
     setSelectedPhotos(prev => [...prev, ...newItems])
   }
 
-  // Remove photo utility
+  // Remove newly attached photo utility
   const removePhoto = (index: number) => {
     setSelectedPhotos(prev => {
       const next = [...prev]
@@ -70,6 +118,13 @@ export function ActionFormPage() {
       next.splice(index, 1)
       return next
     })
+  }
+
+  // Toggle removal of existing photo
+  const toggleRemoveExistingPhoto = (photoId: number) => {
+    setRemovedPhotoIds(prev =>
+      prev.includes(photoId) ? prev.filter(id => id !== photoId) : [...prev, photoId]
+    )
   }
 
   // Drag and drop handlers
@@ -83,35 +138,39 @@ export function ActionFormPage() {
     setIsDragOver(false)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
     const selected = Array.from(e.dataTransfer.files || [])
-    addPhotos(selected)
+    await addPhotos(selected)
   }
 
   // Queries
   const { data: locations = [], isLoading: loadingLocations } = useLocations(undefined)
   const createActionMut = useCreateAction()
+  const updateActionMut = useUpdateAction()
 
   // Filter root locations (parentId === null)
   const rootLocations = locations.filter(loc => loc.parentId === null)
 
-  // Pre-populate location from search params
+  // Pre-populate location from search params in create mode
   useEffect(() => {
-    const locIdParam = searchParams.get('locationId')
-    if (locIdParam) {
-      const parsedId = Number(locIdParam)
-      if (parsedId > 0) {
-        setSelectedLocationId(parsedId)
+    if (!isEdit) {
+      const locIdParam = searchParams.get('locationId')
+      if (locIdParam) {
+        const parsedId = Number(locIdParam)
+        if (parsedId > 0) {
+          setSelectedLocationId(parsedId)
+        }
       }
     }
-  }, [searchParams])
+  }, [searchParams, isEdit])
 
-  const isPending = createActionMut.isPending || isUploadingPhoto
-  const inputCls = 'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
+  const isPending = createActionMut.isPending || updateActionMut.isPending || isUploadingPhoto
+  const inputCls =
+    'w-full border border-app-border rounded-lg px-3 py-2 text-sm bg-card text-fg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors'
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
@@ -125,7 +184,7 @@ export function ActionFormPage() {
       return
     }
 
-    // Format changes to match create action payload
+    // Format changes to match action payload
     const formattedMaterials = stagedChanges.map(c => ({
       materialId: c.materialId,
       name: c.name,
@@ -133,40 +192,90 @@ export function ActionFormPage() {
       description: c.description,
       attributes: c.attributes,
       locationId: c.locationId,
-      operation: c.operation
+      operation: c.operation,
     }))
 
-    createActionMut.mutate(
-      {
-        title: title.trim(),
-        description: description.trim() || null,
-        performedAt: new Date(performedAt).toISOString(),
-        locationId: selectedLocationId,
-        materials: formattedMaterials
-      },
-      {
-        onSuccess: async (data) => {
-          qc.invalidateQueries({ queryKey: locationKeys.all })
-          if (selectedPhotos.length > 0) {
-            setIsUploadingPhoto(true)
-            try {
-              await Promise.all(
-                selectedPhotos.map(p => uploadActionPhoto(data.id, p.file))
-              )
-            } catch (err) {
-              console.error('Error uploading action images:', err)
-            } finally {
-              setIsUploadingPhoto(false)
-            }
-          }
-          // Redirect to location detail or actions list
-          navigate(`/locations/${selectedLocationId}`)
+    if (isEdit && actionId) {
+      updateActionMut.mutate(
+        {
+          id: actionId,
+          body: {
+            title: title.trim(),
+            description: description.trim() || null,
+            performedAt: new Date(performedAt).toISOString(),
+            materials: formattedMaterials,
+          },
         },
-        onError: (err: any) => {
-          setError(err?.error?.message ?? 'Error al registrar el trabajo')
+        {
+          onSuccess: async () => {
+            qc.invalidateQueries({ queryKey: locationKeys.all })
+            qc.invalidateQueries({ queryKey: actionKeys.all })
+            qc.invalidateQueries({ queryKey: actionKeys.detail(actionId) })
+
+            // 1. Upload newly selected photos
+            if (selectedPhotos.length > 0) {
+              setIsUploadingPhoto(true)
+              try {
+                await Promise.all(
+                  selectedPhotos.map(p => uploadActionPhoto(actionId, p.file))
+                )
+              } catch (err) {
+                console.error('Error uploading action images:', err)
+              } finally {
+                setIsUploadingPhoto(false)
+              }
+            }
+
+            // 2. Delete marked existing photos
+            if (removedPhotoIds.length > 0) {
+              try {
+                await Promise.all(
+                  removedPhotoIds.map(photoId => deleteLocationPhoto(photoId))
+                )
+              } catch (err) {
+                console.error('Error deleting action images:', err)
+              }
+            }
+
+            navigate(`/actions/${actionId}`)
+          },
+          onError: (err: any) => {
+            setError(err?.error?.message ?? 'Error al guardar los cambios del trabajo')
+          },
         }
-      }
-    )
+      )
+    } else {
+      createActionMut.mutate(
+        {
+          title: title.trim(),
+          description: description.trim() || null,
+          performedAt: new Date(performedAt).toISOString(),
+          locationId: selectedLocationId,
+          materials: formattedMaterials,
+        },
+        {
+          onSuccess: async data => {
+            qc.invalidateQueries({ queryKey: locationKeys.all })
+            if (selectedPhotos.length > 0) {
+              setIsUploadingPhoto(true)
+              try {
+                await Promise.all(
+                  selectedPhotos.map(p => uploadActionPhoto(data.id, p.file))
+                )
+              } catch (err) {
+                console.error('Error uploading action images:', err)
+              } finally {
+                setIsUploadingPhoto(false)
+              }
+            }
+            navigate(`/locations/${selectedLocationId}`)
+          },
+          onError: (err: any) => {
+            setError(err?.error?.message ?? 'Error al registrar el trabajo')
+          },
+        }
+      )
+    }
   }
 
   // Count staged operations
@@ -174,17 +283,40 @@ export function ActionFormPage() {
   const uninstalls = stagedChanges.filter(c => c.operation === 'UNINSTALL').length
   const updates = stagedChanges.filter(c => c.operation === 'UPDATE').length
 
-  const selectedLocName = rootLocations.find(l => l.id === selectedLocationId)?.name ?? ''
+  const selectedLocName =
+    locations.find(l => l.id === selectedLocationId)?.name ??
+    existingAction?.location?.name ??
+    ''
+
+  const activeExistingPhotos = existingPhotos.filter(p => !removedPhotoIds.includes(p.id))
+
+  if (isEdit && loadingAction) {
+    return (
+      <div className="text-center py-24 text-muted text-sm italic">
+        Cargando detalles del trabajo...
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto pb-10">
       {/* Breadcrumbs */}
       <nav className="text-xs text-muted flex items-center gap-1.5 mb-2">
         <Link to="/actions" className="hover:text-fg font-medium flex items-center gap-1">
           <ChevronLeft className="w-3.5 h-3.5" /> Trabajos
         </Link>
         <span className="text-muted/60">/</span>
-        <span className="text-fg font-semibold">Registrar Trabajo</span>
+        {isEdit ? (
+          <>
+            <Link to={`/actions/${actionId}`} className="hover:text-fg font-medium">
+              Detalle #{actionId}
+            </Link>
+            <span className="text-muted/60">/</span>
+            <span className="text-fg font-semibold">Editar Trabajo</span>
+          </>
+        ) : (
+          <span className="text-fg font-semibold">Registrar Trabajo</span>
+        )}
       </nav>
 
       {/* Header */}
@@ -193,9 +325,13 @@ export function ActionFormPage() {
           <ClipboardList className="w-6 h-6" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-fg leading-tight">Registrar Trabajo / Mantenimiento</h2>
+          <h2 className="text-xl font-bold text-fg leading-tight">
+            {isEdit ? `Editar Trabajo #${actionId}` : 'Registrar Trabajo / Mantenimiento'}
+          </h2>
           <p className="text-xs text-muted mt-1">
-            Completa los detalles de la intervención y edita el inventario de materiales asociado.
+            {isEdit
+              ? 'Modifica los detalles de la intervención, añade o quita fotos y actualiza el inventario de materiales.'
+              : 'Completa los detalles de la intervención y edita el inventario de materiales asociado.'}
           </p>
         </div>
       </div>
@@ -224,17 +360,17 @@ export function ActionFormPage() {
           </label>
           {loadingLocations ? (
             <div className="text-xs text-muted py-2">Cargando ubicaciones...</div>
-          ) : searchParams.get('locationId') ? (
+          ) : isEdit || searchParams.get('locationId') ? (
             <div className="flex items-center gap-2 px-3.5 py-2.5 bg-app-bg border border-app-border rounded-lg text-sm text-fg font-semibold">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              {selectedLocName}
+              {selectedLocName || 'Ubicación asignada'}
             </div>
           ) : (
             <select
               value={selectedLocationId || ''}
               onChange={e => {
                 setSelectedLocationId(Number(e.target.value))
-                setStagedChanges([]) // Reset staged changes if location changes
+                setStagedChanges([])
               }}
               className={inputCls}
               required
@@ -280,17 +416,17 @@ export function ActionFormPage() {
           />
         </div>
 
-        {/* Adjuntar Foto */}
-        <div>
+        {/* Photos Section */}
+        <div className="space-y-3">
           {/* Hidden Inputs */}
           <input
             type="file"
             ref={cameraInputRef}
             accept="image/*"
             capture="environment"
-            onChange={e => {
+            onChange={async e => {
               const selected = Array.from(e.target.files || [])
-              addPhotos(selected)
+              await addPhotos(selected)
             }}
             className="hidden"
           />
@@ -299,20 +435,75 @@ export function ActionFormPage() {
             ref={archiveInputRef}
             accept="image/*"
             multiple
-            onChange={e => {
+            onChange={async e => {
               const selected = Array.from(e.target.files || [])
-              addPhotos(selected)
+              await addPhotos(selected)
             }}
             className="hidden"
           />
 
-          <label className="block text-xs font-bold uppercase tracking-wider text-fg-secondary mb-1.5">
-            Adjuntar Fotos del Trabajo (Opcional)
+          <label className="block text-xs font-bold uppercase tracking-wider text-fg-secondary">
+            Fotos del Trabajo
           </label>
-          
+
+          {/* Existing Photos Grid in Edit Mode */}
+          {isEdit && existingPhotos.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-fg-secondary">Fotos Actuales:</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-app-bg/10 border border-app-border rounded-xl">
+                {existingPhotos.map(photo => {
+                  const isRemoved = removedPhotoIds.includes(photo.id)
+                  return (
+                    <div
+                      key={photo.id}
+                      className={`relative group aspect-square rounded-lg overflow-hidden border transition-all ${
+                        isRemoved
+                          ? 'border-rose-500/50 opacity-40 bg-rose-500/10'
+                          : 'border-app-border bg-card'
+                      }`}
+                    >
+                      <img
+                        src={photo.url}
+                        alt="Foto existente"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleRemoveExistingPhoto(photo.id)}
+                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold transition-all active:scale-95 shadow-sm flex items-center gap-1 ${
+                            isRemoved
+                              ? 'bg-primary text-white hover:bg-primary-hover'
+                              : 'bg-error text-white hover:bg-red-600'
+                          }`}
+                        >
+                          {isRemoved ? (
+                            <>
+                              <RotateCcw className="w-3 h-3" /> Restaurar
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="w-3 h-3" /> Eliminar
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      {isRemoved && (
+                        <div className="absolute top-1 left-1 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                          A eliminar
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* New Photos Staging */}
           {selectedPhotos.length === 0 ? (
             !isMobile ? (
-              <div 
+              <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -324,17 +515,19 @@ export function ActionFormPage() {
                 }`}
               >
                 <UploadCloud className="w-8 h-8 text-muted mb-2 group-hover:text-primary transition-colors" />
-                <p className="text-xs font-semibold text-fg mb-0.5">Haz clic para seleccionar o arrastra fotos</p>
-                <p className="text-[10px] text-muted">Formatos aceptados: PNG, JPG, WEBP</p>
+                <p className="text-xs font-semibold text-fg mb-0.5">
+                  Haz clic para seleccionar o arrastra fotos nuevas
+                </p>
+                <p className="text-[10px] text-muted">Formatos aceptados: PNG, JPG, WEBP (se comprimen automáticamente)</p>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center border-2 border-dashed border-app-border rounded-xl p-6 bg-app-bg/10 text-center gap-3">
                 <div className="text-center space-y-0.5">
                   <UploadCloud className="w-8 h-8 text-muted mx-auto mb-1.5" />
-                  <p className="text-xs font-semibold text-fg">Fotos del Trabajo (Opcional)</p>
-                  <p className="text-[10px] text-muted">Sube una o varias fotos del mantenimiento realizado</p>
+                  <p className="text-xs font-semibold text-fg">Añadir Fotos (Opcional)</p>
+                  <p className="text-[10px] text-muted">Sube una o varias fotos del mantenimiento</p>
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row gap-2.5 w-full justify-center">
                   <button
                     type="button"
@@ -355,14 +548,18 @@ export function ActionFormPage() {
             )
           ) : (
             <div className="space-y-3">
+              <p className="text-[11px] font-semibold text-fg-secondary">Nuevas Fotos a Subir:</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-app-bg/10 border border-app-border rounded-xl">
                 {selectedPhotos.map((item, index) => (
-                  <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-app-border bg-card">
+                  <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-emerald-500/30 bg-card">
                     <img
                       src={item.previewUrl}
                       alt="Vista previa"
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute top-1 left-1 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                      Nueva
+                    </div>
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
                       <button
                         type="button"
@@ -389,16 +586,16 @@ export function ActionFormPage() {
                   onClick={() => archiveInputRef.current?.click()}
                   className="flex items-center justify-center gap-1 px-3 py-1.5 border border-app-border bg-card hover:bg-app-bg text-fg-secondary hover:text-fg rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm"
                 >
-                  <UploadCloud className="w-3.5 h-3.5" /> Añadir Archivo(s)
+                  <UploadCloud className="w-3.5 h-3.5" /> Añadir Más Fotos
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Recursive Materials Editor Button replacing card */}
+        {/* Recursive Materials Editor Button */}
         {selectedLocationId > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             <button
               type="button"
               disabled={loadingLocations}
@@ -433,7 +630,7 @@ export function ActionFormPage() {
                   </span>
                 )}
                 <span className="text-muted font-normal self-center ml-auto flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5 text-emerald-500" /> Cambios guardados localmente
+                  <Check className="w-3.5 h-3.5 text-emerald-500" /> Cambios configurados
                 </span>
               </div>
             ) : (
@@ -465,7 +662,13 @@ export function ActionFormPage() {
             disabled={isPending}
             className="px-5 py-2.5 text-sm text-primary-fg bg-primary rounded-lg hover:bg-[var(--primary-hover)] disabled:opacity-50 transition-colors font-bold shadow-sm"
           >
-            {isPending ? (isUploadingPhoto ? 'Subiendo foto...' : 'Registrando...') : 'Registrar Trabajo'}
+            {isPending
+              ? isUploadingPhoto
+                ? 'Subiendo fotos...'
+                : 'Guardando...'
+              : isEdit
+              ? 'Guardar Cambios'
+              : 'Registrar Trabajo'}
           </button>
         </div>
       </form>
@@ -477,10 +680,10 @@ export function ActionFormPage() {
           allLocations={locations}
           initialChanges={stagedChanges}
           onClose={() => setShowMaterialModal(false)}
-          onConfirm={(updatedChanges) => {
+          onConfirm={updatedChanges => {
             setStagedChanges(updatedChanges)
-            setShowMaterialModal(false)}
-          }
+            setShowMaterialModal(false)
+          }}
         />
       )}
     </div>
