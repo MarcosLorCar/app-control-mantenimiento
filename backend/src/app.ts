@@ -79,6 +79,8 @@ export async function buildApp(opts: AppOptions): Promise<FastifyInstance> {
     root: path.join(process.cwd(), 'uploads'),
     prefix: '/uploads/',
     decorateReply: false,
+    maxAge: '30d',
+    immutable: true,
   })
 
   const frontendDist = path.join(process.cwd(), 'public')

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Camera, UploadCloud, Clipboard, Loader2 } from 'lucide-react'
+import { compressImage } from '../../utils/imageCompression'
 
 interface Props {
   onFileSelect: (file: File | null) => void
@@ -40,7 +41,7 @@ export function PhotoInputZone({ onFileSelect, selectedFile, previewUrl, isPendi
   useEffect(() => {
     if (isMobile) return
 
-    const handlePaste = (e: ClipboardEvent) => {
+    const handlePaste = async (e: ClipboardEvent) => {
       const target = e.target as HTMLElement
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
 
@@ -49,7 +50,8 @@ export function PhotoInputZone({ onFileSelect, selectedFile, previewUrl, isPendi
       if (imageItem) {
         const file = imageItem.getAsFile()
         if (file) {
-          onFileSelect(file)
+          const compressed = await compressImage(file)
+          onFileSelect(compressed)
         }
       }
     }
@@ -130,10 +132,11 @@ export function PhotoInputZone({ onFileSelect, selectedFile, previewUrl, isPendi
     }
   }
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null
     if (file && file.type.startsWith('image/')) {
-      onFileSelect(file)
+      const compressed = await compressImage(file)
+      onFileSelect(compressed)
     }
   }
 
@@ -146,7 +149,8 @@ export function PhotoInputZone({ onFileSelect, selectedFile, previewUrl, isPendi
         if (imageType) {
           const blob = await item.getType(imageType)
           const file = new File([blob], 'photo_clipboard.png', { type: imageType })
-          onFileSelect(file)
+          const compressed = await compressImage(file)
+          onFileSelect(compressed)
           return
         }
       }
@@ -166,12 +170,13 @@ export function PhotoInputZone({ onFileSelect, selectedFile, previewUrl, isPendi
     setIsDragOver(false)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
     const file = e.dataTransfer.files?.[0]
     if (file && file.type.startsWith('image/')) {
-      onFileSelect(file)
+      const compressed = await compressImage(file)
+      onFileSelect(compressed)
     }
   }
 

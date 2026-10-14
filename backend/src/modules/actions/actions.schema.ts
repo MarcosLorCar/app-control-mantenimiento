@@ -1,5 +1,15 @@
 import { z } from 'zod'
 
+export const ActionMaterialItemSchema = z.object({
+  materialId: z.number().int().positive().optional(),
+  name: z.string().min(1).max(255).optional(),
+  typeId: z.number().int().positive().optional(),
+  description: z.string().optional().nullable(),
+  attributes: z.record(z.any()).optional().default({}),
+  locationId: z.number().int().positive().nullable().optional(),
+  operation: z.enum(['INSTALL', 'UNINSTALL', 'UPDATE'])
+})
+
 export const CreateActionSchema = z.object({
   title: z.string().min(1).max(255),
   description: z.string().optional().nullable(),
@@ -14,17 +24,7 @@ export const CreateActionSchema = z.object({
     parentId: z.number().int().positive().nullable().optional(),
     infraTypeId: z.number().int().positive().nullable().optional(),
   }).optional(),
-  materials: z.array(
-    z.object({
-      materialId: z.number().int().positive().optional(),
-      name: z.string().min(1).max(255).optional(),
-      typeId: z.number().int().positive().optional(),
-      description: z.string().optional().nullable(),
-      attributes: z.record(z.any()).optional().default({}),
-      locationId: z.number().int().positive().nullable().optional(),
-      operation: z.enum(['INSTALL', 'UNINSTALL', 'UPDATE'])
-    })
-  ).optional(),
+  materials: z.array(ActionMaterialItemSchema).optional(),
 }).refine(data => {
   return data.locationId !== undefined || data.newLocation !== undefined;
 }, {
@@ -36,6 +36,7 @@ export const UpdateActionSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   description: z.string().optional().nullable(),
   performedAt: z.string().datetime().optional(),
+  materials: z.array(ActionMaterialItemSchema).optional(),
 })
 
 export type CreateActionInput = z.infer<typeof CreateActionSchema>

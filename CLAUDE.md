@@ -28,8 +28,8 @@ cd backend && npx prisma migrate dev   # apply migrations
 cd backend && npx prisma db seed       # seed roles + dev users
 cd backend && npx prisma studio        # GUI browser
 
-# Docker DB (port 5433 → 5432 inside container)
-docker-compose up -d
+# Docker DB (port 5434 → 5432 inside container)
+docker compose up -d
 ```
 
 Backend tests require a real PostgreSQL instance (no mocks). Setup is in `backend/tests/helpers/db.ts`. Tests run serially (`fileParallelism: false`), timeout 30 s.

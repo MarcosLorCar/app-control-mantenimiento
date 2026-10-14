@@ -38,6 +38,7 @@ export default function App() {
                 <Route path="/actions" element={<ActionsPage />} />
                 <Route path="/actions/new" element={<ActionFormPage />} />
                 <Route path="/actions/:id" element={<ActionDetail />} />
+                <Route path="/actions/:id/edit" element={<ActionFormPage />} />
                 <Route path="/map" element={<LocationsMapPage />} />
                 <Route path="/materials" element={<MaterialsPage />} />
                 <Route path="/admin" element={<Users />} />

@@ -44,7 +44,20 @@ export function createAction(body: {
 
 export function updateAction(
   id: number,
-  body: { title?: string; description?: string | null; performedAt?: string },
+  body: {
+    title?: string
+    description?: string | null
+    performedAt?: string
+    materials?: {
+      materialId?: number
+      name?: string
+      typeId?: number
+      description?: string | null
+      attributes?: Record<string, any>
+      locationId?: number | null
+      operation: 'INSTALL' | 'UNINSTALL' | 'UPDATE'
+    }[]
+  },
 ): Promise<Action> {
   return apiFetch<ApiData<Action>>(`${API_BASE}/actions/${id}`, {
     method: 'PATCH',

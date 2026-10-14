@@ -494,15 +494,13 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
             </span>
           </div>
 
-          {node.parentId !== null && (
-            <button
-              type="button"
-              onClick={() => openAdd(node.id)}
-              className="text-[11px] font-bold text-primary hover:underline bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded shrink-0"
-            >
-              + Añadir
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => openAdd(node.id)}
+            className="text-[11px] font-bold text-primary hover:underline bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded shrink-0"
+          >
+            + Añadir
+          </button>
         </div>
 
         {/* Folder items */}
@@ -605,6 +603,17 @@ export function RecursiveMaterialModal({ rootLocationId, allLocations, initialCh
                 </div>
               )
             })}
+
+            {/* Prominent Add Button in Material List */}
+            <button
+              type="button"
+              onClick={() => openAdd(node.id)}
+              style={{ marginLeft: `${(depth + 1) * 16}px` }}
+              className="w-[calc(100%-${(depth + 1) * 16}px)] flex items-center justify-center gap-1.5 py-2 px-3 border border-dashed border-primary/40 bg-primary/[0.04] hover:bg-primary/[0.08] text-primary rounded-lg text-xs font-semibold transition-all active:scale-[0.99] group cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
+              <span>Añadir material a {node.name}</span>
+            </button>
 
             {/* Subfolders */}
             {node.children.map(child => renderTreeNode(child, depth + 1))}
